@@ -1,11 +1,10 @@
 package com.lumi.app.settings
 
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -29,7 +28,18 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun populateUi() {
+        // Provider toggle
+        binding.switchOpenRouter.isChecked = settings.useOpenRouter
+        updateProviderVisibility(settings.useOpenRouter)
+
+        // API keys
         binding.etApiKey.setText(settings.geminiApiKey)
+        binding.etOpenRouterKey.setText(settings.openRouterApiKey)
+        binding.etOpenRouterUrl.setText(
+            settings.openRouterBaseUrl.takeIf { it != AppSettings.OPENROUTER_DEFAULT_URL } ?: ""
+        )
+        binding.etOpenRouterUrl.hint = AppSettings.OPENROUTER_DEFAULT_URL
+
         binding.etSystemPrompt.setText(settings.systemPrompt)
         binding.switchAutoConnect.isChecked = settings.autoConnect
 
@@ -37,8 +47,7 @@ class SettingsActivity : AppCompatActivity() {
         val fastAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, AppSettings.FAST_MODEL_LABELS)
         fastAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerFastModel.adapter = fastAdapter
-        val fastIdx = AppSettings.FAST_MODELS.indexOf(settings.fastModel).coerceAtLeast(0)
-        binding.spinnerFastModel.setSelection(fastIdx)
+        binding.spinnerFastModel.setSelection(AppSettings.FAST_MODELS.indexOf(settings.fastModel).coerceAtLeast(0))
 
         // STT language
         val languages = listOf("ro-RO", "en-US", "fr-FR", "de-DE", "es-ES")
@@ -56,6 +65,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
+        binding.switchOpenRouter.setOnCheckedChangeListener { _, checked ->
+            updateProviderVisibility(checked)
+        }
         binding.btnSave.setOnClickListener { saveSettings() }
         binding.btnScanBt.setOnClickListener { scanBluetooth() }
         binding.btnResetPrompt.setOnClickListener {
@@ -63,13 +75,33 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateProviderVisibility(useOpenRouter: Boolean) {
+        binding.layoutGeminiDirect.visibility = if (useOpenRouter) View.GONE else View.VISIBLE
+        binding.layoutOpenRouter.visibility = if (useOpenRouter) View.VISIBLE else View.GONE
+    }
+
     private fun saveSettings() {
-        val apiKey = binding.etApiKey.text.toString().trim()
-        if (apiKey.isBlank()) {
-            Toast.makeText(this, "Cheia API nu poate fi goală.", Toast.LENGTH_SHORT).show()
-            return
+        val useOpenRouter = binding.switchOpenRouter.isChecked
+
+        if (useOpenRouter) {
+            val orKey = binding.etOpenRouterKey.text.toString().trim()
+            if (orKey.isBlank()) {
+                Toast.makeText(this, "Cheia API OpenRouter nu poate fi goală.", Toast.LENGTH_SHORT).show()
+                return
+            }
+            settings.openRouterApiKey = orKey
+            val customUrl = binding.etOpenRouterUrl.text.toString().trim()
+            settings.openRouterBaseUrl = customUrl.ifBlank { AppSettings.OPENROUTER_DEFAULT_URL }
+        } else {
+            val geminiKey = binding.etApiKey.text.toString().trim()
+            if (geminiKey.isBlank()) {
+                Toast.makeText(this, "Cheia API Gemini nu poate fi goală.", Toast.LENGTH_SHORT).show()
+                return
+            }
+            settings.geminiApiKey = geminiKey
         }
-        settings.geminiApiKey = apiKey
+
+        settings.useOpenRouter = useOpenRouter
         settings.systemPrompt = binding.etSystemPrompt.text.toString()
         settings.autoConnect = binding.switchAutoConnect.isChecked
         settings.fastModel = AppSettings.FAST_MODELS[binding.spinnerFastModel.selectedItemPosition]
@@ -112,7 +144,6 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun scanBluetooth() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Scanning happens in MainActivity via LumiBluetoothManager
             Toast.makeText(this, "Pornește scanarea din ecranul principal.", Toast.LENGTH_SHORT).show()
         }
         loadPairedDevices()

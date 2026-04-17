@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.lumi.app.ai.ApiProvider
 import com.lumi.app.ai.ConversationMemory
 import com.lumi.app.ai.GeminiClient
 import com.lumi.app.ai.Interaction
@@ -26,9 +27,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val settings = AppSettings(app)
     val bluetooth = LumiBluetoothManager(app)
 
-    private val gemini get() = GeminiClient(settings.geminiApiKey)
     private val memory = ConversationMemory(maxSize = 5)
-    private val router get() = TaskRouter(gemini, settings)
+
+    private fun buildClient() = GeminiClient(
+        apiKey = settings.activeApiKey(),
+        provider = if (settings.useOpenRouter) ApiProvider.OPEN_ROUTER else ApiProvider.GEMINI_DIRECT,
+        openRouterBaseUrl = settings.openRouterBaseUrl
+    )
+    private val router get() = TaskRouter(buildClient(), settings)
 
     private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
     val messages: LiveData<List<ChatMessage>> = _messages

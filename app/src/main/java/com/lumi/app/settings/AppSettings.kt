@@ -17,6 +17,11 @@ class AppSettings(context: Context) {
         const val KEY_STT_LANGUAGE = "stt_language"
         const val KEY_SYSTEM_PROMPT = "system_prompt"
         const val KEY_AUTO_CONNECT = "auto_connect"
+        const val KEY_USE_OPENROUTER = "use_openrouter"
+        const val KEY_OPENROUTER_API_KEY = "openrouter_api_key"
+        const val KEY_OPENROUTER_BASE_URL = "openrouter_base_url"
+
+        const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
         const val MODEL_FLASH_15 = "gemini-1.5-flash"
         const val MODEL_FLASH_25 = "gemini-2.5-flash-preview-04-17"
@@ -65,6 +70,21 @@ Pentru sarcini complexe, orchestrezi acțiunile pas cu pas."""
         get() = prefs.getBoolean(KEY_AUTO_CONNECT, true)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_CONNECT, value).apply()
 
-    fun hasApiKey() = geminiApiKey.isNotBlank()
+    var useOpenRouter: Boolean
+        get() = prefs.getBoolean(KEY_USE_OPENROUTER, false)
+        set(value) = prefs.edit().putBoolean(KEY_USE_OPENROUTER, value).apply()
+
+    var openRouterApiKey: String
+        get() = prefs.getString(KEY_OPENROUTER_API_KEY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_OPENROUTER_API_KEY, value).apply()
+
+    var openRouterBaseUrl: String
+        get() = prefs.getString(KEY_OPENROUTER_BASE_URL, OPENROUTER_DEFAULT_URL) ?: OPENROUTER_DEFAULT_URL
+        set(value) = prefs.edit().putString(KEY_OPENROUTER_BASE_URL, value).apply()
+
+    /** Returns the active API key based on selected provider. */
+    fun activeApiKey() = if (useOpenRouter) openRouterApiKey else geminiApiKey
+
+    fun hasApiKey() = activeApiKey().isNotBlank()
     fun hasBtDevice() = btDeviceAddress.isNotBlank()
 }
