@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFFFFF"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -21,7 +22,8 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="#FFFFFF">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -30,98 +32,67 @@
             android:padding="16dp">
 
             <!-- API Section -->
-            <TextView style="@style/SectionHeader" android:text="Furnizor API"/>
+            <TextView style="@style/SectionHeader" android:text="API OpenRouter"/>
 
-            <!-- Provider toggle -->
-            <LinearLayout
+            <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="0dp"
+                android:layout_marginBottom="8dp"
+                android:hint="Cheie API OpenRouter"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etOpenRouterKey"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Folosește OpenRouter"
-                    android:textSize="15sp"/>
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/switchOpenRouter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-            </LinearLayout>
+                    android:inputType="textPassword"
+                    android:singleLine="true"
+                    android:textColor="#000000"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Gemini Direct section -->
-            <LinearLayout
-                android:id="@+id/layoutGeminiDirect"
+            <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <com.google.android.material.textfield.TextInputLayout
+                android:layout_marginBottom="16dp"
+                android:hint="Base URL (lasă gol pentru implicit)"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etOpenRouterUrl"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:hint="Cheie API Google Gemini"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etApiKey"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword"
-                        android:singleLine="true"/>
-                </com.google.android.material.textfield.TextInputLayout>
+                    android:inputType="textUri"
+                    android:singleLine="true"
+                    android:textColor="#000000"
+                    android:textColorHint="#888888"/>
+            </com.google.android.material.textfield.TextInputLayout>
 
-            </LinearLayout>
-
-            <!-- OpenRouter section -->
-            <LinearLayout
-                android:id="@+id/layoutOpenRouter"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:hint="Cheie API OpenRouter"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etOpenRouterKey"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword"
-                        android:singleLine="true"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:hint="Base URL (opțional)"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etOpenRouterUrl"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textUri"
-                        android:singleLine="true"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-            </LinearLayout>
+            <!-- Models Section -->
+            <TextView style="@style/SectionHeader" android:text="Modele AI"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
-                android:text="Model rapid (Flash)"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"/>
+                android:text="Model rapid"
+                android:textColor="#333333"
+                android:textSize="13sp"/>
 
             <Spinner
                 android:id="@+id/spinnerFastModel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/spinner_bg"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="Model expert (pentru sarcini complexe)"
+                android:textColor="#333333"
+                android:textSize="13sp"/>
+
+            <Spinner
+                android:id="@+id/spinnerExpertModel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -135,8 +106,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
                 android:text="Limbă STT"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"/>
+                android:textColor="#333333"
+                android:textSize="13sp"/>
 
             <Spinner
                 android:id="@+id/spinnerSttLanguage"
@@ -154,7 +125,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:text="Niciun dispozitiv selectat"
-                android:textColor="@color/text_secondary"/>
+                android:textColor="#666666"/>
 
             <Spinner
                 android:id="@+id/spinnerBtDevices"
@@ -182,6 +153,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Conectare automată la pornire"
+                    android:textColor="#000000"
                     android:textSize="15sp"/>
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switchAutoConnect"
@@ -202,7 +174,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textMultiLine"
-                    android:minLines="4"/>
+                    android:minLines="4"
+                    android:textColor="#000000"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <Button

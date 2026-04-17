@@ -7,7 +7,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.lumi.app.ai.ApiProvider
 import com.lumi.app.ai.ConversationMemory
 import com.lumi.app.ai.GeminiClient
 import com.lumi.app.ai.Interaction
@@ -30,9 +29,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val memory = ConversationMemory(maxSize = 5)
 
     private fun buildClient() = GeminiClient(
-        apiKey = settings.activeApiKey(),
-        provider = if (settings.useOpenRouter) ApiProvider.OPEN_ROUTER else ApiProvider.GEMINI_DIRECT,
-        openRouterBaseUrl = settings.openRouterBaseUrl
+        apiKey = settings.openRouterApiKey,
+        baseUrl = settings.openRouterBaseUrl
     )
     private val router get() = TaskRouter(buildClient(), settings)
 
@@ -48,9 +46,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _statusText = MutableLiveData("Inactiv")
     val statusText: LiveData<String> = _statusText
 
-    // Latest image frame from Lumi device (base64 JPEG)
     private var latestImageBase64: String? = null
-
     private var currentJob: Job? = null
 
     init {
@@ -69,14 +65,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 })
             }
 
-            override fun onAudioFrame(pcmData: ByteArray, sequenceNum: Int) {
-                // PCM audio from device mic — accumulated and fed to STT in MainActivity
-                // Signal is forwarded via AudioStreamBuffer (managed by MainActivity)
-            }
+            override fun onAudioFrame(pcmData: ByteArray, sequenceNum: Int) {}
 
             override fun onImageReceived(jpegData: ByteArray) {
                 latestImageBase64 = Base64.encodeToString(jpegData, Base64.NO_WRAP)
-                Log.d(TAG, "Image received: ${jpegData.size} bytes")
             }
 
             override fun onError(message: String) {
@@ -86,19 +78,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun connectBluetooth() {
-        if (settings.hasBtDevice()) {
-            bluetooth.connectToAddress(settings.btDeviceAddress)
-        } else {
-            bluetooth.startScan()
-        }
+        if (settings.hasBtDevice()) bluetooth.connectToAddress(settings.btDeviceAddress)
+        else bluetooth.startScan()
     }
 
     fun disconnectBluetooth() = bluetooth.disconnect()
 
-    /** Process a voice/text prompt from user (with optional image from device). */
     fun processPrompt(userText: String, useCurrentImage: Boolean = true) {
         if (!settings.hasApiKey()) {
-            addSystemMessage("⚠ Configurează cheia API Gemini în Setări.")
+            addSystemMessage("⚠ Configurează cheia API OpenRouter în Setări.")
             return
         }
         if (userText.isBlank()) return
@@ -106,24 +94,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val imageBase64 = if (useCurrentImage) latestImageBase64 else null
         val notifContext = LumiNotificationService.formatSummary(15)
 
-        val userMsg = ChatMessage(
-            text = userText,
-            time = now(),
-            isUser = true,
-            imageBase64 = imageBase64
-        )
+        val userMsg = ChatMessage(text = userText, time = now(), isUser = true, imageBase64 = imageBase64)
         appendMessage(userMsg)
 
-        val loadingMsg = ChatMessage(
-            text = "…",
-            time = now(),
-            isUser = false,
-            isLoading = true
-        )
+        val loadingMsg = ChatMessage(text = "…", time = now(), isUser = false, isLoading = true)
         appendMessage(loadingMsg)
 
         _isProcessing.value = true
-        _statusText.value = "Procesez cu Gemini…"
+        _statusText.value = "Procesez…"
 
         currentJob?.cancel()
         currentJob = viewModelScope.launch {
@@ -135,14 +113,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     notificationContext = notifContext.takeIf { it.isNotBlank() }
                 )
 
-                val modelLabel = if (result.usedPro) "Pro" else "Flash"
-                _statusText.postValue("Răspuns de la Gemini $modelLabel")
+                val label = if (result.usedExpert) "Expert" else "Fast"
+                _statusText.postValue("Răspuns · $label")
 
                 val lumiMsg = ChatMessage(
                     text = result.response.text,
                     time = now(),
                     isUser = false,
-                    usedPro = result.usedPro
+                    usedPro = result.usedExpert
                 )
                 replaceLoading(loadingMsg.id, lumiMsg)
 
@@ -150,20 +128,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     userText = userText,
                     assistantText = result.response.text,
                     imageBase64 = imageBase64,
-                    usedProModel = result.usedPro
+                    usedProModel = result.usedExpert
                 ))
 
-                // Clear latest image after it's been used
                 latestImageBase64 = null
 
             } catch (e: Exception) {
-                Log.e(TAG, "Gemini error", e)
-                val errorMsg = ChatMessage(
-                    text = "Eroare: ${e.message}",
-                    time = now(),
-                    isUser = false
-                )
-                replaceLoading(loadingMsg.id, errorMsg)
+                Log.e(TAG, "AI error", e)
+                replaceLoading(loadingMsg.id, ChatMessage(text = "Eroare: ${e.message}", time = now(), isUser = false))
                 _statusText.postValue("Eroare la procesare")
             } finally {
                 _isProcessing.postValue(false)
@@ -189,9 +161,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _messages.postValue(current)
     }
 
-    private fun addSystemMessage(text: String) {
+    private fun addSystemMessage(text: String) =
         appendMessage(ChatMessage(text = text, time = now(), isUser = false))
-    }
 
     private fun now() = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
 

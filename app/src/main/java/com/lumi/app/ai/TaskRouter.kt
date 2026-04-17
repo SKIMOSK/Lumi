@@ -2,12 +2,6 @@ package com.lumi.app.ai
 
 import com.lumi.app.settings.AppSettings
 
-/**
- * Routes each request to Flash (simple/fast) or Pro (complex/orchestration).
- *
- * Classification prompt asks Gemini Flash to tag the task.
- * Complex tasks that need multi-step phone actions are forwarded to the Pro model.
- */
 class TaskRouter(
     private val client: GeminiClient,
     private val settings: AppSettings
@@ -15,7 +9,7 @@ class TaskRouter(
 
     data class RouteResult(
         val response: GeminiResponse,
-        val usedPro: Boolean,
+        val usedExpert: Boolean,
         val classification: TaskClass
     )
 
@@ -47,7 +41,6 @@ Reply with exactly one word: SIMPLE or COMPLEX
         val history = memory.toGeminiContents()
         val fastModel = settings.fastModel
 
-        // Ask Flash to classify — cheap and fast
         val classificationResponse = client.generate(
             prompt = "$classifyPrompt\n\nUser request: \"$userPrompt\"",
             model = fastModel,
@@ -57,23 +50,23 @@ Reply with exactly one word: SIMPLE or COMPLEX
             TaskClass.COMPLEX else TaskClass.SIMPLE
 
         return if (taskClass == TaskClass.COMPLEX) {
-            val proResponse = client.generate(
+            val response = client.generate(
                 prompt = enrichedPrompt,
                 imageBase64 = imageBase64,
-                model = settings.proModel,
+                model = settings.expertModel,
                 history = history,
                 systemInstruction = systemPrompt
             )
-            RouteResult(proResponse, usedPro = true, classification = TaskClass.COMPLEX)
+            RouteResult(response, usedExpert = true, classification = TaskClass.COMPLEX)
         } else {
-            val flashResponse = client.generate(
+            val response = client.generate(
                 prompt = enrichedPrompt,
                 imageBase64 = imageBase64,
                 model = fastModel,
                 history = history,
                 systemInstruction = systemPrompt
             )
-            RouteResult(flashResponse, usedPro = false, classification = TaskClass.SIMPLE)
+            RouteResult(response, usedExpert = false, classification = TaskClass.SIMPLE)
         }
     }
 

@@ -9,26 +9,32 @@ class AppSettings(context: Context) {
     private val prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
     companion object {
-        const val KEY_GEMINI_API_KEY = "gemini_api_key"
+        const val KEY_OPENROUTER_API_KEY = "openrouter_api_key"
+        const val KEY_OPENROUTER_BASE_URL = "openrouter_base_url"
         const val KEY_FAST_MODEL = "fast_model"
-        const val KEY_PRO_MODEL = "pro_model"
+        const val KEY_EXPERT_MODEL = "expert_model"
         const val KEY_BT_DEVICE_ADDRESS = "bt_device_address"
         const val KEY_BT_DEVICE_NAME = "bt_device_name"
         const val KEY_STT_LANGUAGE = "stt_language"
         const val KEY_SYSTEM_PROMPT = "system_prompt"
         const val KEY_AUTO_CONNECT = "auto_connect"
-        const val KEY_USE_OPENROUTER = "use_openrouter"
-        const val KEY_OPENROUTER_API_KEY = "openrouter_api_key"
-        const val KEY_OPENROUTER_BASE_URL = "openrouter_base_url"
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
-        const val MODEL_FLASH_15 = "gemini-1.5-flash"
-        const val MODEL_FLASH_25 = "gemini-2.5-flash-preview-04-17"
-        const val MODEL_PRO_25 = "gemini-2.5-pro-preview-03-25"
+        // Fast models
+        const val MODEL_FAST       = "google/gemini-2.5-flash"
+        const val MODEL_FAST_LITE  = "google/gemini-2.5-flash-lite"
 
-        val FAST_MODELS = listOf(MODEL_FLASH_15, MODEL_FLASH_25)
-        val FAST_MODEL_LABELS = listOf("Gemini 1.5 Flash", "Gemini 2.5 Flash")
+        // Expert models
+        const val MODEL_EXPERT_PRO    = "google/gemini-3.1-pro-preview"
+        const val MODEL_EXPERT_OPUS   = "anthropic/claude-opus-4.6"
+        const val MODEL_EXPERT_SONNET = "anthropic/claude-sonnet-4.6"
+
+        val FAST_MODELS  = listOf(MODEL_FAST, MODEL_FAST_LITE)
+        val FAST_LABELS  = listOf("Fast Model", "Cheaper Model")
+
+        val EXPERT_MODELS  = listOf(MODEL_EXPERT_PRO, MODEL_EXPERT_OPUS, MODEL_EXPERT_SONNET)
+        val EXPERT_LABELS  = listOf("Expert (Default)", "Higher End Model", "Cost Efficient Model")
 
         const val DEFAULT_SYSTEM_PROMPT = """Ești Lumi, un asistent AI personal integrat în dispozitivul Lumi.
 Răspunzi în română (sau în limba în care ți se vorbește).
@@ -38,17 +44,21 @@ Preferă răspunsuri scurte pentru întrebări simple.
 Pentru sarcini complexe, orchestrezi acțiunile pas cu pas."""
     }
 
-    var geminiApiKey: String
-        get() = prefs.getString(KEY_GEMINI_API_KEY, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_GEMINI_API_KEY, value).apply()
+    var openRouterApiKey: String
+        get() = prefs.getString(KEY_OPENROUTER_API_KEY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_OPENROUTER_API_KEY, value).apply()
+
+    var openRouterBaseUrl: String
+        get() = prefs.getString(KEY_OPENROUTER_BASE_URL, OPENROUTER_DEFAULT_URL) ?: OPENROUTER_DEFAULT_URL
+        set(value) = prefs.edit().putString(KEY_OPENROUTER_BASE_URL, value).apply()
 
     var fastModel: String
-        get() = prefs.getString(KEY_FAST_MODEL, MODEL_FLASH_25) ?: MODEL_FLASH_25
+        get() = prefs.getString(KEY_FAST_MODEL, MODEL_FAST) ?: MODEL_FAST
         set(value) = prefs.edit().putString(KEY_FAST_MODEL, value).apply()
 
-    var proModel: String
-        get() = prefs.getString(KEY_PRO_MODEL, MODEL_PRO_25) ?: MODEL_PRO_25
-        set(value) = prefs.edit().putString(KEY_PRO_MODEL, value).apply()
+    var expertModel: String
+        get() = prefs.getString(KEY_EXPERT_MODEL, MODEL_EXPERT_PRO) ?: MODEL_EXPERT_PRO
+        set(value) = prefs.edit().putString(KEY_EXPERT_MODEL, value).apply()
 
     var btDeviceAddress: String
         get() = prefs.getString(KEY_BT_DEVICE_ADDRESS, "") ?: ""
@@ -70,21 +80,6 @@ Pentru sarcini complexe, orchestrezi acțiunile pas cu pas."""
         get() = prefs.getBoolean(KEY_AUTO_CONNECT, true)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_CONNECT, value).apply()
 
-    var useOpenRouter: Boolean
-        get() = prefs.getBoolean(KEY_USE_OPENROUTER, false)
-        set(value) = prefs.edit().putBoolean(KEY_USE_OPENROUTER, value).apply()
-
-    var openRouterApiKey: String
-        get() = prefs.getString(KEY_OPENROUTER_API_KEY, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_OPENROUTER_API_KEY, value).apply()
-
-    var openRouterBaseUrl: String
-        get() = prefs.getString(KEY_OPENROUTER_BASE_URL, OPENROUTER_DEFAULT_URL) ?: OPENROUTER_DEFAULT_URL
-        set(value) = prefs.edit().putString(KEY_OPENROUTER_BASE_URL, value).apply()
-
-    /** Returns the active API key based on selected provider. */
-    fun activeApiKey() = if (useOpenRouter) openRouterApiKey else geminiApiKey
-
-    fun hasApiKey() = activeApiKey().isNotBlank()
+    fun hasApiKey() = openRouterApiKey.isNotBlank()
     fun hasBtDevice() = btDeviceAddress.isNotBlank()
 }
