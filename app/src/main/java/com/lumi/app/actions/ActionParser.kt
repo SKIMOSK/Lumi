@@ -57,7 +57,13 @@ object ActionParser {
                 val type = o["type"]?.asString ?: return@mapNotNull null
                 val params = o.entrySet()
                     .filter { it.key != "type" }
-                    .associate { it.key to it.value.asString }
+                    .associate { (k, v) ->
+                        k to when {
+                            v.isJsonPrimitive && v.asJsonPrimitive.isNumber ->
+                                v.asLong.toString()
+                            else -> v.asString
+                        }
+                    }
                 LumiAction(type, params)
             }
         } catch (e: Exception) { emptyList() }

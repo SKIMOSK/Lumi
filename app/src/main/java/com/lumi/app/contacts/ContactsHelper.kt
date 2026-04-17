@@ -2,6 +2,7 @@ package com.lumi.app.contacts
 
 import android.content.Context
 import android.provider.ContactsContract
+import java.text.Normalizer
 
 data class Contact(
     val id: Long,
@@ -44,24 +45,44 @@ class ContactsHelper(private val context: Context) {
         return contacts.values.toList()
     }
 
+    /** Load ALL contacts with phone numbers (used for diacritic-tolerant search). */
+    private fun getAllContacts(): List<Contact> = searchByName("")
+
+    /** Find best match: alias → exact → diacritic-normalized → first-name only. */
+    fun findBestMatch(name: String): Contact? {
+        resolveAlias(name)?.let { return it }
+        searchByName(name).firstOrNull()?.let { return it }
+
+        // Diacritic-normalized fallback (handles Romanian ă/â/î/ș/ț)
+        val normQuery = normalize(name)
+        getAllContacts().firstOrNull { normalize(it.name).contains(normQuery) }?.let { return it }
+
+        // First-name only fallback
+        val firstName = name.trim().split(Regex("\\s+")).firstOrNull() ?: return null
+        if (firstName.length >= 3) {
+            searchByName(firstName).firstOrNull()?.let { return it }
+            getAllContacts().firstOrNull { normalize(it.name).contains(normalize(firstName)) }?.let { return it }
+        }
+        return null
+    }
+
     /**
      * Fuzzy resolve a name alias like "mama", "mom", "tata", "dad" to a contact.
-     * Returns the best match or null.
      */
     fun resolveAlias(alias: String): Contact? {
         val aliasMap = mapOf(
-            "mama" to listOf("mama", "mom", "mother", "mami", "mãmica", "mamica"),
-            "tata" to listOf("tata", "dad", "father", "papa", "tătic", "tatic"),
-            "bunica" to listOf("bunica", "grandma", "grandmother", "bunică"),
+            "mama" to listOf("mama", "mom", "mother", "mami", "mamica"),
+            "tata" to listOf("tata", "dad", "father", "papa", "tatic"),
+            "bunica" to listOf("bunica", "grandma", "grandmother", "bunica"),
             "bunicul" to listOf("bunicul", "grandpa", "grandfather"),
-            "soție" to listOf("soție", "nevastă", "wife", "sotie", "nevasta"),
-            "soț" to listOf("soț", "bărbat", "husband", "sot", "barbat")
+            "sotie" to listOf("sotie", "soție", "nevasta", "nevastă", "wife"),
+            "sot" to listOf("sot", "soț", "barbat", "bărbat", "husband")
         )
 
-        val lowerAlias = alias.lowercase().trim()
+        val lowerAlias = normalize(alias)
         val searchTerms = aliasMap.entries
-            .firstOrNull { (_, variants) -> variants.any { it == lowerAlias } }
-            ?.value ?: listOf(lowerAlias)
+            .firstOrNull { (_, variants) -> variants.any { normalize(it) == lowerAlias } }
+            ?.value ?: listOf(alias)
 
         for (term in searchTerms) {
             val results = searchByName(term)
@@ -71,9 +92,15 @@ class ContactsHelper(private val context: Context) {
     }
 
     fun formatForGemini(contacts: List<Contact>): String {
-        if (contacts.isEmpty()) return "Niciun contact găsit."
+        if (contacts.isEmpty()) return "Niciun contact gasit."
         return contacts.joinToString("\n") { c ->
             "${c.name}: ${c.phoneNumbers.joinToString(", ")}"
         }
     }
+
+    private fun normalize(s: String): String =
+        Normalizer.normalize(s, Normalizer.Form.NFD)
+            .replace(Regex("[^\\p{ASCII}]"), "")
+            .lowercase()
+            .trim()
 }

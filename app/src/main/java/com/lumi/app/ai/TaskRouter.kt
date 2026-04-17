@@ -40,19 +40,27 @@ ___LUMI_REQUEST___
 Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
 """.trimIndent()
 
+    private val noActionModeNote = """
+
+IMPORTANT: Nu poti executa actiuni (timere, mesaje, apeluri). Daca utilizatorul cere o astfel de actiune, spune-i sa activeze "Mod Actiune" din Setari.
+""".trimIndent()
+
     private val actionSystemPromptAddition = """
 
-Modul Actiune ACTIVAT. Poti executa actiuni reale. Adauga LA FINAL (dupa textul tau):
+Modul Actiune ACTIVAT. Poti executa actiuni reale. Raspunde utilizatorului, apoi adauga EXACT la final:
 ___LUMI_ACTIONS___
-{"actions":[{"type":"TIP","param":"valoare"}]}
+{"actions":[...]}
 
-Tipuri disponibile:
-SET_TIMER(name, duration_seconds) — SET_STOPWATCH(name) — SET_ALARM(name, time_24h e.g. "07:30")
-PAUSE_TIMER(name) — RESUME_TIMER(name) — CANCEL_TIMER(name) — RESET_TIMER(name)
-SEND_WHATSAPP(contact, message, exact="true" daca mesajul e citat exact / "false" daca il compui tu)
-SEND_SMS(contact, message) — CALL(contact)
+Exemple JSON corecte:
+Timer 5 min: {"actions":[{"type":"SET_TIMER","name":"Paste","duration_seconds":"300"}]}
+Alarma: {"actions":[{"type":"SET_ALARM","name":"Dimineata","time_24h":"07:30"}]}
+Cronometru: {"actions":[{"type":"SET_STOPWATCH","name":"Alergare"}]}
+Pauza timer: {"actions":[{"type":"PAUSE_TIMER","name":"Paste"}]}
+WhatsApp: {"actions":[{"type":"SEND_WHATSAPP","contact":"Mama","message":"Vin acasa","exact":"true"}]}
+SMS: {"actions":[{"type":"SEND_SMS","contact":"Ana","message":"Salut"}]}
+Apel: {"actions":[{"type":"CALL","contact":"Tata"}]}
 
-Daca mesajul NU e citat exact de la utilizator, pune exact="false" si eu il voi citi inainte de trimitere.
+REGULI: duration_seconds TREBUIE sa fie string cu numar intreg (ex: "300" nu 300). exact="false" daca mesajul nu e citat mot-a-mot de utilizator.
 """.trimIndent()
 
     private val classifyPrompt = """
@@ -84,9 +92,10 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         val model = if (useExpert) settings.expertModel else fastModel
         val wordLimit = if (useExpert) expertWordLimit else fastWordLimit
 
+        val actionNote = if (settings.actionModeEnabled) actionSystemPromptAddition else noActionModeNote
         val sysPrompt = baseSystemPrompt +
             "\n\nIMPORTANT: Raspunde in cel mult $wordLimit cuvinte." +
-            if (settings.actionModeEnabled) actionSystemPromptAddition else ""
+            actionNote
 
         // 2. First AI pass (may return a data request)
         var firstResponse = client.generate(
@@ -145,7 +154,7 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         if (req.contacts.isNotEmpty()) {
             sb.appendLine("=== Contacte ===")
             req.contacts.forEach { name ->
-                val found = contacts.resolveAlias(name) ?: contacts.searchByName(name).firstOrNull()
+                val found = contacts.findBestMatch(name)
                 if (found != null) {
                     sb.appendLine("$name → ${found.name} (${found.phoneNumbers.joinToString()})")
                 } else {

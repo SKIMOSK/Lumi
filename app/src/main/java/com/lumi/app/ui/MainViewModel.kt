@@ -130,9 +130,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val imageBase64 = pendingAttachImage ?: (if (useDeviceImage) latestImageBase64 else null)
         pendingAttachImage = null
 
-        appendMessage(ChatMessage(text = userText, time = now(), isUser = true, imageBase64 = imageBase64))
+        val userMsg = ChatMessage(text = userText, time = now(), isUser = true, imageBase64 = imageBase64)
         val loading = ChatMessage(text = "…", time = now(), isUser = false, isLoading = true)
-        appendMessage(loading)
+        val newList = (_messages.value ?: emptyList()).toMutableList()
+        newList.add(userMsg); newList.add(loading)
+        _messages.value = newList  // single synchronous update — no postValue race
 
         _isProcessing.value = true
         _statusText.value = "Procesez…"
@@ -159,7 +161,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 )
                 replaceLoading(loading.id, lumiMsg)
 
-                memory.add(Interaction(userText, displayText, imageBase64, result.usedExpert))
+                // If AI asked a clarifying question, park this exchange in the pending buffer
+                // so the next reply keeps it in context even with memory size = 0.
+                val aiAskedQuestion = displayText.trimEnd().endsWith("?")
+                if (aiAskedQuestion) {
+                    memory.addPending(Interaction(userText, displayText, imageBase64, result.usedExpert))
+                } else {
+                    memory.clearPending()
+                    memory.add(Interaction(userText, displayText, imageBase64, result.usedExpert))
+                }
                 latestImageBase64 = null
                 _statusText.postValue(if (result.usedExpert) "Răspuns · Expert" else "Răspuns · Fast")
 
@@ -179,7 +189,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun attachImage(base64: String) { pendingAttachImage = base64 }
 
-    fun clearHistory() { memory.clear(); _messages.value = emptyList() }
+    fun clearHistory() { memory.clear(); wordLimitBonus = 0; _messages.value = emptyList() }
     fun connectBluetooth() { if (settings.hasBtDevice()) bluetooth.connectToAddress(settings.btDeviceAddress) else bluetooth.startScan() }
     fun disconnectBluetooth() = bluetooth.disconnect()
 

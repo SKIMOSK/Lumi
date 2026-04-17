@@ -99,7 +99,7 @@ class ActionExecutor(
         val msg   = a.params["message"] ?: return Result(a, false, "Mesaj lipsă.")
         val exact = a.params["exact"] == "true"
 
-        val contact = contacts.resolveAlias(cName) ?: contacts.searchByName(cName).firstOrNull()
+        val contact = contacts.findBestMatch(cName)
             ?: return Result(a, false, "Contactul \"$cName\" negăsit.")
 
         val prompt = if (exact)
@@ -119,7 +119,7 @@ class ActionExecutor(
         val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsă.")
         val msg   = a.params["message"] ?: return Result(a, false, "Mesaj lipsă.")
 
-        val contact = contacts.resolveAlias(cName) ?: contacts.searchByName(cName).firstOrNull()
+        val contact = contacts.findBestMatch(cName)
             ?: return Result(a, false, "Contactul \"$cName\" negăsit.")
 
         if (!consent.request("Trimit SMS lui ${contact.name}: \"$msg\". Confirmi?", getMode()))
@@ -133,7 +133,7 @@ class ActionExecutor(
 
     private suspend fun call(a: LumiAction): Result {
         val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsă.")
-        val contact = contacts.resolveAlias(cName) ?: contacts.searchByName(cName).firstOrNull()
+        val contact = contacts.findBestMatch(cName)
             ?: return Result(a, false, "Contactul \"$cName\" negăsit.")
         val phone = contact.phoneNumbers.firstOrNull() ?: return Result(a, false, "Niciun număr.")
 

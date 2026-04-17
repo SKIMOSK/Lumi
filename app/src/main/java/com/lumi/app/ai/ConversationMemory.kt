@@ -19,24 +19,38 @@ class ConversationMemory(private var maxSize: Int = 5) {
 
     private val history = ArrayDeque<Interaction>()
 
+    // Holds clarification exchanges that must stay in context regardless of maxSize.
+    // Cleared once the AI gives a final non-question answer.
+    private val pendingBuffer = ArrayDeque<Interaction>()
+
     fun updateMaxSize(newSize: Int) {
         maxSize = newSize.coerceAtLeast(0)
         while (history.size > maxSize) history.removeFirst()
     }
 
     fun add(interaction: Interaction) {
-        if (maxSize == 0) return  // 0 = remember nothing beyond current query
+        if (maxSize == 0) return
         if (history.size >= maxSize) history.removeFirst()
         history.addLast(interaction)
     }
 
-    fun getAll(): List<Interaction> = history.toList()
-    fun clear() = history.clear()
+    /** Add to the always-visible clarification buffer (not subject to maxSize). */
+    fun addPending(interaction: Interaction) {
+        pendingBuffer.addLast(interaction)
+    }
 
-    /** Formats history as Gemini/OpenAI "contents" entries for the API. */
+    fun clearPending() = pendingBuffer.clear()
+
+    fun hasPending() = pendingBuffer.isNotEmpty()
+
+    fun getAll(): List<Interaction> = history.toList()
+    fun clear() { history.clear(); pendingBuffer.clear() }
+
+    /** Formats history as Gemini/OpenAI "contents" entries for the API.
+     *  Pending buffer always prepended so clarification context is never lost. */
     fun toGeminiContents(): List<Map<String, Any>> {
         val contents = mutableListOf<Map<String, Any>>()
-        for (i in history) {
+        for (i in (pendingBuffer + history)) {
             val userParts = mutableListOf<Map<String, Any>>()
             userParts.add(mapOf("text" to i.userText))
             i.imageBase64?.let { img ->
