@@ -25,6 +25,12 @@
     <uses-permission android:name="android.permission.READ_SMS"/>
     <uses-permission android:name="android.permission.SEND_SMS"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+
+    <!-- Alarms / exact timers -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
     <!-- Internet (Gemini API) -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -87,6 +93,29 @@
             android:name=".bluetooth.LumiBluetoothService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice"/>
+
+        <!-- Timer alarm receiver -->
+        <receiver
+            android:name=".timer.TimerReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.lumi.app.ACTION_TIMER_DONE"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- Accessibility service for WhatsApp reading -->
+        <service
+            android:name=".whatsapp.LumiAccessibilityService"
+            android:exported="true"
+            android:label="Lumi Accesibilitate"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config"/>
+        </service>
 
     </application>
 </manifest>

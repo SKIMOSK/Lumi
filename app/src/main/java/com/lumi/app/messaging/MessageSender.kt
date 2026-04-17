@@ -3,9 +3,11 @@ package com.lumi.app.messaging
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Bundle
 import android.telephony.SmsManager
 import android.util.Log
 import com.lumi.app.contacts.Contact
+import com.lumi.app.notifications.LumiNotificationService
 
 sealed class SendResult {
     object Success : SendResult()
@@ -16,72 +18,87 @@ class MessageSender(private val context: Context) {
 
     companion object {
         const val WHATSAPP_PACKAGE = "com.whatsapp"
-        const val WHATSAPP_BUSINESS_PACKAGE = "com.whatsapp.w4b"
         private const val TAG = "MessageSender"
     }
 
-    fun isWhatsAppInstalled(): Boolean =
-        try { context.packageManager.getPackageInfo(WHATSAPP_PACKAGE, 0); true }
-        catch (e: Exception) { false }
+    fun isWhatsAppInstalled() = try {
+        context.packageManager.getPackageInfo(WHATSAPP_PACKAGE, 0); true
+    } catch (e: Exception) { false }
 
     /**
-     * Open WhatsApp to send a message to a contact.
-     * Brings WhatsApp to foreground — user can review before sending.
-     * For full auto-send, Accessibility Service is required (not implemented in this prototype).
+     * Send WhatsApp message.
+     * First tries silent notification-reply (smartwatch style, no app launch).
+     * Falls back to deep-link (opens WhatsApp pre-filled, user taps Send).
      */
     fun sendWhatsApp(contact: Contact, message: String): SendResult {
         if (!isWhatsAppInstalled()) return SendResult.Error("WhatsApp nu este instalat.")
 
+        // Prefer silent reply via notification RemoteInput
+        val notif = LumiNotificationService.findReplyable(WHATSAPP_PACKAGE, contact.name)
+        if (notif?.directReply != null) {
+            return trySilentReply(notif.directReply!!, message)
+        }
+
+        // Fallback: deep link
         val phone = contact.phoneNumbers.firstOrNull()
             ?: return SendResult.Error("Contactul nu are număr de telefon.")
-
-        // Strip non-digits for the wa.me link
-        val cleanPhone = phone.replace(Regex("[^\\d+]"), "")
-
+        val clean = phone.replace(Regex("[^\\d+]"), "")
         return try {
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("https://api.whatsapp.com/send?phone=$cleanPhone&text=${Uri.encode(message)}")
+            context.startActivity(Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("https://api.whatsapp.com/send?phone=$clean&text=${Uri.encode(message)}")
                 setPackage(WHATSAPP_PACKAGE)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
+            })
             SendResult.Success
         } catch (e: Exception) {
-            Log.e(TAG, "WhatsApp send failed", e)
+            Log.e(TAG, "WhatsApp deep-link failed", e)
             SendResult.Error("Nu s-a putut deschide WhatsApp: ${e.message}")
         }
     }
 
-    /** Send SMS via system SmsManager. */
-    fun sendSms(contact: Contact, message: String): SendResult {
-        val phone = contact.phoneNumbers.firstOrNull()
-            ?: return SendResult.Error("Contactul nu are număr de telefon.")
+    /** Silently reply to an existing notification (smartwatch style — no app launch, no unlock needed). */
+    fun trySilentReply(reply: com.lumi.app.notifications.DirectReply, message: String): SendResult {
         return try {
-            @Suppress("DEPRECATION")
-            val smsManager = SmsManager.getDefault()
-            val parts = smsManager.divideMessage(message)
-            smsManager.sendMultipartTextMessage(phone, null, parts, null, null)
+            val intent = Intent()
+            android.app.RemoteInput.addResultsToIntent(
+                arrayOf(reply.remoteInput),
+                intent,
+                Bundle().apply { putCharSequence(reply.resultKey, message) }
+            )
+            reply.replyPendingIntent.send(context, 0, intent)
             SendResult.Success
         } catch (e: Exception) {
-            Log.e(TAG, "SMS send failed", e)
-            SendResult.Error("Eroare la trimiterea SMS: ${e.message}")
+            Log.e(TAG, "Silent reply failed", e)
+            SendResult.Error("Eroare la trimitere silențioasă: ${e.message}")
         }
     }
 
-    /** Open the default SMS composer with pre-filled recipient and text. */
+    fun sendSms(contact: Contact, message: String): SendResult {
+        val phone = contact.phoneNumbers.firstOrNull()
+            ?: return SendResult.Error("Contactul nu are număr.")
+        return try {
+            @Suppress("DEPRECATION")
+            val mgr = SmsManager.getDefault()
+            mgr.sendMultipartTextMessage(phone, null, mgr.divideMessage(message), null, null)
+            SendResult.Success
+        } catch (e: Exception) {
+            Log.e(TAG, "SMS failed", e)
+            SendResult.Error("Eroare SMS: ${e.message}")
+        }
+    }
+
     fun composeSms(contact: Contact, message: String): SendResult {
         val phone = contact.phoneNumbers.firstOrNull()
-            ?: return SendResult.Error("Contactul nu are număr de telefon.")
+            ?: return SendResult.Error("Contactul nu are număr.")
         return try {
-            val intent = Intent(Intent.ACTION_SENDTO).apply {
+            context.startActivity(Intent(Intent.ACTION_SENDTO).apply {
                 data = Uri.parse("smsto:$phone")
                 putExtra("sms_body", message)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
+            })
             SendResult.Success
         } catch (e: Exception) {
-            SendResult.Error("Nu s-a putut deschide aplicația de SMS.")
+            SendResult.Error("Nu s-a putut deschide SMS.")
         }
     }
 }

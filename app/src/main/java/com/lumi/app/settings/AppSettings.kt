@@ -9,76 +9,81 @@ class AppSettings(context: Context) {
     private val prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
     companion object {
-        const val KEY_OPENROUTER_API_KEY = "openrouter_api_key"
+        const val KEY_OPENROUTER_API_KEY  = "openrouter_api_key"
         const val KEY_OPENROUTER_BASE_URL = "openrouter_base_url"
-        const val KEY_FAST_MODEL = "fast_model"
-        const val KEY_EXPERT_MODEL = "expert_model"
-        const val KEY_BT_DEVICE_ADDRESS = "bt_device_address"
-        const val KEY_BT_DEVICE_NAME = "bt_device_name"
-        const val KEY_STT_LANGUAGE = "stt_language"
-        const val KEY_SYSTEM_PROMPT = "system_prompt"
-        const val KEY_AUTO_CONNECT = "auto_connect"
+        const val KEY_FAST_MODEL          = "fast_model"
+        const val KEY_EXPERT_MODEL        = "expert_model"
+        const val KEY_BT_DEVICE_ADDRESS   = "bt_device_address"
+        const val KEY_BT_DEVICE_NAME      = "bt_device_name"
+        const val KEY_STT_LANGUAGE        = "stt_language"
+        const val KEY_SYSTEM_PROMPT       = "system_prompt"
+        const val KEY_AUTO_CONNECT        = "auto_connect"
+        const val KEY_MEMORY_SIZE         = "memory_size"
+        const val KEY_ACTION_MODE         = "action_mode"  // safety/action mode
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
-        // Fast models
-        const val MODEL_FAST       = "google/gemini-2.5-flash"
-        const val MODEL_FAST_LITE  = "google/gemini-2.5-flash-lite"
-
-        // Expert models
-        const val MODEL_EXPERT_PRO    = "google/gemini-3.1-pro-preview"
-        const val MODEL_EXPERT_OPUS   = "anthropic/claude-opus-4.6"
+        const val MODEL_FAST        = "google/gemini-2.5-flash"
+        const val MODEL_FAST_LITE   = "google/gemini-2.5-flash-lite"
+        const val MODEL_EXPERT_PRO  = "google/gemini-3.1-pro-preview"
+        const val MODEL_EXPERT_OPUS = "anthropic/claude-opus-4.6"
         const val MODEL_EXPERT_SONNET = "anthropic/claude-sonnet-4.6"
 
         val FAST_MODELS  = listOf(MODEL_FAST, MODEL_FAST_LITE)
         val FAST_LABELS  = listOf("Fast Model", "Cheaper Model")
-
         val EXPERT_MODELS  = listOf(MODEL_EXPERT_PRO, MODEL_EXPERT_OPUS, MODEL_EXPERT_SONNET)
         val EXPERT_LABELS  = listOf("Expert (Default)", "Higher End Model", "Cost Efficient Model")
 
         const val DEFAULT_SYSTEM_PROMPT = """Ești Lumi, un asistent AI personal integrat în dispozitivul Lumi.
 Răspunzi în română (sau în limba în care ți se vorbește).
-Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi.
-Ai acces la notificările telefonului.
-Preferă răspunsuri scurte pentru întrebări simple.
-Pentru sarcini complexe, orchestrezi acțiunile pas cu pas."""
+Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
     }
 
     var openRouterApiKey: String
         get() = prefs.getString(KEY_OPENROUTER_API_KEY, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_OPENROUTER_API_KEY, value).apply()
+        set(v) = prefs.edit().putString(KEY_OPENROUTER_API_KEY, v).apply()
 
     var openRouterBaseUrl: String
         get() = prefs.getString(KEY_OPENROUTER_BASE_URL, OPENROUTER_DEFAULT_URL) ?: OPENROUTER_DEFAULT_URL
-        set(value) = prefs.edit().putString(KEY_OPENROUTER_BASE_URL, value).apply()
+        set(v) = prefs.edit().putString(KEY_OPENROUTER_BASE_URL, v).apply()
 
     var fastModel: String
         get() = prefs.getString(KEY_FAST_MODEL, MODEL_FAST) ?: MODEL_FAST
-        set(value) = prefs.edit().putString(KEY_FAST_MODEL, value).apply()
+        set(v) = prefs.edit().putString(KEY_FAST_MODEL, v).apply()
 
     var expertModel: String
         get() = prefs.getString(KEY_EXPERT_MODEL, MODEL_EXPERT_PRO) ?: MODEL_EXPERT_PRO
-        set(value) = prefs.edit().putString(KEY_EXPERT_MODEL, value).apply()
+        set(v) = prefs.edit().putString(KEY_EXPERT_MODEL, v).apply()
 
     var btDeviceAddress: String
         get() = prefs.getString(KEY_BT_DEVICE_ADDRESS, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_BT_DEVICE_ADDRESS, value).apply()
+        set(v) = prefs.edit().putString(KEY_BT_DEVICE_ADDRESS, v).apply()
 
     var btDeviceName: String
         get() = prefs.getString(KEY_BT_DEVICE_NAME, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_BT_DEVICE_NAME, value).apply()
+        set(v) = prefs.edit().putString(KEY_BT_DEVICE_NAME, v).apply()
 
     var sttLanguage: String
         get() = prefs.getString(KEY_STT_LANGUAGE, "ro-RO") ?: "ro-RO"
-        set(value) = prefs.edit().putString(KEY_STT_LANGUAGE, value).apply()
+        set(v) = prefs.edit().putString(KEY_STT_LANGUAGE, v).apply()
 
     var systemPrompt: String
         get() = prefs.getString(KEY_SYSTEM_PROMPT, DEFAULT_SYSTEM_PROMPT) ?: DEFAULT_SYSTEM_PROMPT
-        set(value) = prefs.edit().putString(KEY_SYSTEM_PROMPT, value).apply()
+        set(v) = prefs.edit().putString(KEY_SYSTEM_PROMPT, v).apply()
 
     var autoConnect: Boolean
         get() = prefs.getBoolean(KEY_AUTO_CONNECT, true)
-        set(value) = prefs.edit().putBoolean(KEY_AUTO_CONNECT, value).apply()
+        set(v) = prefs.edit().putBoolean(KEY_AUTO_CONNECT, v).apply()
+
+    /** 0 = only current query in context; 5 = last 5 turns + current (default). Max 10. */
+    var memorySizeHistory: Int
+        get() = prefs.getInt(KEY_MEMORY_SIZE, 5)
+        set(v) = prefs.edit().putInt(KEY_MEMORY_SIZE, v.coerceIn(0, 10)).apply()
+
+    /** Action mode: when true the AI can call, send messages, set timers, etc. */
+    var actionModeEnabled: Boolean
+        get() = prefs.getBoolean(KEY_ACTION_MODE, false)
+        set(v) = prefs.edit().putBoolean(KEY_ACTION_MODE, v).apply()
 
     fun hasApiKey() = openRouterApiKey.isNotBlank()
     fun hasBtDevice() = btDeviceAddress.isNotBlank()

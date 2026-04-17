@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.widget.ArrayAdapter
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.lumi.app.databinding.ActivitySettingsBinding
@@ -50,6 +51,17 @@ class SettingsActivity : AppCompatActivity() {
         binding.spinnerSttLanguage.adapter = langAdapter
         binding.spinnerSttLanguage.setSelection(languages.indexOf(settings.sttLanguage).coerceAtLeast(0))
 
+        binding.switchActionMode.isChecked = settings.actionModeEnabled
+        binding.seekBarMemory.progress = settings.memorySizeHistory
+        binding.tvMemorySize.text = "Tururi reținute: ${settings.memorySizeHistory}"
+        binding.seekBarMemory.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
+                binding.tvMemorySize.text = "Tururi reținute: $progress"
+            }
+            override fun onStartTrackingTouch(sb: SeekBar) {}
+            override fun onStopTrackingTouch(sb: SeekBar) {}
+        })
+
         binding.etSystemPrompt.setText(settings.systemPrompt)
         binding.switchAutoConnect.isChecked = settings.autoConnect
 
@@ -85,6 +97,8 @@ class SettingsActivity : AppCompatActivity() {
         val languages = listOf("ro-RO", "en-US", "fr-FR", "de-DE", "es-ES")
         settings.sttLanguage = languages[binding.spinnerSttLanguage.selectedItemPosition]
 
+        settings.actionModeEnabled = binding.switchActionMode.isChecked
+        settings.memorySizeHistory = binding.seekBarMemory.progress
         settings.systemPrompt = binding.etSystemPrompt.text?.toString() ?: AppSettings.DEFAULT_SYSTEM_PROMPT
         settings.autoConnect = binding.switchAutoConnect.isChecked
 

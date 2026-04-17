@@ -146,10 +146,29 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <ImageButton
+                android:id="@+id/btnAttach"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Atașează imagine"
+                android:src="@android:drawable/ic_menu_gallery"
+                app:tint="@color/accent"/>
+
+            <ImageView
+                android:id="@+id/ivAttachedPreview"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:contentDescription="Previzualizare imagine"
+                android:scaleType="centerCrop"
+                android:visibility="gone"/>
+
+            <ImageButton
                 android:id="@+id/btnSend"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Trimite"
                 android:src="@android:drawable/ic_menu_send"

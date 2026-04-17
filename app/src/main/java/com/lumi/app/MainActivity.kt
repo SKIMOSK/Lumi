@@ -4,10 +4,12 @@ import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.speech.SpeechRecognizer
+import android.util.Base64
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -24,13 +26,16 @@ import com.lumi.app.databinding.ActivityMainBinding
 import com.lumi.app.notifications.LumiNotificationService
 import com.lumi.app.settings.SettingsActivity
 import com.lumi.app.stt.RomanianSTT
+import com.lumi.app.ui.ChatMessage
+import com.lumi.app.ui.MainViewModel
 import com.lumi.app.ui.MessageAdapter
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: com.lumi.app.ui.MainViewModel by viewModels()
+    private val viewModel: MainViewModel by viewModels()
     private lateinit var adapter: MessageAdapter
     private lateinit var stt: RomanianSTT
     private var isListening = false
@@ -46,30 +51,43 @@ class MainActivity : AppCompatActivity() {
         } else {
             add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        add(Manifest.permission.RECEIVE_SMS)
-        add(Manifest.permission.READ_SMS)
-        add(Manifest.permission.SEND_SMS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(Manifest.permission.POST_NOTIFICATIONS)
+        add(Manifest.permission.RECEIVE_SMS); add(Manifest.permission.READ_SMS); add(Manifest.permission.SEND_SMS)
+        add(Manifest.permission.CALL_PHONE)
     }
 
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
+    private val permLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
         val denied = results.filterValues { !it }.keys
-        if (denied.isNotEmpty()) {
-            Toast.makeText(this, "Unele permisiuni au fost refuzate: ${denied.joinToString()}", Toast.LENGTH_LONG).show()
-        }
-        checkNotificationListenerAccess()
+        if (denied.isNotEmpty()) Toast.makeText(this, "Permisiuni refuzate: ${denied.size}", Toast.LENGTH_SHORT).show()
+        checkNotificationAccess()
         initBluetooth()
     }
-
-    private val btEnableLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) {
+    private val btEnableLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (viewModel.bluetooth.isBluetoothEnabled()) initBluetooth()
-        else Toast.makeText(this, "Bluetooth-ul este necesar pentru Lumi.", Toast.LENGTH_SHORT).show()
+    }
+
+    // ─── Image attachment ─────────────────────────────────────────────────────
+
+    private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { encodeAndAttach(it) }
+    }
+    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp: Bitmap? ->
+        bmp?.let { attachBitmap(it) }
+    }
+
+    private fun encodeAndAttach(uri: Uri) {
+        val bmp = android.provider.MediaStore.Images.Media.getBitmap(contentResolver, uri)
+        attachBitmap(bmp)
+    }
+
+    private fun attachBitmap(bmp: Bitmap) {
+        val out = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.JPEG, 80, out)
+        val b64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+        viewModel.attachImage(b64)
+        binding.ivAttachedPreview.setImageBitmap(bmp)
+        binding.ivAttachedPreview.visibility = View.VISIBLE
+        Toast.makeText(this, "Imagine atașată", Toast.LENGTH_SHORT).show()
     }
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -80,52 +98,46 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
+        stt = RomanianSTT(this).also { it.setLanguage(viewModel.settings.sttLanguage) }
+        viewModel.consent.stt = stt
+
         setupRecyclerView()
         setupButtons()
         observeViewModel()
-
-        stt = RomanianSTT(this).also {
-            it.setLanguage(viewModel.settings.sttLanguage)
-        }
-
         requestPermissionsIfNeeded()
     }
 
     override fun onResume() {
         super.onResume()
         updateNotificationBadge()
+        viewModel.refreshMemorySize()
     }
 
-    override fun onDestroy() {
-        stt.destroy()
-        super.onDestroy()
-    }
+    override fun onDestroy() { stt.destroy(); super.onDestroy() }
 
     // ─── Setup ────────────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
         adapter = MessageAdapter()
-        val layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
-        binding.rvMessages.layoutManager = layoutManager
+        binding.rvMessages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         binding.rvMessages.adapter = adapter
     }
 
     private fun setupButtons() {
-        // Mic / voice button — long-press to speak, tap to stop
-        binding.fabMic.setOnClickListener {
-            if (isListening) stopListening() else startListening()
-        }
+        binding.fabMic.setOnClickListener { if (isListening) stopListening() else startListening() }
 
-        // Send text button
         binding.btnSend.setOnClickListener {
             val text = binding.etInput.text?.toString()?.trim() ?: ""
-            if (text.isNotBlank()) {
-                binding.etInput.text?.clear()
-                viewModel.processPrompt(text)
-            }
+            if (text.isNotBlank()) { binding.etInput.text?.clear(); viewModel.processPrompt(text) }
         }
 
-        // BT connect button
+        binding.btnAttach.setOnClickListener { showImageSourcePicker() }
+
+        binding.ivAttachedPreview.setOnClickListener {
+            viewModel.attachImage("") // clear
+            binding.ivAttachedPreview.visibility = View.GONE
+        }
+
         binding.btnConnect.setOnClickListener {
             when (viewModel.btState.value) {
                 LumiBluetoothManager.ConnectionState.DISCONNECTED -> connectBluetooth()
@@ -135,65 +147,67 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showImageSourcePicker() {
+        AlertDialog.Builder(this)
+            .setTitle("Atașează imagine")
+            .setItems(arrayOf("Cameră", "Galerie")) { _, which ->
+                if (which == 0) cameraLauncher.launch(null)
+                else galleryLauncher.launch("image/*")
+            }.show()
+    }
+
     private fun observeViewModel() {
         viewModel.messages.observe(this) { msgs ->
             adapter.submitList(msgs) {
                 if (msgs.isNotEmpty()) binding.rvMessages.scrollToPosition(msgs.size - 1)
             }
         }
-
         viewModel.btState.observe(this) { state ->
-            val (icon, label) = when (state) {
-                LumiBluetoothManager.ConnectionState.CONNECTED ->
-                    android.R.drawable.stat_sys_data_bluetooth to "Conectat"
+            binding.tvBtStatus.text = when (state) {
+                LumiBluetoothManager.ConnectionState.CONNECTED   -> "Conectat"
                 LumiBluetoothManager.ConnectionState.SCANNING,
-                LumiBluetoothManager.ConnectionState.CONNECTING ->
-                    android.R.drawable.stat_notify_sync to "Conectare…"
-                else ->
-                    android.R.drawable.ic_menu_close_clear_cancel to "Deconectat"
+                LumiBluetoothManager.ConnectionState.CONNECTING  -> "Conectare…"
+                else -> "Deconectat"
             }
-            binding.tvBtStatus.text = label
             binding.btnConnect.text = if (state == LumiBluetoothManager.ConnectionState.CONNECTED) "Deconectare" else "Conectare"
         }
-
         viewModel.statusText.observe(this) { binding.tvStatus.text = it }
-
         viewModel.isProcessing.observe(this) { processing ->
             binding.progressBar.visibility = if (processing) View.VISIBLE else View.GONE
             binding.fabMic.isEnabled = !processing
             binding.btnSend.isEnabled = !processing
+            binding.btnAttach.isEnabled = !processing
+        }
+        // Consent dialog requests from ViewModel
+        viewModel.consentRequest.observe(this) { req ->
+            req ?: return@observe
+            AlertDialog.Builder(this)
+                .setTitle("Confirmare")
+                .setMessage(req.message)
+                .setPositiveButton("Da") { _, _ -> viewModel.resolveConsent(req.id, true) }
+                .setNegativeButton("Nu") { _, _ -> viewModel.resolveConsent(req.id, false) }
+                .setCancelable(false)
+                .show()
         }
     }
 
     // ─── STT ─────────────────────────────────────────────────────────────────
 
     private fun startListening() {
-        if (!stt.isAvailable()) {
-            Toast.makeText(this, "STT nu este disponibil pe acest dispozitiv.", Toast.LENGTH_SHORT).show()
-            return
-        }
+        if (!stt.isAvailable()) { Toast.makeText(this, "STT indisponibil.", Toast.LENGTH_SHORT).show(); return }
         isListening = true
         binding.fabMic.setImageResource(android.R.drawable.ic_media_pause)
         binding.tvStatus.text = "Ascult…"
-
         lifecycleScope.launch {
             try {
                 val text = stt.listenOnce(
-                    onPartialResult = { partial ->
-                        runOnUiThread { binding.etInput.setText(partial) }
-                    },
-                    onReadyForSpeech = {
-                        runOnUiThread { binding.tvStatus.text = "Vorbește acum…" }
-                    }
+                    onPartialResult = { runOnUiThread { binding.etInput.setText(it) } },
+                    onReadyForSpeech = { runOnUiThread { binding.tvStatus.text = "Vorbește…" } }
                 )
                 isListening = false
                 binding.fabMic.setImageResource(android.R.drawable.ic_btn_speak_now)
-                if (text.isNotBlank()) {
-                    binding.etInput.text?.clear()
-                    viewModel.processPrompt(text)
-                } else {
-                    binding.tvStatus.text = "Nu s-a detectat vorbire."
-                }
+                if (text.isNotBlank()) { binding.etInput.text?.clear(); viewModel.processPrompt(text) }
+                else binding.tvStatus.text = "Nicio vorbire detectată."
             } catch (e: Exception) {
                 isListening = false
                 binding.fabMic.setImageResource(android.R.drawable.ic_btn_speak_now)
@@ -203,8 +217,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopListening() {
-        stt.destroy()
-        stt = RomanianSTT(this).also { it.setLanguage(viewModel.settings.sttLanguage) }
+        stt.destroy(); stt = RomanianSTT(this).also { it.setLanguage(viewModel.settings.sttLanguage) }
+        viewModel.consent.stt = stt
         isListening = false
         binding.fabMic.setImageResource(android.R.drawable.ic_btn_speak_now)
     }
@@ -212,78 +226,46 @@ class MainActivity : AppCompatActivity() {
     // ─── Bluetooth ────────────────────────────────────────────────────────────
 
     private fun initBluetooth() {
-        val btAdapter = viewModel.bluetooth.adapter
-        if (btAdapter == null) {
-            Toast.makeText(this, "Acest dispozitiv nu suportă Bluetooth.", Toast.LENGTH_LONG).show()
-            return
-        }
+        val adapter = viewModel.bluetooth.adapter ?: return
         if (!viewModel.bluetooth.isBluetoothEnabled()) {
-            btEnableLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-            return
+            btEnableLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)); return
         }
-        if (viewModel.settings.autoConnect && viewModel.settings.hasBtDevice()) {
-            viewModel.connectBluetooth()
-        }
+        if (viewModel.settings.autoConnect && viewModel.settings.hasBtDevice()) viewModel.connectBluetooth()
     }
 
     private fun connectBluetooth() {
-        if (!viewModel.bluetooth.isBluetoothEnabled()) {
-            btEnableLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-            return
-        }
-        viewModel.connectBluetooth()
+        if (!viewModel.bluetooth.isBluetoothEnabled()) btEnableLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+        else viewModel.connectBluetooth()
     }
 
     // ─── Permissions ─────────────────────────────────────────────────────────
 
     private fun requestPermissionsIfNeeded() {
-        val missing = requiredPermissions.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-        if (missing.isNotEmpty()) {
-            permissionLauncher.launch(missing.toTypedArray())
-        } else {
-            checkNotificationListenerAccess()
-            initBluetooth()
-        }
+        val missing = requiredPermissions.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) permLauncher.launch(missing.toTypedArray())
+        else { checkNotificationAccess(); initBluetooth() }
     }
 
-    private fun checkNotificationListenerAccess() {
+    private fun checkNotificationAccess() {
         if (!LumiNotificationService.isEnabled(this)) {
             AlertDialog.Builder(this)
                 .setTitle("Acces la notificări")
-                .setMessage("Lumi are nevoie de acces la notificări pentru a putea citi mesajele și alertele tale. Activează acum?")
-                .setPositiveButton("Activează") { _, _ ->
-                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                }
-                .setNegativeButton("Mai târziu", null)
-                .show()
+                .setMessage("Lumi are nevoie de acces la notificări. Activează acum?")
+                .setPositiveButton("Activează") { _, _ -> startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
+                .setNegativeButton("Mai târziu", null).show()
         }
     }
 
     private fun updateNotificationBadge() {
-        val enabled = LumiNotificationService.isEnabled(this)
-        binding.tvNotifStatus.text = if (enabled) "Notificări: ON" else "Notificări: OFF"
+        binding.tvNotifStatus.text = if (LumiNotificationService.isEnabled(this)) "Notificări: ON" else "Notificări: OFF"
     }
 
     // ─── Menu ─────────────────────────────────────────────────────────────────
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                true
-            }
-            R.id.action_clear -> {
-                viewModel.clearHistory()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
+    override fun onCreateOptionsMenu(menu: Menu): Boolean { menuInflater.inflate(R.menu.main_menu, menu); return true }
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.action_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
+        R.id.action_clear -> { viewModel.clearHistory(); true }
+        else -> super.onOptionsItemSelected(item)
     }
 }

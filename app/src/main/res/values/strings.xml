@@ -10,4 +10,5 @@
     <string name="listening">Ascult…</string>
     <string name="processing">Procesez…</string>
     <string name="no_api_key">Configurează cheia API în Setări</string>
+    <string name="accessibility_service_description">Lumi folosește serviciul de accesibilitate pentru a citi mesajele WhatsApp și a trimite răspunsuri în numele tău, fără a debloca ecranul.</string>
 </resources>
