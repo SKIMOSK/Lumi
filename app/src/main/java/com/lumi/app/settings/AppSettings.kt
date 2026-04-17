@@ -23,7 +23,7 @@ class AppSettings(context: Context) {
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
-        const val MODEL_FASTER       = "google/gemini-2.0-flash"       // default fast
+        const val MODEL_FASTER       = "google/gemini-1.5-flash"       // default fast
         const val MODEL_FAST         = "google/gemini-2.5-flash"
         const val MODEL_EXPERT_PRO   = "google/gemini-3.1-pro-preview"
         const val MODEL_EXPERT_OPUS  = "anthropic/claude-opus-4.6"
