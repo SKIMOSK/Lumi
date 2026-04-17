@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lumi</string>
+    <string name="notification_listener_label">Lumi Notificări</string>
+    <string name="action_settings">Setări</string>
+    <string name="action_clear">Șterge conversația</string>
+    <string name="bt_connected">Conectat la Lumi</string>
+    <string name="bt_disconnected">Deconectat</string>
+    <string name="bt_scanning">Caut dispozitiv…</string>
+    <string name="listening">Ascult…</string>
+    <string name="processing">Procesez…</string>
+    <string name="no_api_key">Configurează cheia API în Setări</string>
+</resources>

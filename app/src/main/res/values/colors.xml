@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#1A1A2E</color>
+    <color name="primary_dark">#16213E</color>
+    <color name="accent">#7C4DFF</color>
+    <color name="accent_light">#B388FF</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+
+    <color name="bg_main">#F5F5F5</color>
+    <color name="input_bg">#FFFFFF</color>
+    <color name="status_bg">#F0F0F0</color>
+
+    <color name="bubble_user">#7C4DFF</color>
+    <color name="bubble_lumi">#FFFFFF</color>
+
+    <color name="text_primary">#1A1A2E</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_hint">#AAAAAA</color>
+
+    <!-- Status bar -->
+    <color name="colorPrimaryVariant">#16213E</color>
+    <color name="colorSecondary">#7C4DFF</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+</resources>
