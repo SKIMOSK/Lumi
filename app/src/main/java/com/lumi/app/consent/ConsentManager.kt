@@ -13,10 +13,11 @@ private val AFFIRMATIONS = setOf(
 
 class ConsentManager(
     private val tts: LumiTTS,
-    private val stt: RomanianSTT?,
+    stt: RomanianSTT?,
     /** Set by MainActivity to show a dialog; returns true if user confirms. */
     var onInAppConsent: (suspend (String) -> Boolean)? = null
 ) {
+    var stt: RomanianSTT? = stt
     suspend fun request(message: String, mode: ConsentMode): Boolean = when (mode) {
         ConsentMode.VOICE -> voiceConsent(message)
         ConsentMode.IN_APP -> onInAppConsent?.invoke(message) ?: false
