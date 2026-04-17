@@ -118,9 +118,9 @@ class MainActivity : AppCompatActivity() {
 
         // Send text button
         binding.btnSend.setOnClickListener {
-            val text = binding.etInput.text.toString().trim()
+            val text = binding.etInput.text?.toString()?.trim() ?: ""
             if (text.isNotBlank()) {
-                binding.etInput.text.clear()
+                binding.etInput.text?.clear()
                 viewModel.processPrompt(text)
             }
         }
@@ -189,7 +189,7 @@ class MainActivity : AppCompatActivity() {
                 isListening = false
                 binding.fabMic.setImageResource(android.R.drawable.ic_btn_speak_now)
                 if (text.isNotBlank()) {
-                    binding.etInput.text.clear()
+                    binding.etInput.text?.clear()
                     viewModel.processPrompt(text)
                 } else {
                     binding.tvStatus.text = "Nu s-a detectat vorbire."

@@ -12,6 +12,13 @@ import java.util.concurrent.TimeUnit
 
 enum class ApiProvider { GEMINI_DIRECT, OPEN_ROUTER }
 
+data class GeminiResponse(
+    val text: String,
+    val model: String,
+    val promptTokens: Int = 0,
+    val outputTokens: Int = 0
+)
+
 class GeminiClient(
     private var apiKey: String,
     private var provider: ApiProvider = ApiProvider.GEMINI_DIRECT,
@@ -31,13 +38,6 @@ class GeminiClient(
         provider = prov
         openRouterBaseUrl = baseUrl
     }
-
-    data class GeminiResponse(
-        val text: String,
-        val model: String,
-        val promptTokens: Int = 0,
-        val outputTokens: Int = 0
-    )
 
     suspend fun generate(
         prompt: String,
