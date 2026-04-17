@@ -5,15 +5,19 @@ import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.lumi.app.R
-import com.lumi.app.ai.Interaction
 
-class MessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF) {
+class MessageAdapter(
+    private val onSpeak: ((String) -> Unit)? = null
+) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF) {
+
+    private var lastLumiMsgId: Long = -1L
 
     companion object {
         private const val TYPE_USER = 0
@@ -22,6 +26,17 @@ class MessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF) {
         private val DIFF = object : DiffUtil.ItemCallback<ChatMessage>() {
             override fun areItemsTheSame(a: ChatMessage, b: ChatMessage) = a.id == b.id
             override fun areContentsTheSame(a: ChatMessage, b: ChatMessage) = a == b
+        }
+    }
+
+    override fun onCurrentListChanged(prev: List<ChatMessage>, curr: List<ChatMessage>) {
+        val newLastLumi = curr.lastOrNull { !it.isUser && !it.isLoading }?.id ?: -1L
+        if (newLastLumi != lastLumiMsgId) {
+            val prevIdx = prev.indexOfFirst { it.id == lastLumiMsgId }
+            lastLumiMsgId = newLastLumi
+            if (prevIdx >= 0) notifyItemChanged(prevIdx)
+            val newIdx = curr.indexOfFirst { it.id == newLastLumi }
+            if (newIdx >= 0) notifyItemChanged(newIdx)
         }
     }
 
@@ -40,7 +55,7 @@ class MessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF) {
         val msg = getItem(position)
         when (holder) {
             is UserViewHolder -> holder.bind(msg)
-            is LumiViewHolder -> holder.bind(msg)
+            is LumiViewHolder -> holder.bind(msg, msg.id == lastLumiMsgId)
         }
     }
 
@@ -54,8 +69,7 @@ class MessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF) {
             tvTime.text = msg.time
             if (msg.imageBase64 != null) {
                 val bytes = Base64.decode(msg.imageBase64, Base64.DEFAULT)
-                val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                ivImage.setImageBitmap(bmp)
+                ivImage.setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
                 ivImage.visibility = View.VISIBLE
             } else {
                 ivImage.visibility = View.GONE
@@ -67,12 +81,19 @@ class MessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DIFF) {
         private val tvText: TextView = view.findViewById(R.id.tvMessageText)
         private val tvTime: TextView = view.findViewById(R.id.tvMessageTime)
         private val tvModel: TextView = view.findViewById(R.id.tvModelBadge)
+        private val btnSpeak: ImageButton = view.findViewById(R.id.btnSpeak)
 
-        fun bind(msg: ChatMessage) {
+        fun bind(msg: ChatMessage, isLast: Boolean) {
             tvText.text = msg.text
             tvTime.text = msg.time
             tvModel.text = if (msg.usedPro) "Pro" else "Flash"
             tvModel.visibility = View.VISIBLE
+            if (isLast && onSpeak != null && !msg.isLoading) {
+                btnSpeak.visibility = View.VISIBLE
+                btnSpeak.setOnClickListener { onSpeak.invoke(msg.text) }
+            } else {
+                btnSpeak.visibility = View.GONE
+            }
         }
     }
 }

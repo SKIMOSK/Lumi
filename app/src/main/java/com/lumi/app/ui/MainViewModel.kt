@@ -103,12 +103,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private var latestImageBase64: String? = null
     private var pendingAttachImage: String? = null  // manually attached from gallery/camera
     private var currentJob: Job? = null
+    private var wordLimitBonus = 0
+
+    private fun isAskingForMoreDetail(prompt: String): Boolean {
+        val p = prompt.lowercase()
+        return listOf("explică mai", "mai mult", "mai detaliat", "mai multe detalii",
+            "detaliază", "povestește mai", "explain more", "more detail", "elaborate",
+            "în detaliu", "cu mai multe", "extinde").any { p.contains(it) }
+    }
 
     // ─── Process prompt ──────────────────────────────────────────────────────
 
     fun processPrompt(userText: String, useDeviceImage: Boolean = true) {
-        if (!settings.hasApiKey()) { addSystem("⚠ Configurează cheia API OpenRouter în Setări."); return }
+        if (!settings.hasApiKey()) { addSystem("Configurează cheia API OpenRouter în Setări."); return }
         if (userText.isBlank()) return
+
+        val wantsDetail = isAskingForMoreDetail(userText)
+        if (wantsDetail) wordLimitBonus += 50 else wordLimitBonus = 0
+        val expertLimit = 95 + wordLimitBonus
+        if (expertLimit > 500) {
+            addSystem("Maximum words exceeded, I cannot complete your request.")
+            wordLimitBonus = 0
+            return
+        }
 
         val imageBase64 = pendingAttachImage ?: (if (useDeviceImage) latestImageBase64 else null)
         pendingAttachImage = null
@@ -123,7 +140,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         currentJob?.cancel()
         currentJob = viewModelScope.launch {
             try {
-                val result = buildRouter().route(userText, imageBase64, memory)
+                val result = buildRouter().route(
+                    userText, imageBase64, memory,
+                    fastWordLimit = 45, expertWordLimit = expertLimit, forceExpert = wantsDetail
+                )
                 val displayText = result.parsed.displayText
 
                 // Append action results to display text if any

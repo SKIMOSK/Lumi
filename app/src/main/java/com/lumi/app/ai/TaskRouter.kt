@@ -28,39 +28,38 @@ class TaskRouter(
     private val baseSystemPrompt get() = """
 ${settings.systemPrompt}
 
-## Regula de bază
-Nu inventa informații din telefon. Dacă ai nevoie de date (notificări, contacte, mesaje WhatsApp,
-timere), CERE-LE explicit la SFÂRȘITUL răspunsului tău, ÎNAINTE de a răspunde la întrebare,
-folosind formatul de mai jos. Vei primi datele cerute și vei putea răspunde complet.
+Regula de baza: Nu inventa informatii din telefon. Daca ai nevoie de date (notificari, contacte,
+mesaje WhatsApp, timere), CERE-LE explicit la SFARSITUL raspunsului tau, INAINTE de a raspunde,
+folosind formatul de mai jos. Vei primi datele si vei putea raspunde complet.
+Nu folosi simboluri markdown (asteriscuri, diez, liniute de lista). Raspunde natural, ca si cand vorbesti.
 
-## Cerere date (adaugă LA FINAL dacă ai nevoie)
+Cerere date (adauga LA FINAL daca ai nevoie):
 ___LUMI_REQUEST___
 {"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true}
 
-Include NUMAI câmpurile necesare. Nu adăuga nimic după ___LUMI_REQUEST___.
+Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
 """.trimIndent()
 
     private val actionSystemPromptAddition = """
 
-## Modul Acțiune ACTIVAT
-Poți executa acțiuni reale. Adaugă LA FINAL (după textul tău):
+Modul Actiune ACTIVAT. Poti executa actiuni reale. Adauga LA FINAL (dupa textul tau):
 ___LUMI_ACTIONS___
 {"actions":[{"type":"TIP","param":"valoare"}]}
 
 Tipuri disponibile:
 SET_TIMER(name, duration_seconds) — SET_STOPWATCH(name) — SET_ALARM(name, time_24h e.g. "07:30")
 PAUSE_TIMER(name) — RESUME_TIMER(name) — CANCEL_TIMER(name) — RESET_TIMER(name)
-SEND_WHATSAPP(contact, message, exact="true" dacă mesajul e citat exact / "false" dacă îl compui tu)
+SEND_WHATSAPP(contact, message, exact="true" daca mesajul e citat exact / "false" daca il compui tu)
 SEND_SMS(contact, message) — CALL(contact)
 
-Dacă mesajul NU e citat exact de la utilizator, pune exact="false" și eu îl voi citi înainte de trimitere.
+Daca mesajul NU e citat exact de la utilizator, pune exact="false" si eu il voi citi inainte de trimitere.
 """.trimIndent()
 
     private val classifyPrompt = """
-Clasifică cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: răspunsuri rapide, identificare obiecte, citire notificări, calcule, traduceri, timere simple.
-COMPLEX: trimitere mesaje, apeluri, căutare contacte, orchestrare multi-pas, acces WhatsApp.
-Răspunde cu UN SINGUR CUVÂNT: SIMPLU sau COMPLEX
+Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
+SIMPLU: raspunsuri rapide, identificare obiecte, citire notificari, calcule, traduceri, timere simple.
+COMPLEX: trimitere mesaje, apeluri, cautare contacte, orchestrare multi-pas, acces WhatsApp.
+Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()
 
     // ─── Main entry ──────────────────────────────────────────────────────────
@@ -68,19 +67,26 @@ Răspunde cu UN SINGUR CUVÂNT: SIMPLU sau COMPLEX
     suspend fun route(
         userPrompt: String,
         imageBase64: String?,
-        memory: ConversationMemory
+        memory: ConversationMemory,
+        fastWordLimit: Int = 45,
+        expertWordLimit: Int = 95,
+        forceExpert: Boolean = false
     ): RouteResult {
         val history = memory.toGeminiContents()
         val fastModel = settings.fastModel
-        val sysPrompt = baseSystemPrompt + if (settings.actionModeEnabled) actionSystemPromptAddition else ""
 
         // 1. Classify
         val cls = client.generate(
             prompt = "$classifyPrompt\n\nCerere: \"$userPrompt\"",
             model = fastModel, temperature = 0.0
         ).text.trim().uppercase()
-        val useExpert = cls.contains("COMPLEX")
+        val useExpert = forceExpert || cls.contains("COMPLEX")
         val model = if (useExpert) settings.expertModel else fastModel
+        val wordLimit = if (useExpert) expertWordLimit else fastWordLimit
+
+        val sysPrompt = baseSystemPrompt +
+            "\n\nIMPORTANT: Raspunde in cel mult $wordLimit cuvinte." +
+            if (settings.actionModeEnabled) actionSystemPromptAddition else ""
 
         // 2. First AI pass (may return a data request)
         var firstResponse = client.generate(
@@ -100,13 +106,30 @@ Răspunde cu UN SINGUR CUVÂNT: SIMPLU sau COMPLEX
             parsed = ActionParser.parse(firstResponse.text)
         }
 
-        // 4. Execute actions if action mode ON
-        val actionResults = if (settings.actionModeEnabled && parsed.actions.isNotEmpty()) {
-            executor?.executeAll(parsed.actions) ?: emptyList()
+        // 4. Strip markdown from display text
+        val cleanParsed = parsed.copy(displayText = stripMarkdown(parsed.displayText))
+
+        // 5. Execute actions if action mode ON
+        val actionResults = if (settings.actionModeEnabled && cleanParsed.actions.isNotEmpty()) {
+            executor?.executeAll(cleanParsed.actions) ?: emptyList()
         } else emptyList()
 
-        return RouteResult(firstResponse, parsed, useExpert, actionResults)
+        return RouteResult(firstResponse, cleanParsed, useExpert, actionResults)
     }
+
+    // ─── Markdown stripper (responses go to TTS) ─────────────────────────────
+
+    private fun stripMarkdown(text: String): String = text
+        .replace(Regex("(?m)^#{1,6}\\s+"), "")
+        .replace(Regex("\\*\\*(.+?)\\*\\*"), "$1")
+        .replace(Regex("\\*(.+?)\\*"), "$1")
+        .replace(Regex("_(.+?)_"), "$1")
+        .replace(Regex("`(.+?)`"), "$1")
+        .replace(Regex("(?m)^[-*•]\\s+"), "")
+        .replace(Regex("(?m)^\\d+\\.\\s+"), "")
+        .replace(Regex("(?m)^---+$"), "")
+        .replace(Regex("\n{3,}"), "\n\n")
+        .trim()
 
     // ─── Data fulfillment ────────────────────────────────────────────────────
 
@@ -115,8 +138,8 @@ Răspunde cu UN SINGUR CUVÂNT: SIMPLU sau COMPLEX
 
         if (req.notifications) {
             val n = LumiNotificationService.formatSummary(20)
-            sb.appendLine("=== Notificări recente ===")
-            sb.appendLine(if (n.isBlank()) "Fără notificări." else n)
+            sb.appendLine("=== Notificari recente ===")
+            sb.appendLine(if (n.isBlank()) "Fara notificari." else n)
         }
 
         if (req.contacts.isNotEmpty()) {
@@ -126,7 +149,7 @@ Răspunde cu UN SINGUR CUVÂNT: SIMPLU sau COMPLEX
                 if (found != null) {
                     sb.appendLine("$name → ${found.name} (${found.phoneNumbers.joinToString()})")
                 } else {
-                    sb.appendLine("$name → negăsit")
+                    sb.appendLine("$name → negasit")
                 }
             }
         }
@@ -135,12 +158,11 @@ Răspunde cu UN SINGUR CUVÂNT: SIMPLU sau COMPLEX
             sb.appendLine("=== Mesaje WhatsApp cu ${wa.contact} (ultimele ${wa.limit}) ===")
             if (LumiAccessibilityService.isAvailable()) {
                 val msgs = LumiAccessibilityService.readVisibleMessages(wa.limit)
-                if (msgs.isEmpty()) sb.appendLine("Niciun mesaj vizibil. Deschide conversația în WhatsApp.")
+                if (msgs.isEmpty()) sb.appendLine("Niciun mesaj vizibil. Deschide conversatia in WhatsApp.")
                 else msgs.forEach { sb.appendLine(it) }
             } else {
-                // Fallback: use notification history
                 val notifs = LumiNotificationService.getFromApp("com.whatsapp", wa.limit)
-                if (notifs.isEmpty()) sb.appendLine("Nu am acces la WhatsApp. Activează Accessibility Service.")
+                if (notifs.isEmpty()) sb.appendLine("Nu am acces la WhatsApp. Activeaza Accessibility Service.")
                 else notifs.forEach { sb.appendLine(it.formatted()) }
             }
         }
