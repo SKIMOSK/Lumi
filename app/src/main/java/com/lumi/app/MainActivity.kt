@@ -270,12 +270,12 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Serviciu Accesibilitate necesar")
             .setMessage(
-                "Lumi are nevoie de Serviciul de Accesibilitate pentru a trimite mesaje WhatsApp, " +
-                "seta timere și salva notițe complet autonom.\n\n" +
-                "Pași pe Samsung (Android 13+):\n" +
-                "1. Ține apăsat pe iconița Lumi → Informații aplicație → " +
-                "„Permite setările restricționate"\n" +
-                "2. Deschide Setări → Accesibilitate → Aplicații instalate → Lumi → Activează"
+                "Lumi are nevoie de Serviciul de Accesibilitate pentru a trimite mesaje " +
+                "WhatsApp, seta timere \u0219i salva noti\u021Be complet autonom.\n\n" +
+                "Pa\u0219i pe Samsung (Android 13+):\n" +
+                "1. \u021Aine ap\u0103sat pe iconi\u021Ba Lumi \u2192 Informa\u021Bii aplica\u021Bie \u2192 " +
+                "Permite set\u0103rile restric\u021Bionate\n" +
+                "2. Deschide Set\u0103ri \u2192 Accesibilitate \u2192 Aplica\u021Bii instalate \u2192 Lumi \u2192 Activeaz\u0103"
             )
             .setPositiveButton("Deschide Accesibilitate") { _, _ ->
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
