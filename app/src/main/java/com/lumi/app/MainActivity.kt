@@ -39,6 +39,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: MessageAdapter
     private lateinit var stt: RomanianSTT
     private var isListening = false
+    // Prevent re-showing the accessibility dialog on every resume until the next cold start
+    private var accessibilityDialogShown = false
 
     // ─── Permissions ──────────────────────────────────────────────────────────
 
@@ -111,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         updateNotificationBadge()
         viewModel.refreshMemorySize()
+        checkAccessibilityService()
     }
 
     override fun onDestroy() { stt.destroy(); super.onDestroy() }
@@ -254,6 +257,39 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton("Activează") { _, _ -> startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
                 .setNegativeButton("Mai târziu", null).show()
         }
+    }
+
+    private fun checkAccessibilityService() {
+        if (isAccessibilityServiceEnabled()) {
+            // Service was just granted — allow the dialog to re-appear next launch if revoked
+            accessibilityDialogShown = false
+            return
+        }
+        if (accessibilityDialogShown) return  // already prompted this session
+        accessibilityDialogShown = true
+        AlertDialog.Builder(this)
+            .setTitle("Serviciu Accesibilitate necesar")
+            .setMessage(
+                "Lumi are nevoie de Serviciul de Accesibilitate pentru a trimite mesaje WhatsApp, " +
+                "seta timere și salva notițe complet autonom.\n\n" +
+                "Pași pe Samsung (Android 13+):\n" +
+                "1. Ține apăsat pe iconița Lumi → Informații aplicație → " +
+                "„Permite setările restricționate"\n" +
+                "2. Deschide Setări → Accesibilitate → Aplicații instalate → Lumi → Activează"
+            )
+            .setPositiveButton("Deschide Accesibilitate") { _, _ ->
+                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            }
+            .setNegativeButton("Mai târziu", null)
+            .show()
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val serviceName = "${packageName}/.whatsapp.LumiAccessibilityService"
+        val enabled = Settings.Secure.getString(
+            contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabled.split(":").any { it.trim().equals(serviceName, ignoreCase = true) }
     }
 
     private fun updateNotificationBadge() {
