@@ -61,6 +61,33 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val consentRequest: LiveData<ConsentRequest?> = _consentRequest
     private val pendingConsents = mutableMapOf<Long, CompletableDeferred<Boolean>>()
 
+    // ─── UI state ────────────────────────────────────────────────────────────
+
+    private val messageList = mutableListOf<ChatMessage>()
+    private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
+    val messages: LiveData<List<ChatMessage>> = _messages
+
+    private val _btState = MutableLiveData(LumiBluetoothManager.ConnectionState.DISCONNECTED)
+    val btState: LiveData<LumiBluetoothManager.ConnectionState> = _btState
+
+    private val _isProcessing = MutableLiveData(false)
+    val isProcessing: LiveData<Boolean> = _isProcessing
+
+    private val _statusText = MutableLiveData("Inactiv")
+    val statusText: LiveData<String> = _statusText
+
+    private var latestImageBase64: String? = null
+    private var pendingAttachImage: String? = null
+    private var currentJob: Job? = null
+    private var wordLimitBonus = 0
+
+    // ─── Message persistence ─────────────────────────────────────────────────
+
+    private val historyFile = File(getApplication<Application>().filesDir, "chat_history.json")
+    private val gson = Gson()
+
+    // ─── Init ────────────────────────────────────────────────────────────────
+
     init {
         consent.onInAppConsent = { message -> awaitInAppConsent(message) }
         setupTimerDoneCallback()
@@ -101,31 +128,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         } else null
         return TaskRouter(client, settings, timerManager, contactsHelper, notesHelper, sysSettings, exec)
     }
-
-    // ─── UI state ────────────────────────────────────────────────────────────
-
-    private val messageList = mutableListOf<ChatMessage>()
-    private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
-    val messages: LiveData<List<ChatMessage>> = _messages
-
-    private val _btState = MutableLiveData(LumiBluetoothManager.ConnectionState.DISCONNECTED)
-    val btState: LiveData<LumiBluetoothManager.ConnectionState> = _btState
-
-    private val _isProcessing = MutableLiveData(false)
-    val isProcessing: LiveData<Boolean> = _isProcessing
-
-    private val _statusText = MutableLiveData("Inactiv")
-    val statusText: LiveData<String> = _statusText
-
-    private var latestImageBase64: String? = null
-    private var pendingAttachImage: String? = null
-    private var currentJob: Job? = null
-    private var wordLimitBonus = 0
-
-    // ─── Message persistence ─────────────────────────────────────────────────
-
-    private val historyFile = File(getApplication<Application>().filesDir, "chat_history.json")
-    private val gson = Gson()
 
     private fun loadChatHistory() {
         try {
