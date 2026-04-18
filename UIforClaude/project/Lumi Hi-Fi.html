@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Lumi — Hi-Fi Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing: border-box; }
+  html, body{ margin: 0; background: #F1EFF8; font-family: 'Inter', system-ui, sans-serif; color: #1A1A2E; min-height: 100vh; }
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% 0%, #EDE6FF 0%, transparent 60%),
+      radial-gradient(1200px 600px at 110% 110%, #DDEBFF 0%, transparent 60%),
+      #F1EFF8;
+    padding: 40px 24px 80px;
+  }
+  header.page{
+    max-width: 1400px; margin: 0 auto 28px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap: 20px; flex-wrap: wrap;
+  }
+  h1{
+    font-size: 44px; line-height: 1; letter-spacing: -1.2px; font-weight: 800; margin: 0;
+  }
+  h1 em{ font-style: normal; color: #7C4DFF; font-weight: 700; }
+  .sub{ color: #5B5B6E; font-size: 16px; max-width: 620px; margin-top: 6px; }
+  .badge{
+    border: 1px solid #D9C8FF; background: #fff; color: #7C4DFF;
+    padding: 8px 14px; border-radius: 99px; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+  }
+
+  .stage{
+    max-width: 1400px; margin: 0 auto;
+    display: flex; gap: 36px 28px; flex-wrap: wrap; justify-content: center;
+    align-items: flex-start;
+  }
+  .slot{
+    display:flex; flex-direction:column; align-items:center; gap: 12px;
+  }
+  .slot .cap{
+    text-align: center; max-width: 340px;
+  }
+  .slot .cap .num{ font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: #7C4DFF; text-transform: uppercase; }
+  .slot .cap .name{ font-size: 18px; font-weight: 700; letter-spacing: -0.3px; margin-top: 2px; }
+  .slot .cap .desc{ font-size: 13px; color: #5B5B6E; margin-top: 4px; line-height: 1.4; }
+
+  @keyframes lumiRipple {
+    0%   { transform: scale(0.9); opacity: 0.55; }
+    100% { transform: scale(1.25); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page">
+  <div>
+    <h1>Lumi <em>hi-fi</em></h1>
+    <div class="sub">Tap any screen to open it — full flow below. Based on round 1 directions: Classic Chat, Pulsing Orb, 3-step wizard, Grouped Cards, Bottom Sheet confirm.</div>
+  </div>
+  <div class="badge">Round 2 · 5 screens</div>
+</header>
+
+<div id="root" class="stage"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="hifi/components.jsx"></script>
+<script type="text/babel" src="hifi/screens.jsx"></script>
+
+<script type="text/babel">
+function App(){
+  const [focus, setFocus] = React.useState(null); // null = grid of all
+  const screens = [
+    { key: 'chat',     num: '01', name: 'Home & Chat',         desc: 'Classic chat with persistent status chips. Tap a proposed action to see the bottom sheet.' },
+    { key: 'voice',    num: '02', name: 'Voice (Pulsing Orb)', desc: 'Animated orb, live transcript, send-to-Lumi CTA.' },
+    { key: 'pair',     num: '03', name: 'Pair Lumi (wizard)',  desc: '3-step onboarding for the BLE device.' },
+    { key: 'settings', num: '04', name: 'Settings',            desc: 'Grouped cards — Actiuni emphasized.' },
+    { key: 'action',   num: '05', name: 'Action confirm',      desc: 'Bottom sheet preview, 5s auto-cancel.' },
+  ];
+  const render = (key) => {
+    switch(key){
+      case 'chat':     return <ScreenChat onOpenSettings={() => setFocus('settings')} onOpenPair={() => setFocus('pair')} onOpenVoice={() => setFocus('voice')} onOpenAction={() => setFocus('action')} />;
+      case 'voice':    return <ScreenVoice onClose={() => setFocus('chat')} />;
+      case 'pair':     return <ScreenPair  onClose={() => setFocus('chat')} />;
+      case 'settings': return <ScreenSettings onClose={() => setFocus('chat')} />;
+      case 'action':   return <ScreenAction onClose={() => setFocus('chat')} onConfirm={() => setFocus('chat')} />;
+    }
+  };
+
+  if (focus) {
+    return (
+      <div style={{ width: '100%', display:'flex', flexDirection:'column', alignItems:'center', gap: 16 }}>
+        <button onClick={() => setFocus(null)} style={{
+          background:'#fff', border: '1px solid #E6E4F0', padding: '8px 16px', borderRadius: 99,
+          fontSize: 13, fontWeight: 600, color: '#1A1A2E', cursor: 'pointer',
+          display:'inline-flex', alignItems:'center', gap: 6,
+        }}>← Toate ecranele</button>
+        {render(focus)}
+      </div>
+    );
+  }
+
+  return screens.map(s => (
+    <div key={s.key} className="slot" onClick={() => setFocus(s.key)} style={{ cursor: 'pointer' }}>
+      {render(s.key)}
+      <div className="cap">
+        <div className="num">{s.num}</div>
+        <div className="name">{s.name}</div>
+        <div className="desc">{s.desc}</div>
+      </div>
+    </div>
+  ));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

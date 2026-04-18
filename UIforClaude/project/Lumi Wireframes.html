@@ -1,0 +1,1421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Lumi — Wireframe Explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;700&family=Kalam:wght@300;400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #f4efe4;
+    --paper-2: #ece5d4;
+    --ink: #1a1a1a;
+    --ink-2: #2b2b2b;
+    --muted: #6b6b6b;
+    --line: #1a1a1a;
+    --accent: oklch(0.55 0.08 295);   /* muted purple, low sat */
+    --accent-soft: oklch(0.88 0.04 295);
+    --warn: oklch(0.65 0.11 45);
+    --ok: oklch(0.65 0.08 150);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; background:var(--paper); color:var(--ink); font-family: 'Kalam', 'Caveat', system-ui, sans-serif; }
+  body{
+    background-image:
+      radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+      radial-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 28px 28px, 9px 9px;
+    background-position: 0 0, 14px 14px;
+    min-height: 100vh;
+    padding: 40px 32px 120px;
+  }
+  .hand{ font-family: 'Caveat', cursive; }
+  .mono{ font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  /* ───── Header ───── */
+  header.page{
+    max-width: 1400px;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .title{
+    font-family: 'Caveat', cursive;
+    font-size: 68px; line-height: 0.95; font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+  .title em{ font-style: normal; color: var(--accent); }
+  .subtitle{
+    font-size: 18px; color: var(--muted);
+    max-width: 640px; margin-top: 6px;
+  }
+  .stamp{
+    border: 1.5px dashed var(--ink);
+    padding: 10px 16px;
+    font-family: 'Caveat', cursive;
+    font-size: 24px;
+    transform: rotate(-2deg);
+    background: rgba(255,255,255,0.4);
+  }
+  .stamp small{ display:block; font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 2px;}
+
+  /* ───── Tabs ───── */
+  nav.tabs{
+    max-width: 1400px;
+    margin: 0 auto 18px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0;
+  }
+  .tab{
+    font-family: 'Kalam', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 10px 18px 8px;
+    border: 2px solid var(--ink);
+    border-bottom: none;
+    background: var(--paper-2);
+    cursor: pointer;
+    border-radius: 10px 14px 2px 2px;
+    transform: translateY(2px);
+    color: var(--ink);
+    position: relative;
+    transition: transform 0.12s ease, background 0.12s;
+  }
+  .tab:nth-child(2n){ border-radius: 14px 10px 2px 2px; }
+  .tab:hover{ background: #fff; }
+  .tab.active{
+    background: var(--paper);
+    transform: translateY(2px) rotate(-0.5deg);
+    box-shadow: inset 0 -4px 0 var(--paper);
+  }
+  .tab .num{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  /* ───── Section intro ───── */
+  .section{ max-width: 1400px; margin: 0 auto; display:none; }
+  .section.active{ display:block; }
+  .intro{
+    display: flex; gap: 16px; align-items: flex-start;
+    margin: 14px 0 28px;
+    padding: 14px 18px;
+    border: 2px solid var(--ink);
+    background: rgba(255,255,255,0.5);
+    border-radius: 6px 18px 8px 20px;
+    position: relative;
+  }
+  .intro::before{
+    content: ""; position: absolute; inset: 4px; border: 1px dashed rgba(0,0,0,0.15);
+    border-radius: inherit; pointer-events:none;
+  }
+  .intro h2{
+    font-family:'Caveat', cursive; font-size: 38px; margin: 0 0 4px; font-weight: 700;
+  }
+  .intro p{ margin: 0; font-size: 17px; color: var(--ink-2); max-width: 820px; }
+  .intro .arrow{ font-family:'Caveat'; font-size: 30px; color: var(--accent); transform: rotate(8deg); }
+
+  /* ───── Grid of wireframes ───── */
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 36px 28px;
+    padding: 10px 0 40px;
+  }
+  .grid.wide{ grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+  .wf{
+    display: flex; flex-direction: column; align-items: center;
+    gap: 12px;
+  }
+  .wf .caption{
+    width: 100%;
+    text-align: left;
+  }
+  .wf .caption .num{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .wf .caption .name{
+    font-family:'Caveat', cursive; font-size: 28px; line-height: 1; font-weight: 700;
+    margin-top: 2px;
+  }
+  .wf .caption .desc{
+    font-size: 14px; color: var(--muted); margin-top: 4px;
+  }
+
+  /* ───── Phone frame ───── */
+  .phone{
+    width: 280px;
+    aspect-ratio: 9 / 19;
+    background: #fff;
+    border: 2.5px solid var(--ink);
+    border-radius: 32px;
+    position: relative;
+    padding: 10px 10px 12px;
+    box-shadow: 4px 5px 0 rgba(0,0,0,0.08), 8px 10px 0 rgba(0,0,0,0.04);
+    transform: rotate(var(--tilt, -0.6deg));
+    overflow: hidden;
+    font-family: 'Kalam', sans-serif;
+  }
+  .phone::before{
+    content:""; position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 78px; height: 18px; background: var(--ink); border-radius: 99px;
+  }
+  .phone .screen{
+    width: 100%; height: 100%;
+    border: 1.5px solid var(--ink);
+    border-radius: 22px;
+    background: #fdfaf2;
+    padding: 36px 12px 12px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    font-size: 12px;
+  }
+  /* Sketchy jitter on phone borders */
+  .phone.jit{ filter: url(#wobble); }
+
+  /* ───── Screen building blocks ───── */
+  .statusbar{
+    display:flex; justify-content: space-between; align-items: center;
+    font-family:'JetBrains Mono', monospace; font-size: 9px; color: var(--muted);
+    padding: 0 6px 4px; border-bottom: 1px dashed rgba(0,0,0,0.2); margin-bottom: 8px;
+  }
+  .appbar{
+    display:flex; align-items: center; justify-content: space-between;
+    padding: 6px 4px 8px;
+    border-bottom: 1.5px solid var(--ink);
+    margin: -2px -2px 8px;
+  }
+  .appbar .logo{
+    font-family:'Caveat', cursive; font-size: 22px; font-weight: 700; line-height: 1;
+  }
+  .appbar .logo::before{
+    content:"◐ "; color: var(--accent);
+  }
+  .appbar .right{ display:flex; gap: 6px; align-items:center; font-family:'Kalam'; font-size: 11px; color: var(--muted); }
+  .icon-btn{
+    width: 22px; height: 22px; border: 1.5px solid var(--ink); border-radius: 6px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size: 11px; background: #fff;
+  }
+
+  .chip{
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 1.3px solid var(--ink); border-radius: 99px;
+    padding: 2px 8px 3px; font-size: 10px;
+    background: #fff;
+    font-family: 'Kalam', sans-serif;
+  }
+  .chip.ok::before{ content:"●"; color: var(--ok); margin-right: 2px; }
+  .chip.off::before{ content:"○"; color: var(--muted); margin-right: 2px; }
+  .chip.warn::before{ content:"●"; color: var(--warn); margin-right: 2px; }
+  .chip.accent{ background: var(--accent-soft); border-color: var(--accent); }
+
+  .bubble{
+    padding: 6px 10px;
+    border: 1.5px solid var(--ink);
+    border-radius: 14px 14px 14px 4px;
+    font-size: 11px; line-height: 1.2;
+    max-width: 78%;
+    background: #fff;
+    margin-bottom: 6px;
+    align-self: flex-start;
+    word-break: break-word;
+  }
+  .bubble.user{
+    border-radius: 14px 14px 4px 14px;
+    align-self: flex-end;
+    background: var(--accent-soft);
+  }
+  .bubble .meta{
+    font-family:'JetBrains Mono', monospace; font-size: 8px; color: var(--muted);
+    margin-top: 3px; display: block;
+  }
+
+  .inputbar{
+    display: flex; align-items: center; gap: 6px;
+    border: 1.5px solid var(--ink); border-radius: 20px;
+    padding: 4px 6px; margin-top: auto; background: #fff;
+  }
+  .inputbar .field{
+    flex: 1; border-bottom: 1px dashed rgba(0,0,0,0.3); padding: 2px 4px; font-size: 11px; color: var(--muted);
+  }
+  .circ-btn{
+    width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--ink);
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items:center; justify-content: center; font-size: 12px;
+    flex-shrink: 0;
+  }
+  .circ-btn.ghost{ background:#fff; color: var(--ink); }
+
+  .ph-img{
+    border: 1.5px solid var(--ink);
+    background:
+      repeating-linear-gradient(135deg, rgba(0,0,0,0.06) 0 4px, transparent 4px 8px);
+    font-family:'JetBrains Mono', monospace; font-size: 9px; color: var(--muted);
+    display:flex; align-items:center; justify-content:center;
+    border-radius: 8px;
+  }
+
+  .divider{ border: none; border-top: 1.2px dashed rgba(0,0,0,0.3); margin: 8px 0; }
+
+  .big-btn{
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px;
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: var(--accent-soft);
+    font-family:'Kalam', sans-serif; font-weight: 700; font-size: 12px;
+  }
+  .big-btn.primary{ background: var(--accent); color: #fff; }
+  .big-btn.ghost{ background: #fff; }
+
+  .list-row{
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 4px;
+    border-bottom: 1px dashed rgba(0,0,0,0.25);
+    font-size: 11px;
+  }
+  .list-row .ico{
+    width: 22px; height: 22px; border: 1.3px solid var(--ink); border-radius: 6px;
+    display:flex; align-items:center; justify-content:center; font-size: 11px;
+    flex-shrink: 0; background: #fff;
+  }
+  .list-row .main{ flex: 1; }
+  .list-row .main b{ display:block; font-weight: 700; }
+  .list-row .main small{ color: var(--muted); font-family:'JetBrains Mono', monospace; font-size: 9px;}
+  .toggle{
+    width: 28px; height: 16px; border: 1.5px solid var(--ink); border-radius: 99px;
+    background: #fff; position: relative; flex-shrink: 0;
+  }
+  .toggle::after{
+    content:""; position: absolute; top: 1.5px; left: 2px;
+    width: 10px; height: 10px; border-radius: 50%; background: var(--ink);
+    transition: left 0.2s;
+  }
+  .toggle.on{ background: var(--accent); }
+  .toggle.on::after{ left: 14px; background: #fff; }
+
+  /* ───── Annotations ───── */
+  .note{
+    font-family:'Caveat', cursive;
+    font-size: 18px;
+    color: var(--accent);
+    line-height: 1;
+    max-width: 160px;
+  }
+  .note.scribble{
+    padding: 4px 8px;
+    border-bottom: 2px solid var(--accent);
+  }
+  .anno-layer{
+    position: relative;
+    display: inline-block;
+  }
+  .anno{
+    position: absolute;
+    font-family:'Caveat', cursive;
+    font-size: 17px;
+    color: var(--accent);
+    line-height: 1.05;
+    pointer-events: none;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .anno.block{ white-space: normal; width: 120px; }
+  .anno::before{
+    content:"";
+    position: absolute;
+    border-bottom: 1.5px solid var(--accent);
+  }
+  .hide-annos .anno{ display: none; }
+
+  /* Visual: mic orb */
+  .orb{
+    width: 120px; height: 120px; border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: radial-gradient(circle at 35% 35%, var(--accent-soft), var(--accent));
+    display:flex; align-items:center; justify-content:center;
+    color: #fff; font-size: 36px;
+    margin: 10px auto;
+    position: relative;
+  }
+  .orb::before, .orb::after{
+    content:""; position:absolute; inset:-10px; border-radius:50%;
+    border: 1.5px dashed var(--accent);
+    opacity: 0.5;
+  }
+  .orb::after{ inset: -22px; opacity: 0.25;}
+  .waveform{
+    display:flex; align-items: flex-end; justify-content: center; gap: 3px; height: 36px;
+    margin: 6px 0;
+  }
+  .waveform span{
+    width: 4px; background: var(--ink); border-radius: 2px;
+  }
+
+  /* ───── Tweaks panel ───── */
+  .tweaks{
+    position: fixed;
+    bottom: 18px; right: 18px;
+    width: 280px;
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-family: 'Kalam', sans-serif;
+    box-shadow: 4px 5px 0 rgba(0,0,0,0.1);
+    z-index: 50;
+    display: none;
+  }
+  .tweaks.open{ display: block; }
+  .tweaks h3{ margin:0 0 8px; font-family:'Caveat', cursive; font-size: 26px; font-weight:700; }
+  .tweaks label{ display:block; font-size: 13px; color: var(--muted); margin-bottom: 2px; margin-top: 10px; }
+  .tweaks .row{ display:flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 14px; }
+  .tweaks select, .tweaks input[type=range]{ width: 100%; font-family: inherit; }
+  .tweak-toggle-btn{
+    position: fixed; bottom: 18px; right: 18px;
+    border: 2px solid var(--ink); background: #fff;
+    padding: 8px 14px; border-radius: 99px;
+    font-family:'Caveat', cursive; font-size: 20px; font-weight: 700;
+    cursor: pointer; z-index: 49;
+    box-shadow: 3px 4px 0 rgba(0,0,0,0.1);
+  }
+
+  /* Paper variants */
+  body.paper-cream{ --paper: #f4efe4; --paper-2: #ece5d4; }
+  body.paper-white{ --paper: #fafafa; --paper-2: #efefef; }
+  body.paper-grid{
+    --paper: #f8f5ec;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px;
+  }
+  body.paper-blueprint{
+    --paper: #1a2436; --ink: #eaf2ff; --ink-2: #cfd9ec; --muted: #8fa3c4;
+    --paper-2: #243251; --accent: oklch(0.78 0.08 220); --accent-soft: oklch(0.35 0.06 220);
+    background-image:
+      linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px;
+    color: var(--ink);
+  }
+  body.paper-blueprint .phone{ background: #2a375a; }
+  body.paper-blueprint .phone .screen{ background: #1f2a44; color: var(--ink); }
+  body.paper-blueprint .bubble{ background: #2a375a; color: var(--ink); }
+  body.paper-blueprint .bubble.user{ background: var(--accent-soft); }
+  body.paper-blueprint .chip, body.paper-blueprint .icon-btn, body.paper-blueprint .inputbar, body.paper-blueprint .toggle, body.paper-blueprint .list-row .ico, body.paper-blueprint .big-btn.ghost{ background: #2a375a; color: var(--ink);}
+  body.paper-blueprint .tab{ background: #243251; color: var(--ink); border-color: var(--ink); }
+  body.paper-blueprint .tab.active{ background: var(--paper); }
+  body.paper-blueprint .intro{ background: rgba(255,255,255,0.04); }
+
+  @media (max-width: 720px){
+    .title{ font-size: 48px; }
+  }
+</style>
+</head>
+<body class="paper-cream">
+
+<!-- SVG jitter filter for sketchy lines -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="wobble">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="4"/>
+      <feDisplacementMap in="SourceGraphic" scale="1.2"/>
+    </filter>
+  </defs>
+</svg>
+
+<header class="page">
+  <div>
+    <h1 class="title">Lumi <em>— wireframes</em></h1>
+    <div class="subtitle">Exploring structure & flows for the Romanian AI companion that pairs with the Lumi BLE device. Low-fi on purpose — pick directions, not pixels.</div>
+  </div>
+  <div class="stamp">
+    <small>round 1 · 18 screens</small>
+    draft / low-fi
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-tab="chat"><span class="num">01</span>Home & Chat</button>
+  <button class="tab" data-tab="voice"><span class="num">02</span>Voice</button>
+  <button class="tab" data-tab="pair"><span class="num">03</span>Device & Pairing</button>
+  <button class="tab" data-tab="settings"><span class="num">04</span>Settings</button>
+  <button class="tab" data-tab="action"><span class="num">05</span>Action Confirmation</button>
+  <button class="tab" data-tab="system"><span class="num">06</span>System Notes</button>
+</nav>
+
+<!-- ================== 01 HOME & CHAT ================== -->
+<section class="section active" data-tab="chat">
+  <div class="intro">
+    <div>
+      <h2>01 — Home & Chat</h2>
+      <p>The default screen after launch. Needs to surface: Lumi device status, notifications access, and the chat/voice input. Four very different takes — from the existing chat-centric direction, to a glanceable "companion" dashboard, to a pure voice-first canvas.</p>
+    </div>
+    <div class="arrow">↓</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- A: Classic chat (current direction, tidied) -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.8deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar">
+            <div class="logo">Lumi</div>
+            <div class="right"><span class="icon-btn">⚙</span></div>
+          </div>
+          <div style="display:flex; gap:4px; margin-bottom: 8px; flex-wrap: wrap;">
+            <span class="chip ok">Conectat</span>
+            <span class="chip ok">Notif. ON</span>
+          </div>
+          <div class="bubble">Buna! Cum te pot ajuta?<span class="meta">09:40 · fast</span></div>
+          <div class="bubble user">Cat e ceasul la Tokyo?</div>
+          <div class="bubble">E 15:41 acum, cu 6 ore inaintea ta.<span class="meta">09:41 · fast</span></div>
+          <div class="bubble user">Trimite mamei ca vin acasa</div>
+          <div class="inputbar" style="margin-top: auto;">
+            <div class="circ-btn">🎙</div>
+            <div class="field">Scrie sau vorbeste…</div>
+            <div class="circ-btn ghost">＋</div>
+            <div class="circ-btn">➤</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">01 · A</div>
+        <div class="name">Classic chat</div>
+        <div class="desc">Straight evolution of the current layout. Status chips replace the dark bar. Familiar, safe.</div>
+      </div>
+    </div>
+
+    <!-- B: Dashboard + chat -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.5deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div style="display:flex; align-items:center; gap:8px; padding: 4px 4px 10px;">
+            <div style="width:36px; height:36px; border-radius:50%; background: var(--accent); border:1.5px solid var(--ink);"></div>
+            <div>
+              <div style="font-family:'Caveat'; font-size: 22px; line-height: 1; font-weight:700;">Buna, Andrei</div>
+              <div style="font-size: 10px; color: var(--muted);">Lumi: conectat · baterie 78%</div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom: 8px;">
+            <div style="border:1.5px solid var(--ink); border-radius:10px; padding:6px; background:#fff;">
+              <div style="font-family:'JetBrains Mono'; font-size:8px; color: var(--muted);">TIMER ACTIV</div>
+              <div style="font-family:'Caveat'; font-size: 22px; font-weight:700; line-height:1;">04:32</div>
+              <div style="font-size: 9px;">Paste</div>
+            </div>
+            <div style="border:1.5px solid var(--ink); border-radius:10px; padding:6px; background: var(--accent-soft);">
+              <div style="font-family:'JetBrains Mono'; font-size:8px; color: var(--muted);">NOTIF. NOI</div>
+              <div style="font-family:'Caveat'; font-size: 22px; font-weight:700; line-height:1;">3</div>
+              <div style="font-size: 9px;">WhatsApp, Gmail</div>
+            </div>
+          </div>
+          <div style="font-family:'JetBrains Mono'; font-size:8px; color: var(--muted); margin-bottom: 4px;">ULTIMA CONVERSATIE</div>
+          <div class="bubble" style="font-size: 10px;">Ti-am setat un timer de 5 min pentru paste.</div>
+          <div style="text-align:center; font-size: 10px; color: var(--muted); margin: 4px 0;">— acum 2 min —</div>
+          <div class="inputbar" style="margin-top: auto;">
+            <div class="circ-btn">🎙</div>
+            <div class="field">Intreaba Lumi…</div>
+            <div class="circ-btn">➤</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">01 · B</div>
+        <div class="name">Glanceable home</div>
+        <div class="desc">Cards for live state (timers, notifications), chat is condensed to last turn. Feels like a real companion, not a chatbot.</div>
+      </div>
+    </div>
+
+    <!-- C: Voice-first canvas -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.3deg">
+        <div class="screen" style="background: #faf6e9;">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar" style="border-bottom: none;">
+            <div style="font-family:'JetBrains Mono'; font-size: 10px; color: var(--muted);">LUMI · conectat</div>
+            <div class="icon-btn">≡</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+            <div class="orb" style="width: 130px; height: 130px; font-size: 44px;">🎙</div>
+            <div style="font-family:'Caveat'; font-size: 26px; font-weight: 700; text-align:center; line-height: 1;">Apasa si vorbeste</div>
+            <div style="font-size: 11px; color: var(--muted); text-align:center; max-width: 180px;">sau scrie mai jos · romana detectata</div>
+          </div>
+          <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap; margin-bottom: 6px;">
+            <span class="chip">⏱ Timer 5 min</span>
+            <span class="chip">✉ Mesaj mamei</span>
+            <span class="chip">📝 Notita</span>
+          </div>
+          <div class="inputbar" style="margin-top: 4px;">
+            <div class="field">Sau scrie aici…</div>
+            <div class="circ-btn ghost">📎</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">01 · C</div>
+        <div class="name">Voice-first canvas</div>
+        <div class="desc">App opens to the mic. Chat history lives behind a drawer. Suggestion chips = common Romanian requests. Bold but risky — loses the log at a glance.</div>
+      </div>
+    </div>
+
+    <!-- D: Stream/journal -->
+    <div class="wf">
+      <div class="phone" style="--tilt:1deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar">
+            <div class="logo" style="font-size:18px;">Lumi · jurnal</div>
+            <div class="right"><span class="icon-btn">⚙</span></div>
+          </div>
+          <div style="font-family:'JetBrains Mono'; font-size:9px; color: var(--muted); margin: 4px 0 6px;">— MIERCURI, 17 APR —</div>
+
+          <div style="border-left: 3px solid var(--accent); padding: 2px 6px 4px 8px; margin-bottom: 6px;">
+            <div style="font-size: 9px; color: var(--muted); font-family:'JetBrains Mono';">09:12 · TU</div>
+            <div style="font-size: 11px;">„Seteaza un timer de 5 min"</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 2px;">✓ Timer Paste · 5:00</div>
+          </div>
+          <div style="border-left: 3px solid var(--accent); padding: 2px 6px 4px 8px; margin-bottom: 6px;">
+            <div style="font-size: 9px; color: var(--muted); font-family:'JetBrains Mono';">09:20 · TU 📷</div>
+            <div class="ph-img" style="height: 40px; margin-bottom: 4px;">[camera frame]</div>
+            <div style="font-size: 11px;">„Ce e asta?" → „Pasaport romanesc"</div>
+          </div>
+          <div style="border-left: 3px solid var(--ink); padding: 2px 6px 4px 8px; margin-bottom: 6px;">
+            <div style="font-size: 9px; color: var(--muted); font-family:'JetBrains Mono';">09:32 · LUMI</div>
+            <div style="font-size: 11px;">Notificare: „Mama: unde esti?"</div>
+          </div>
+          <div class="inputbar" style="margin-top: auto;">
+            <div class="circ-btn">🎙</div>
+            <div class="field">Scrie…</div>
+            <div class="circ-btn">➤</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">01 · D</div>
+        <div class="name">Daily journal</div>
+        <div class="desc">Chat reframed as a timeline of "what happened today" — including photos from the device and notifications Lumi saw. More memorable, less transactional.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================== 02 VOICE ================== -->
+<section class="section" data-tab="voice">
+  <div class="intro">
+    <div>
+      <h2>02 — Voice listening state</h2>
+      <p>What the screen looks like while the user is talking (mic hot). STT is Romanian. The Lumi device may be streaming audio over BLE instead of the phone's mic — UI needs to make the difference clear.</p>
+    </div>
+    <div class="arrow">↓</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Orb centered -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.5deg">
+        <div class="screen" style="background: radial-gradient(circle at 50% 40%, var(--accent-soft), #fdfaf2 70%);">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div style="text-align:center; font-family:'JetBrains Mono'; font-size: 10px; color: var(--muted); margin: 4px 0;">ASCULT · RO · prin Lumi</div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div class="orb">🎙</div>
+            <div style="font-family:'Caveat'; font-size: 28px; font-weight: 700; margin-top: 10px;">„trimite mamei…"</div>
+            <div class="waveform" style="width: 80%;">
+              <span style="height: 12px"></span><span style="height: 24px"></span>
+              <span style="height: 30px"></span><span style="height: 18px"></span>
+              <span style="height: 34px"></span><span style="height: 22px"></span>
+              <span style="height: 14px"></span><span style="height: 28px"></span>
+              <span style="height: 20px"></span><span style="height: 10px"></span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; justify-content: center;">
+            <button class="big-btn ghost" style="flex: 1;">Anuleaza</button>
+            <button class="big-btn primary" style="flex: 1;">Trimite</button>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">02 · A</div>
+        <div class="name">Pulsing orb</div>
+        <div class="desc">Single glowing mic orb. Live partial transcript in big handwritten text. Source ("prin Lumi") noted tiny up top.</div>
+      </div>
+    </div>
+
+    <!-- Full transcript takeover -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.7deg">
+        <div class="screen" style="background: var(--ink); color: #fafafa;">
+          <div class="statusbar" style="color: #aaa;"><span>9:41</span><span>● ● ●</span></div>
+          <div style="color:#fff; font-family:'JetBrains Mono'; font-size:10px; letter-spacing:0.1em; margin: 8px 0;">● RECORDING · ro-RO</div>
+          <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+            <div style="font-family:'Caveat'; font-size: 34px; font-weight: 700; line-height: 1.1; color: #fff;">
+              „Trimite mamei ca <span style="color: var(--accent); border-bottom: 2px dashed var(--accent);">vin acasa</span>
+              <span style="opacity:0.4;"> la ora…"</span>
+            </div>
+            <div style="margin-top: 14px; font-size: 11px; color: #aaa;">confidence 0.92 · Expert model</div>
+          </div>
+          <div class="waveform" style="margin: 10px 0;">
+            <span style="background:#fff; height: 8px"></span><span style="background:#fff; height: 22px"></span>
+            <span style="background:#fff; height: 34px"></span><span style="background: var(--accent); height: 42px"></span>
+            <span style="background:#fff; height: 20px"></span><span style="background:#fff; height: 30px"></span>
+            <span style="background:#fff; height: 12px"></span><span style="background:#fff; height: 26px"></span>
+            <span style="background:#fff; height: 18px"></span><span style="background:#fff; height: 10px"></span>
+            <span style="background:#fff; height: 24px"></span><span style="background:#fff; height: 6px"></span>
+          </div>
+          <div style="display:flex; gap:6px; justify-content: center;">
+            <div class="circ-btn ghost" style="background:#fff; color:#000; width: 36px; height: 36px;">✕</div>
+            <div class="circ-btn" style="background: var(--accent); width: 52px; height: 52px; font-size: 18px;">■</div>
+            <div class="circ-btn ghost" style="background:#fff; color:#000; width: 36px; height: 36px;">↩</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">02 · B</div>
+        <div class="name">Dark takeover</div>
+        <div class="desc">Fullscreen dark state. Partial transcript is the hero. Active word highlighted in accent. Stop button in the middle, clearly modal.</div>
+      </div>
+    </div>
+
+    <!-- Inline overlay -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-1.1deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar">
+            <div class="logo">Lumi</div>
+            <div class="right"><span class="chip ok">Conectat</span></div>
+          </div>
+          <div class="bubble">Am trimis mesajul.</div>
+          <div class="bubble user">Ce vreme e in Cluj?</div>
+          <div class="bubble">17°, partial noros.</div>
+          <div style="flex:1"></div>
+
+          <!-- overlay pill -->
+          <div style="border: 2px solid var(--ink); background: var(--accent-soft); border-radius: 16px; padding: 8px 10px; margin-bottom: 6px; box-shadow: 2px 3px 0 rgba(0,0,0,0.1);">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom: 4px;">
+              <div class="circ-btn" style="width:22px; height:22px; font-size:11px;">🎙</div>
+              <div style="font-family:'JetBrains Mono'; font-size:9px; letter-spacing:0.1em; color: var(--muted);">ASCULT · RO</div>
+              <div style="margin-left:auto; font-size:10px;">0:03</div>
+            </div>
+            <div style="font-family:'Caveat'; font-size: 18px; font-weight: 700; line-height: 1.1;">„cat e ceasul la tok…"</div>
+            <div class="waveform" style="height: 16px; margin-top: 4px;">
+              <span style="height: 8px"></span><span style="height: 14px"></span>
+              <span style="height: 6px"></span><span style="height: 12px"></span>
+              <span style="height: 16px"></span><span style="height: 10px"></span>
+              <span style="height: 14px"></span><span style="height: 8px"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">02 · C</div>
+        <div class="name">Inline pill</div>
+        <div class="desc">Non-modal. Chat stays behind, mic state sits above the input as a pill. Good when users want to glance back at context while speaking.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================== 03 DEVICE & PAIRING ================== -->
+<section class="section" data-tab="pair">
+  <div class="intro">
+    <div>
+      <h2>03 — Device & Pairing</h2>
+      <p>Connecting the phone to the physical Lumi BLE device. Today this is buried in settings. Three takes on making the hardware relationship feel first-class: wizard, permanent widget, full-page device view.</p>
+    </div>
+    <div class="arrow">↓</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Pair wizard -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.5deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div style="text-align:center; padding: 10px 0;">
+            <div style="font-family:'JetBrains Mono'; font-size: 9px; color: var(--muted);">PAS 2 DIN 3</div>
+            <div style="font-family:'Caveat'; font-size: 32px; font-weight: 700; line-height: 1; margin-top: 4px;">Porneste Lumi</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">Tine apasat butonul 3 secunde pana LED-ul devine albastru.</div>
+          </div>
+
+          <!-- sketchy device -->
+          <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+            <div style="width: 120px; height: 140px; border: 2px solid var(--ink); border-radius: 18px; background: #fff; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; transform: rotate(-2deg); box-shadow: 3px 4px 0 rgba(0,0,0,0.1);">
+              <div style="width:32px; height:32px; border-radius:50%; border:1.5px solid var(--ink); background: var(--accent-soft); margin-bottom: 6px;"></div>
+              <div style="font-family:'JetBrains Mono'; font-size:9px; color: var(--muted);">LUMI</div>
+              <div style="position:absolute; bottom:-6px; width:40px; height:8px; background: var(--ink); border-radius: 4px;"></div>
+              <div style="position:absolute; top:-14px; left:50%; transform: translateX(-50%); font-family:'Caveat'; font-size: 18px; color: var(--accent);">• • •</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:6px; justify-content:center; margin-bottom:8px;">
+            <span style="width:6px; height:6px; border-radius:50%; background: var(--ink);"></span>
+            <span style="width:6px; height:6px; border-radius:50%; background: var(--accent);"></span>
+            <span style="width:6px; height:6px; border-radius:50%; background: #ddd; border: 1px solid var(--ink);"></span>
+          </div>
+          <button class="big-btn primary">Am pornit Lumi →</button>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">03 · A</div>
+        <div class="name">3-step wizard</div>
+        <div class="desc">Onboarding flow with illustrated device. Fixes the "buried in settings" problem. Only shown on first launch or re-pair.</div>
+      </div>
+    </div>
+
+    <!-- Persistent device card -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.7deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar">
+            <div class="logo">Lumi</div>
+            <div class="right"><span class="icon-btn">⚙</span></div>
+          </div>
+
+          <!-- Device card -->
+          <div style="border: 2px solid var(--ink); border-radius: 14px; padding: 10px; background: #fff; margin-bottom: 8px; box-shadow: 2px 3px 0 rgba(0,0,0,0.08);">
+            <div style="display:flex; align-items:center; gap: 8px; margin-bottom: 6px;">
+              <div style="width: 32px; height: 32px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--accent-soft); display:flex; align-items:center; justify-content:center; font-size: 16px;">◐</div>
+              <div style="flex:1;">
+                <div style="font-family:'Caveat'; font-size: 20px; font-weight:700; line-height:1;">Lumi Dev-01</div>
+                <div style="font-size: 10px; color: var(--muted); font-family:'JetBrains Mono';">● conectat · 78% · rssi −54</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+            <div style="display:flex; gap: 4px; font-size: 9px; flex-wrap: wrap;">
+              <span class="chip">🎙 audio</span>
+              <span class="chip">📷 imagine</span>
+              <span class="chip">🔊 TTS</span>
+            </div>
+          </div>
+
+          <div style="font-family:'JetBrains Mono'; font-size: 9px; color: var(--muted); margin: 8px 4px 4px;">CONVERSATIE</div>
+          <div class="bubble">Cum te pot ajuta?</div>
+          <div class="bubble user">…</div>
+          <div style="flex:1"></div>
+          <div class="inputbar">
+            <div class="circ-btn">🎙</div>
+            <div class="field">…</div>
+            <div class="circ-btn">➤</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">03 · B</div>
+        <div class="name">Persistent device card</div>
+        <div class="desc">Device stays visible at the top of the chat. Battery + signal + what streams are active. Tap to open device page.</div>
+      </div>
+    </div>
+
+    <!-- Device full page -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.8deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div style="display:flex; align-items:center; gap: 8px; padding: 4px 2px 10px; border-bottom: 1.5px solid var(--ink); margin: -2px -2px 10px;">
+            <div class="icon-btn">←</div>
+            <div style="font-family:'Caveat'; font-size: 22px; font-weight:700;">Dispozitiv</div>
+          </div>
+
+          <!-- big device illustration -->
+          <div style="display:flex; align-items:center; justify-content:center; padding: 10px 0;">
+            <div style="width: 90px; height: 90px; border-radius: 50%; border: 2px solid var(--ink); background: radial-gradient(circle at 30% 30%, #fff, var(--accent-soft));">
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:'Caveat'; font-size: 26px; font-weight: 700; line-height: 1;">Lumi Dev-01</div>
+            <div style="font-size: 11px; color: var(--ok); margin-top: 2px;">● conectat · acum 2 min</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="list-row"><div class="ico">🔋</div><div class="main"><b>Baterie</b><small>78% · ~6h rămase</small></div></div>
+          <div class="list-row"><div class="ico">📶</div><div class="main"><b>Semnal BLE</b><small>−54 dBm · excelent</small></div></div>
+          <div class="list-row"><div class="ico">🎙</div><div class="main"><b>Stream audio</b><small>PCM 16kHz · 2.4 KB/s</small></div><div class="toggle on"></div></div>
+          <div class="list-row"><div class="ico">📷</div><div class="main"><b>Stream imagine</b><small>JPEG · 1 cadru/s</small></div><div class="toggle on"></div></div>
+          <div style="margin-top: auto; padding-top: 8px;">
+            <button class="big-btn ghost" style="color: var(--warn); border-color: var(--warn);">Deconecteaza</button>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">03 · C</div>
+        <div class="name">Device full page</div>
+        <div class="desc">Dedicated page showing real BLE state (matches your protocol: audio 16kHz PCM, image JPEG chunks). Debug-friendly for the hackathon.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================== 04 SETTINGS ================== -->
+<section class="section" data-tab="settings">
+  <div class="intro">
+    <div>
+      <h2>04 — Settings & Action Mode</h2>
+      <p>Current settings screen is a long scroll. Three directions: sectioned & dense, grouped cards with plain-language descriptions, or a "control center" that makes Action Mode the hero (since autonomy is the scary setting).</p>
+    </div>
+    <div class="arrow">↓</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Dense list -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.3deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar">
+            <div style="display:flex; align-items:center; gap: 6px;"><div class="icon-btn">←</div><div style="font-family:'Caveat'; font-size: 22px; font-weight:700;">Setari</div></div>
+          </div>
+          <div style="font-family:'JetBrains Mono'; font-size: 9px; color: var(--muted); letter-spacing:0.08em; margin: 4px 0;">API OPENROUTER</div>
+          <div class="list-row"><div class="main"><b>Cheie API</b><small>••••••••3f21</small></div></div>
+          <div class="list-row"><div class="main"><b>Base URL</b><small>implicit</small></div></div>
+
+          <div style="font-family:'JetBrains Mono'; font-size: 9px; color: var(--muted); letter-spacing:0.08em; margin: 10px 0 4px;">MODELE AI</div>
+          <div class="list-row"><div class="main"><b>Rapid</b><small>Gemini 2.5 Flash</small></div></div>
+          <div class="list-row"><div class="main"><b>Expert</b><small>Gemini 2.5 Pro</small></div></div>
+
+          <div style="font-family:'JetBrains Mono'; font-size: 9px; color: var(--muted); letter-spacing:0.08em; margin: 10px 0 4px;">ACTIUNE</div>
+          <div class="list-row"><div class="main"><b>Mod actiune</b><small>mesaje, apeluri, timere</small></div><div class="toggle on"></div></div>
+          <div class="list-row"><div class="main" style="padding-left: 10px;"><b>Complet autonom</b><small>fara confirmare</small></div><div class="toggle"></div></div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">04 · A</div>
+        <div class="name">Dense list</div>
+        <div class="desc">Settings-app-familiar. Section headers in mono caps. Compact — fits more per screen than today.</div>
+      </div>
+    </div>
+
+    <!-- Grouped cards -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.6deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar">
+            <div style="display:flex; align-items:center; gap: 6px;"><div class="icon-btn">←</div><div style="font-family:'Caveat'; font-size: 22px; font-weight:700;">Setari</div></div>
+          </div>
+
+          <div style="border: 1.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; background:#fff;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height:1;">🔌 Creier</div>
+                <div style="font-size: 10px; color: var(--muted); margin-top: 2px;">Gemini Flash + Pro</div>
+              </div>
+              <div class="icon-btn">›</div>
+            </div>
+          </div>
+
+          <div style="border: 1.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; background:#fff;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height:1;">🎙 Voce</div>
+                <div style="font-size: 10px; color: var(--muted); margin-top: 2px;">Romana · 5 tururi memorie</div>
+              </div>
+              <div class="icon-btn">›</div>
+            </div>
+          </div>
+
+          <div style="border: 2px solid var(--accent); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; background: var(--accent-soft);">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height:1;">⚡ Actiuni</div>
+                <div style="font-size: 10px; color: var(--ink-2); margin-top: 2px;"><b>Pornit</b> · cere confirmare</div>
+              </div>
+              <div class="icon-btn" style="background: var(--accent); color: #fff; border-color: var(--accent);">›</div>
+            </div>
+          </div>
+
+          <div style="border: 1.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; background:#fff;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height:1;">◐ Lumi Dev-01</div>
+                <div style="font-size: 10px; color: var(--muted); margin-top: 2px;">Conectat · 78%</div>
+              </div>
+              <div class="icon-btn">›</div>
+            </div>
+          </div>
+
+          <div style="border: 1.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; background:#fff;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height:1;">🔐 Permisiuni</div>
+                <div style="font-size: 10px; color: var(--muted); margin-top: 2px;">2 necesare</div>
+              </div>
+              <div class="icon-btn">›</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">04 · B</div>
+        <div class="name">Grouped cards</div>
+        <div class="desc">Five cards = five concerns. Plain-language summary on each. "Actiuni" is visually emphasized because it's the risky one.</div>
+      </div>
+    </div>
+
+    <!-- Action Mode hero -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.9deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar">
+            <div style="display:flex; align-items:center; gap: 6px;"><div class="icon-btn">←</div><div style="font-family:'Caveat'; font-size: 22px; font-weight:700;">Cat poate Lumi?</div></div>
+          </div>
+
+          <div style="font-family:'Caveat'; font-size: 20px; font-weight:700; line-height: 1; text-align:center; margin: 8px 0 4px;">Alege nivelul</div>
+          <div style="font-size: 10px; color: var(--muted); text-align:center; margin-bottom: 12px;">poti schimba oricand</div>
+
+          <div style="border: 1.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; background:#fff;">
+            <div style="display:flex; align-items:center; gap: 6px;">
+              <div style="width:16px; height:16px; border-radius:50%; border:1.5px solid var(--ink); background: #fff;"></div>
+              <div style="flex:1;">
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height:1;">Doar raspunde</div>
+                <div style="font-size: 10px; color: var(--muted);">Lumi vorbeste, dar nu atinge telefonul.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="border: 2px solid var(--accent); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; background: var(--accent-soft);">
+            <div style="display:flex; align-items:center; gap: 6px;">
+              <div style="width:16px; height:16px; border-radius:50%; border:1.5px solid var(--ink); background: var(--accent); box-shadow: inset 0 0 0 2px #fff;"></div>
+              <div style="flex:1;">
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height:1;">Cere voie</div>
+                <div style="font-size: 10px; color: var(--ink-2);">Propune actiuni, confirmi tu. <b>Recomandat.</b></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="border: 1.5px solid var(--ink); border-radius: 12px; padding: 8px 10px; margin-bottom: 8px; background:#fff;">
+            <div style="display:flex; align-items:center; gap: 6px;">
+              <div style="width:16px; height:16px; border-radius:50%; border:1.5px solid var(--ink); background: #fff;"></div>
+              <div style="flex:1;">
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height:1;">Fa-le singur ⚠</div>
+                <div style="font-size: 10px; color: var(--warn);">Complet autonom. Ca un ceas inteligent.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-family:'JetBrains Mono'; font-size: 9px; color: var(--muted); margin-top: 6px; text-align:center; line-height: 1.3;">
+            include: timere, mesaje WhatsApp,<br/>SMS, apeluri, luminozitate, DND
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">04 · C</div>
+        <div class="name">Autonomy levels</div>
+        <div class="desc">Turns a confusing 2-toggle system into a clear 3-choice radio. Plain Romanian, no jargon. "Cere voie" is recommended default.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================== 05 ACTION CONFIRMATION ================== -->
+<section class="section" data-tab="action">
+  <div class="intro">
+    <div>
+      <h2>05 — Action confirmation</h2>
+      <p>When Action Mode is on (but not autonomous), Lumi proposes actions and asks the user to confirm. Today: a system alert dialog. These wireframes explore more contextual, voice-friendly, and batched confirmations.</p>
+    </div>
+    <div class="arrow">↓</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Bottom sheet -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.3deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar"><div class="logo">Lumi</div><div class="right"><span class="chip ok">Conectat</span></div></div>
+          <div class="bubble">Urmeaza sa trimit lui Mama: „Vin acasa". Confirmi?</div>
+          <div style="flex:1"></div>
+
+          <!-- sheet -->
+          <div style="margin: 0 -10px -10px; border: 2px solid var(--ink); border-bottom: none; border-radius: 16px 16px 0 0; padding: 10px 12px; background: #fff; box-shadow: 0 -3px 0 rgba(0,0,0,0.05);">
+            <div style="width: 32px; height:4px; background: #ccc; border-radius: 2px; margin: -4px auto 6px;"></div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom: 8px;">
+              <div class="icon-btn" style="background: var(--accent); color: #fff; border-color: var(--accent);">✉</div>
+              <div style="flex:1;">
+                <div style="font-family:'Caveat'; font-size: 18px; font-weight:700; line-height: 1;">WhatsApp → Mama</div>
+                <div style="font-size: 10px; color: var(--muted);">+40 ••• ••• 234</div>
+              </div>
+            </div>
+            <div style="border: 1.5px solid var(--ink); border-radius: 10px; padding: 6px 8px; font-size: 12px; background: var(--accent-soft); margin-bottom: 8px;">
+              „Vin acasa"
+            </div>
+            <div style="display:flex; gap: 6px;">
+              <button class="big-btn ghost" style="flex:1;">Nu</button>
+              <button class="big-btn primary" style="flex:2;">Trimite ✓</button>
+            </div>
+            <div style="font-size: 9px; color: var(--muted); text-align:center; margin-top: 6px; font-family:'JetBrains Mono';">auto în 5s…</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">05 · A</div>
+        <div class="name">Bottom sheet</div>
+        <div class="desc">Rich preview of exactly what will be sent, to whom. Dismissable by swipe. Replaces the plain "Da / Nu" alert.</div>
+      </div>
+    </div>
+
+    <!-- Inline voice confirm -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.8deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar"><div class="logo">Lumi</div><div class="right"><span class="chip ok">Lumi device</span></div></div>
+
+          <div class="bubble user">Trimite mamei ca vin acasa</div>
+          <div class="bubble">Pregatesc mesajul pentru Mama.</div>
+
+          <div style="border: 2px dashed var(--accent); border-radius: 14px; padding: 10px; margin: 6px 0; background: rgba(255,255,255,0.6);">
+            <div style="font-family:'JetBrains Mono'; font-size: 9px; color: var(--accent); letter-spacing:0.08em; margin-bottom: 4px;">PROPUNE · WHATSAPP</div>
+            <div style="font-family:'Caveat'; font-size: 20px; font-weight:700; line-height:1.1;">„Salut mama, vin acasa pe la 18:30."</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 4px;">către Mama (+40 ••• 234)</div>
+            <div style="display:flex; gap:4px; margin-top: 8px; flex-wrap:wrap;">
+              <span class="chip accent">🎙 „Da, trimite"</span>
+              <span class="chip">🎙 „Modifica"</span>
+              <span class="chip">🎙 „Nu"</span>
+            </div>
+          </div>
+          <div style="font-size: 10px; color: var(--muted); text-align:center; margin-top: 4px;">Lumi asculta confirmarea…</div>
+          <div style="flex:1"></div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">05 · B</div>
+        <div class="name">Voice confirm</div>
+        <div class="desc">Confirmation happens by voice — matches the voice-in mental model. Critical when paired with the device (phone in pocket).</div>
+      </div>
+    </div>
+
+    <!-- Batched -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.7deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar"><div class="logo">Lumi</div><div class="right"><span class="chip ok">Conectat</span></div></div>
+          <div class="bubble user">Trezeste-ma la 7, pune volumul la 30% si trimite-i tatei sa ma sune dimineata.</div>
+          <div class="bubble">Am pregatit 3 actiuni. Le confirmi?</div>
+
+          <div style="border: 2px solid var(--ink); border-radius: 12px; padding: 6px 8px; margin-bottom: 6px; background:#fff;">
+            <div style="display:flex; align-items:center; gap: 6px;">
+              <div class="icon-btn">⏰</div>
+              <div style="flex:1;">
+                <div style="font-size: 12px;"><b>Alarma</b> la <b>07:00</b></div>
+                <div style="font-size: 9px; color: var(--muted); font-family:'JetBrains Mono';">SET_ALARM name=\"Dimineata\"</div>
+              </div>
+              <div class="icon-btn" style="background: var(--ok); color:#fff; border-color: var(--ok);">✓</div>
+            </div>
+          </div>
+          <div style="border: 2px solid var(--ink); border-radius: 12px; padding: 6px 8px; margin-bottom: 6px; background:#fff;">
+            <div style="display:flex; align-items:center; gap: 6px;">
+              <div class="icon-btn">🔊</div>
+              <div style="flex:1;">
+                <div style="font-size: 12px;"><b>Volum media → 30%</b></div>
+                <div style="font-size: 9px; color: var(--muted); font-family:'JetBrains Mono';">SET_VOLUME stream=media</div>
+              </div>
+              <div class="icon-btn" style="background: var(--ok); color:#fff; border-color: var(--ok);">✓</div>
+            </div>
+          </div>
+          <div style="border: 2px solid var(--warn); border-radius: 12px; padding: 6px 8px; margin-bottom: 6px; background: #fff;">
+            <div style="display:flex; align-items:center; gap: 6px;">
+              <div class="icon-btn">✉</div>
+              <div style="flex:1;">
+                <div style="font-size: 12px;"><b>WhatsApp → Tata</b></div>
+                <div style="font-size: 10px; color: var(--ink-2);">„Suna-ma dimineata."</div>
+              </div>
+              <div class="icon-btn" style="border-color: var(--warn);">?</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top: auto;">
+            <button class="big-btn ghost" style="flex:1;">Doar bifate</button>
+            <button class="big-btn primary" style="flex:1;">Toate 3 ✓</button>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">05 · C</div>
+        <div class="name">Batched review</div>
+        <div class="desc">Multi-action requests get one review screen. Uncheck the ones you don't want. Raw action type in mono for transparency.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================== 06 SYSTEM NOTES ================== -->
+<section class="section" data-tab="system">
+  <div class="intro">
+    <div>
+      <h2>06 — System & context</h2>
+      <p>Cross-cutting notes: the notifications/permissions gate, empty states, error states, and how the Romanian copy scales. Use these as ingredients, not whole screens.</p>
+    </div>
+    <div class="arrow">↓</div>
+  </div>
+
+  <div class="grid wide">
+
+    <!-- Permissions gate -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.6deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 12px;">
+            <div style="font-family:'Caveat'; font-size: 44px; font-weight:700; line-height: 0.9; color: var(--accent); margin-bottom: 6px;">◐</div>
+            <div style="font-family:'Caveat'; font-size: 26px; font-weight:700; line-height:1; text-align:center;">Lumi are nevoie<br/>de cateva permisiuni</div>
+            <div style="font-size: 11px; color: var(--muted); text-align:center; margin-top: 8px; max-width: 220px;">Ca sa citeasca notificari, sa trimita mesaje si sa se conecteze la dispozitiv.</div>
+
+            <div style="margin-top: 14px; width: 100%;">
+              <div class="list-row" style="border: 1.5px solid var(--ink); border-radius: 10px; margin-bottom: 6px; padding: 6px 8px; background:#fff;">
+                <div class="ico">🎙</div><div class="main"><b>Microfon</b><small>pentru STT romana</small></div>
+                <span class="chip ok">dat</span>
+              </div>
+              <div class="list-row" style="border: 1.5px solid var(--ink); border-radius: 10px; margin-bottom: 6px; padding: 6px 8px; background:#fff;">
+                <div class="ico">🔔</div><div class="main"><b>Notificari</b><small>ca sa le citeasca</small></div>
+                <span class="chip warn">necesar</span>
+              </div>
+              <div class="list-row" style="border: 1.5px solid var(--ink); border-radius: 10px; padding: 6px 8px; background:#fff;">
+                <div class="ico">📱</div><div class="main"><b>Contacte</b><small>„mama" → numar real</small></div>
+                <span class="chip warn">necesar</span>
+              </div>
+            </div>
+          </div>
+          <button class="big-btn primary">Continua →</button>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">06 · A</div>
+        <div class="name">Permissions gate</div>
+        <div class="desc">Cleaner first-run than the current "request them all at once and show toasts if denied" pattern. Explains <em>why</em> each is needed.</div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.4deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar"><div class="logo">Lumi</div><div class="right"><span class="chip warn">Deconectat</span></div></div>
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 10px;">
+            <div style="font-family:'Caveat'; font-size: 26px; font-weight:700; line-height: 1;">Prima zi cu Lumi?</div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 6px; max-width: 200px;">Incearca una dintre astea ca sa vezi ce poate:</div>
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px; width: 100%;">
+              <button class="big-btn ghost" style="justify-content: flex-start;">🎙 „Seteaza un timer de 5 min"</button>
+              <button class="big-btn ghost" style="justify-content: flex-start;">🎙 „Ce e in poza asta?"</button>
+              <button class="big-btn ghost" style="justify-content: flex-start;">🎙 „Citeste-mi notificarile"</button>
+              <button class="big-btn ghost" style="justify-content: flex-start;">🎙 „Trimite mamei ca…"</button>
+            </div>
+          </div>
+          <div class="inputbar">
+            <div class="circ-btn">🎙</div>
+            <div class="field">sau vorbeste…</div>
+            <div class="circ-btn">➤</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">06 · B</div>
+        <div class="name">Empty chat</div>
+        <div class="desc">Suggests real, Romanian voice commands. Better than a blank scroll view on first launch.</div>
+      </div>
+    </div>
+
+    <!-- Error / API key missing -->
+    <div class="wf">
+      <div class="phone" style="--tilt:-0.3deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar"><div class="logo">Lumi</div><div class="right"><span class="chip warn">API lipsa</span></div></div>
+
+          <div class="bubble user">Ce vreme e azi?</div>
+          <div class="bubble" style="border-color: var(--warn); background: #fff6ec;">
+            <div style="font-family:'Caveat'; font-size: 16px; font-weight: 700; color: var(--warn); line-height:1;">Nu pot inca.</div>
+            <div style="font-size: 11px; margin-top: 3px;">Adauga o cheie API OpenRouter in Setari ca sa-ti raspund.</div>
+            <button class="big-btn" style="margin-top: 6px; font-size: 11px; padding: 4px 8px; background: var(--warn); color: #fff; border-color: var(--warn);">Deschide Setari →</button>
+          </div>
+          <div style="flex:1"></div>
+          <div class="inputbar">
+            <div class="circ-btn" style="background:#ddd; color: var(--muted);">🎙</div>
+            <div class="field" style="color: var(--muted);">Dezactivat</div>
+            <div class="circ-btn" style="background: #ddd; color: var(--muted);">➤</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">06 · C</div>
+        <div class="name">Missing API key</div>
+        <div class="desc">Inline error with a one-tap path to fix, instead of a toast that disappears. Input disabled until resolved.</div>
+      </div>
+    </div>
+
+    <!-- Notifications rollup -->
+    <div class="wf">
+      <div class="phone" style="--tilt:0.7deg">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>● ● ●</span></div>
+          <div class="appbar"><div class="logo">Lumi</div><div class="right"><span class="chip ok">Conectat</span></div></div>
+
+          <div class="bubble user">Ce am pierdut?</div>
+          <div class="bubble">Ai <b>4 notificari</b>. Rezumat:</div>
+          <div style="border-left: 3px solid var(--accent); padding: 4px 8px; margin-bottom: 4px;">
+            <div style="font-size: 10px; color: var(--muted); font-family:'JetBrains Mono';">WHATSAPP · mama · 09:02</div>
+            <div style="font-size: 11px;">„Cand ajungi acasa?"</div>
+          </div>
+          <div style="border-left: 3px solid var(--accent); padding: 4px 8px; margin-bottom: 4px;">
+            <div style="font-size: 10px; color: var(--muted); font-family:'JetBrains Mono';">GMAIL · Alex · 09:15</div>
+            <div style="font-size: 11px;">„Re: intalnire vineri la 10"</div>
+          </div>
+          <div style="border-left: 3px solid var(--muted); padding: 4px 8px; margin-bottom: 4px;">
+            <div style="font-size: 10px; color: var(--muted); font-family:'JetBrains Mono';">+ 2 mai putin importante</div>
+          </div>
+          <div style="display:flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
+            <span class="chip accent">🎙 Raspunde mamei</span>
+            <span class="chip">Deschide Gmail</span>
+          </div>
+          <div style="flex:1"></div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="num">06 · D</div>
+        <div class="name">Notification rollup</div>
+        <div class="desc">How Lumi surfaces notifications it has access to. Grouped by source, with voice-action shortcuts.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================== Footer ================== -->
+<footer style="max-width:1400px; margin: 40px auto 20px; padding-top: 20px; border-top: 1.5px dashed var(--muted); display: flex; justify-content:space-between; gap: 16px; flex-wrap: wrap;">
+  <div style="font-family:'Caveat'; font-size: 22px;">Next — pick directions per tab, then go hi-fi.</div>
+  <div style="font-family:'JetBrains Mono'; font-size: 11px; color: var(--muted); letter-spacing: 0.1em;">LUMI · WIREFRAME ROUND 1 · 18 screens</div>
+</footer>
+
+<!-- ================== Tweaks ================== -->
+<button class="tweak-toggle-btn" id="tweakBtn">✎ Tweaks</button>
+<div class="tweaks" id="tweakPanel">
+  <h3>Tweaks</h3>
+  <label>Paper style</label>
+  <select id="tw-paper">
+    <option value="paper-cream">Cream dots (default)</option>
+    <option value="paper-white">Plain white</option>
+    <option value="paper-grid">Engineer grid</option>
+    <option value="paper-blueprint">Blueprint (dark)</option>
+  </select>
+  <div class="row">
+    <span>Sketchy wobble</span>
+    <div class="toggle on" id="tw-wobble"></div>
+  </div>
+  <div class="row">
+    <span>Phone tilt</span>
+    <div class="toggle on" id="tw-tilt"></div>
+  </div>
+  <div class="row">
+    <span>Dev annotations</span>
+    <div class="toggle" id="tw-annos"></div>
+  </div>
+  <label style="margin-top:14px;">Annotations are hidden by default. Turn on to show the "junior designer thinking" layer.</label>
+  <button class="big-btn ghost" id="tw-close" style="margin-top: 14px;">Close</button>
+</div>
+
+<script>
+  // Tabs
+  const tabs = document.querySelectorAll('.tab');
+  const sections = document.querySelectorAll('.section');
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.classList.remove('active'));
+    sections.forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelector(`.section[data-tab="${t.dataset.tab}"]`).classList.add('active');
+    try{ localStorage.setItem('lumi_wf_tab', t.dataset.tab); }catch(e){}
+  }));
+  // Restore last tab
+  try{
+    const last = localStorage.getItem('lumi_wf_tab');
+    if (last){
+      const target = document.querySelector(`.tab[data-tab="${last}"]`);
+      if (target) target.click();
+    }
+  }catch(e){}
+
+  // Tweaks
+  const tweakBtn = document.getElementById('tweakBtn');
+  const tweakPanel = document.getElementById('tweakPanel');
+  const closeTweak = document.getElementById('tw-close');
+  tweakBtn.addEventListener('click', () => {
+    tweakPanel.classList.add('open');
+    tweakBtn.style.display = 'none';
+  });
+  closeTweak.addEventListener('click', () => {
+    tweakPanel.classList.remove('open');
+    tweakBtn.style.display = '';
+  });
+
+  const paperSel = document.getElementById('tw-paper');
+  paperSel.addEventListener('change', () => {
+    document.body.classList.remove('paper-cream','paper-white','paper-grid','paper-blueprint');
+    document.body.classList.add(paperSel.value);
+  });
+
+  function toggleTri(el, onFn, offFn){
+    el.addEventListener('click', () => {
+      el.classList.toggle('on');
+      if (el.classList.contains('on')) onFn(); else offFn();
+    });
+  }
+  toggleTri(document.getElementById('tw-wobble'),
+    () => document.querySelectorAll('.phone').forEach(p => p.classList.add('jit')),
+    () => document.querySelectorAll('.phone').forEach(p => p.classList.remove('jit')));
+  // Start with wobble OFF (too much on load). Force it off:
+  document.getElementById('tw-wobble').classList.remove('on');
+
+  toggleTri(document.getElementById('tw-tilt'),
+    () => document.querySelectorAll('.phone').forEach(p => p.style.removeProperty('transform')),
+    () => document.querySelectorAll('.phone').forEach(p => p.style.transform = 'rotate(0)'));
+
+  toggleTri(document.getElementById('tw-annos'),
+    () => document.body.classList.remove('hide-annos'),
+    () => document.body.classList.add('hide-annos'));
+  document.body.classList.add('hide-annos'); // default hidden
+
+  // Host Tweaks integration
+  window.addEventListener('message', (e) => {
+    if (!e.data || !e.data.type) return;
+    if (e.data.type === '__activate_edit_mode') tweakBtn.click();
+    if (e.data.type === '__deactivate_edit_mode') closeTweak.click();
+  });
+  window.parent.postMessage({type:'__edit_mode_available'}, '*');
+</script>
+
+</body>
+</html>
