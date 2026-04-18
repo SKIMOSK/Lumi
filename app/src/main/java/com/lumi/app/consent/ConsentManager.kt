@@ -4,7 +4,7 @@ import com.lumi.app.stt.RomanianSTT
 import com.lumi.app.tts.LumiTTS
 import kotlinx.coroutines.delay
 
-enum class ConsentMode { VOICE, IN_APP }
+enum class ConsentMode { VOICE, IN_APP, AUTONOMOUS }
 
 private val AFFIRMATIONS = setOf(
     "da", "yes", "corect", "correct", "sigur", "sure",
@@ -14,13 +14,14 @@ private val AFFIRMATIONS = setOf(
 class ConsentManager(
     private val tts: LumiTTS,
     stt: RomanianSTT?,
-    /** Set by MainActivity to show a dialog; returns true if user confirms. */
     var onInAppConsent: (suspend (String) -> Boolean)? = null
 ) {
     var stt: RomanianSTT? = stt
+
     suspend fun request(message: String, mode: ConsentMode): Boolean = when (mode) {
-        ConsentMode.VOICE -> voiceConsent(message)
-        ConsentMode.IN_APP -> onInAppConsent?.invoke(message) ?: false
+        ConsentMode.AUTONOMOUS -> true   // smartwatch-style: act silently, no confirmation
+        ConsentMode.VOICE      -> voiceConsent(message)
+        ConsentMode.IN_APP     -> onInAppConsent?.invoke(message) ?: false
     }
 
     private suspend fun voiceConsent(message: String): Boolean {

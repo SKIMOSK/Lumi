@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.Toast
@@ -52,6 +53,12 @@ class SettingsActivity : AppCompatActivity() {
         binding.spinnerSttLanguage.setSelection(languages.indexOf(settings.sttLanguage).coerceAtLeast(0))
 
         binding.switchActionMode.isChecked = settings.actionModeEnabled
+        binding.layoutAutonomous.visibility = if (settings.actionModeEnabled) View.VISIBLE else View.GONE
+        binding.switchAutonomous.isChecked = settings.autonomousMode
+        binding.switchActionMode.setOnCheckedChangeListener { _, checked ->
+            binding.layoutAutonomous.visibility = if (checked) View.VISIBLE else View.GONE
+            if (!checked) binding.switchAutonomous.isChecked = false
+        }
         binding.seekBarMemory.progress = settings.memorySizeHistory
         binding.tvMemorySize.text = "Tururi reținute: ${settings.memorySizeHistory}"
         binding.seekBarMemory.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -98,6 +105,7 @@ class SettingsActivity : AppCompatActivity() {
         settings.sttLanguage = languages[binding.spinnerSttLanguage.selectedItemPosition]
 
         settings.actionModeEnabled = binding.switchActionMode.isChecked
+        settings.autonomousMode    = binding.switchAutonomous.isChecked
         settings.memorySizeHistory = binding.seekBarMemory.progress
         settings.systemPrompt = binding.etSystemPrompt.text?.toString() ?: AppSettings.DEFAULT_SYSTEM_PROMPT
         settings.autoConnect = binding.switchAutoConnect.isChecked

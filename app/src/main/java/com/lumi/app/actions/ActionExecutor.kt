@@ -8,6 +8,8 @@ import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.messaging.SendResult
+import com.lumi.app.notes.NotesHelper
+import com.lumi.app.system.SystemSettingsHelper
 import com.lumi.app.timer.TimerManager
 import java.util.Calendar
 
@@ -17,6 +19,8 @@ class ActionExecutor(
     private val consent: ConsentManager,
     private val contacts: ContactsHelper,
     private val messenger: MessageSender,
+    private val notes: NotesHelper,
+    private val sysSettings: SystemSettingsHelper,
     private val getMode: () -> ConsentMode
 ) {
     data class Result(val action: LumiAction, val success: Boolean, val message: String)
@@ -35,7 +39,11 @@ class ActionExecutor(
         "SEND_WHATSAPP"   -> sendWhatsApp(a)
         "SEND_SMS"        -> sendSms(a)
         "CALL"            -> call(a)
-        else -> Result(a, false, "Acțiune necunoscută: ${a.type}")
+        "WRITE_NOTE"      -> writeNote(a)
+        "SET_BRIGHTNESS"  -> setBrightness(a)
+        "SET_VOLUME"      -> setVolume(a)
+        "SET_DND"         -> setDND(a)
+        else -> Result(a, false, "Actiune necunoscuta: ${a.type}")
     }
 
     // ─── Timers ──────────────────────────────────────────────────────────────
@@ -43,7 +51,7 @@ class ActionExecutor(
     private fun setTimer(a: LumiAction): Result {
         val name = a.params["name"] ?: "Timer"
         val secs = a.params["duration_seconds"]?.toLongOrNull()
-            ?: return Result(a, false, "Durată lipsă pentru timer.")
+            ?: return Result(a, false, "Durata lipsa pentru timer.")
         timers.setTimer(name, secs)
         return Result(a, true, "Timer \"$name\" setat: ${timers.fmtSecs(secs)}.")
     }
@@ -55,39 +63,39 @@ class ActionExecutor(
     }
 
     private fun setAlarm(a: LumiAction): Result {
-        val name = a.params["name"] ?: "Alarmă"
-        val time = a.params["time_24h"] ?: return Result(a, false, "Ora lipsă.")
+        val name = a.params["name"] ?: "Alarma"
+        val time = a.params["time_24h"] ?: return Result(a, false, "Ora lipsa.")
         val parts = time.split(":")
-        val h = parts.getOrNull(0)?.toIntOrNull() ?: return Result(a, false, "Oră invalidă.")
+        val h = parts.getOrNull(0)?.toIntOrNull() ?: return Result(a, false, "Ora invalida.")
         val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
         val cal = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0)
             if (timeInMillis < System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
         }
         timers.setAlarm(name, cal.timeInMillis)
-        return Result(a, true, "Alarmă \"$name\" setată la $time.")
+        return Result(a, true, "Alarma \"$name\" setata la $time.")
     }
 
     private fun pauseTimer(a: LumiAction): Result {
-        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negăsit.")
+        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negasit.")
         timers.pause(t.id)
-        return Result(a, true, "Timer \"${t.name}\" în pauză.")
+        return Result(a, true, "Timer \"${t.name}\" in pauza.")
     }
 
     private fun resumeTimer(a: LumiAction): Result {
-        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negăsit.")
+        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negasit.")
         timers.resume(t.id)
         return Result(a, true, "Timer \"${t.name}\" reluat.")
     }
 
     private fun cancelTimer(a: LumiAction): Result {
-        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negăsit.")
+        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negasit.")
         timers.cancel(t.id)
         return Result(a, true, "Timer \"${t.name}\" anulat.")
     }
 
     private fun resetTimer(a: LumiAction): Result {
-        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negăsit.")
+        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negasit.")
         timers.reset(t.id)
         return Result(a, true, "Timer \"${t.name}\" resetat.")
     }
@@ -95,20 +103,14 @@ class ActionExecutor(
     // ─── Messaging ───────────────────────────────────────────────────────────
 
     private suspend fun sendWhatsApp(a: LumiAction): Result {
-        val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsă.")
-        val msg   = a.params["message"] ?: return Result(a, false, "Mesaj lipsă.")
+        val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsa.")
+        val msg   = a.params["message"] ?: return Result(a, false, "Mesaj lipsa.")
         val exact = a.params["exact"] == "true"
-
         val contact = contacts.findBestMatch(cName)
-            ?: return Result(a, false, "Contactul \"$cName\" negăsit.")
-
-        val prompt = if (exact)
-            "Trimit WhatsApp lui ${contact.name}: \"$msg\". Confirmi?"
-        else
-            "Urmează să trimit lui ${contact.name}: \"$msg\". Confirmi?"
-
-        if (!consent.request(prompt, getMode())) return Result(a, false, "Anulat de utilizator.")
-
+            ?: return Result(a, false, "Contactul \"$cName\" negasit.")
+        val prompt = if (exact) "Trimit WhatsApp lui ${contact.name}: \"$msg\". Confirmi?"
+                     else       "Urmezi sa trimit lui ${contact.name}: \"$msg\". Confirmi?"
+        if (!consent.request(prompt, getMode())) return Result(a, false, "Anulat.")
         return when (val r = messenger.sendWhatsApp(contact, msg)) {
             is SendResult.Success -> Result(a, true, "Mesaj trimis lui ${contact.name}.")
             is SendResult.Error   -> Result(a, false, r.reason)
@@ -116,15 +118,12 @@ class ActionExecutor(
     }
 
     private suspend fun sendSms(a: LumiAction): Result {
-        val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsă.")
-        val msg   = a.params["message"] ?: return Result(a, false, "Mesaj lipsă.")
-
+        val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsa.")
+        val msg   = a.params["message"] ?: return Result(a, false, "Mesaj lipsa.")
         val contact = contacts.findBestMatch(cName)
-            ?: return Result(a, false, "Contactul \"$cName\" negăsit.")
-
+            ?: return Result(a, false, "Contactul \"$cName\" negasit.")
         if (!consent.request("Trimit SMS lui ${contact.name}: \"$msg\". Confirmi?", getMode()))
             return Result(a, false, "Anulat.")
-
         return when (val r = messenger.sendSms(contact, msg)) {
             is SendResult.Success -> Result(a, true, "SMS trimis lui ${contact.name}.")
             is SendResult.Error   -> Result(a, false, r.reason)
@@ -132,22 +131,59 @@ class ActionExecutor(
     }
 
     private suspend fun call(a: LumiAction): Result {
-        val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsă.")
+        val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsa.")
         val contact = contacts.findBestMatch(cName)
-            ?: return Result(a, false, "Contactul \"$cName\" negăsit.")
-        val phone = contact.phoneNumbers.firstOrNull() ?: return Result(a, false, "Niciun număr.")
-
+            ?: return Result(a, false, "Contactul \"$cName\" negasit.")
+        val phone = contact.phoneNumbers.firstOrNull() ?: return Result(a, false, "Niciun numar.")
         if (!consent.request("Suni pe ${contact.name}. Confirmi?", getMode()))
             return Result(a, false, "Apel anulat.")
-
         return try {
             context.startActivity(Intent(Intent.ACTION_CALL).apply {
-                data = Uri.parse("tel:$phone")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                data = Uri.parse("tel:$phone"); flags = Intent.FLAG_ACTIVITY_NEW_TASK
             })
-            Result(a, true, "Sun pe ${contact.name}…")
-        } catch (e: Exception) {
-            Result(a, false, "Eroare apel: ${e.message}")
+            Result(a, true, "Sun pe ${contact.name}...")
+        } catch (e: Exception) { Result(a, false, "Eroare apel: ${e.message}") }
+    }
+
+    // ─── Notes ───────────────────────────────────────────────────────────────
+
+    private fun writeNote(a: LumiAction): Result {
+        val title   = a.params["title"] ?: ""
+        val content = a.params["content"] ?: return Result(a, false, "Continut notita lipsa.")
+        val id      = a.params["id"]
+        return if (id != null) {
+            notes.update(id, title.ifBlank { null }, content)
+            Result(a, true, "Notita actualizata.")
+        } else {
+            val note = notes.create(title, content)
+            Result(a, true, "Notita \"${note.title}\" creata (ID:${note.id}).")
         }
+    }
+
+    // ─── System settings ─────────────────────────────────────────────────────
+
+    private fun setBrightness(a: LumiAction): Result {
+        val level = a.params["level"]?.toIntOrNull() ?: return Result(a, false, "Nivel lipsa.")
+        return sysSettings.setBrightness(level)
+            .fold(
+                onSuccess = { Result(a, true, "Luminozitate setata la $level%.") },
+                onFailure = { Result(a, false, it.message ?: "Eroare luminozitate.") }
+            )
+    }
+
+    private fun setVolume(a: LumiAction): Result {
+        val stream = a.params["stream"] ?: "media"
+        val level  = a.params["level"]?.toIntOrNull() ?: return Result(a, false, "Nivel lipsa.")
+        sysSettings.setVolume(stream, level)
+        return Result(a, true, "Volum $stream setat la $level%.")
+    }
+
+    private fun setDND(a: LumiAction): Result {
+        val enabled = a.params["enabled"]?.lowercase() == "true"
+        return sysSettings.setDND(enabled)
+            .fold(
+                onSuccess = { Result(a, true, if (enabled) "Nu deranjati activat." else "Nu deranjati dezactivat.") },
+                onFailure = { Result(a, false, it.message ?: "Eroare DND.") }
+            )
     }
 }

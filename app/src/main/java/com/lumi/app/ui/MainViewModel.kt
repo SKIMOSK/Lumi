@@ -11,6 +11,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.lumi.app.actions.ActionExecutor
 import com.lumi.app.ai.ConversationMemory
 import com.lumi.app.ai.GeminiClient
@@ -21,13 +23,18 @@ import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.messaging.MessageSender
+import com.lumi.app.notes.NotesHelper
 import com.lumi.app.settings.AppSettings
+import com.lumi.app.system.SystemSettingsHelper
 import com.lumi.app.timer.TimerManager
 import com.lumi.app.timer.TimerReceiver
 import com.lumi.app.tts.LumiTTS
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -35,18 +42,19 @@ import java.util.Locale
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val TAG = "MainViewModel"
-    val settings = AppSettings(app)
-    val bluetooth = LumiBluetoothManager(app)
-
-    val tts = LumiTTS(app).also { it.setLanguage(settings.sttLanguage) }
+    val settings    = AppSettings(app)
+    val bluetooth   = LumiBluetoothManager(app)
+    val tts         = LumiTTS(app).also { it.setLanguage(settings.sttLanguage) }
     val timerManager = TimerManager(app)
-    private val contactsHelper = ContactsHelper(app)
-    private val messageSender = MessageSender(app)
-    val consent = ConsentManager(tts, null) // STT set by MainActivity after creation
+    private val contactsHelper  = ContactsHelper(app)
+    private val messageSender   = MessageSender(app)
+    private val notesHelper     = NotesHelper(app)
+    private val sysSettings     = SystemSettingsHelper(app)
+    val consent = ConsentManager(tts, null)
 
     private val memory = ConversationMemory(settings.memorySizeHistory)
 
-    // ─── Consent dialog plumbing (ViewModel ↔ MainActivity) ─────────────────
+    // ─── Consent dialog (ViewModel ↔ MainActivity) ───────────────────────────
     data class ConsentRequest(val id: Long, val message: String)
     private val _consentRequest = MutableLiveData<ConsentRequest?>()
     val consentRequest: LiveData<ConsentRequest?> = _consentRequest
@@ -58,6 +66,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         setupBluetoothCallbacks()
         registerTimerReceiver(app)
         memory.updateMaxSize(settings.memorySizeHistory)
+        loadChatHistory()
     }
 
     private suspend fun awaitInAppConsent(message: String): Boolean {
@@ -78,16 +87,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun buildRouter(): TaskRouter {
         val client = GeminiClient(settings.openRouterApiKey, settings.openRouterBaseUrl)
+        val mode: () -> ConsentMode = {
+            when {
+                settings.autonomousMode -> ConsentMode.AUTONOMOUS
+                bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED -> ConsentMode.VOICE
+                else -> ConsentMode.IN_APP
+            }
+        }
         val exec = if (settings.actionModeEnabled) {
-            ActionExecutor(
-                getApplication(), timerManager, consent, contactsHelper, messageSender
-            ) { if (bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED) ConsentMode.VOICE else ConsentMode.IN_APP }
+            ActionExecutor(getApplication(), timerManager, consent, contactsHelper,
+                messageSender, notesHelper, sysSettings, mode)
         } else null
-        return TaskRouter(client, settings, timerManager, contactsHelper, exec)
+        return TaskRouter(client, settings, timerManager, contactsHelper, notesHelper, sysSettings, exec)
     }
 
     // ─── UI state ────────────────────────────────────────────────────────────
 
+    private val messageList = mutableListOf<ChatMessage>()
     private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
     val messages: LiveData<List<ChatMessage>> = _messages
 
@@ -101,9 +117,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val statusText: LiveData<String> = _statusText
 
     private var latestImageBase64: String? = null
-    private var pendingAttachImage: String? = null  // manually attached from gallery/camera
+    private var pendingAttachImage: String? = null
     private var currentJob: Job? = null
     private var wordLimitBonus = 0
+
+    // ─── Message persistence ─────────────────────────────────────────────────
+
+    private val historyFile = File(getApplication<Application>().filesDir, "chat_history.json")
+    private val gson = Gson()
+
+    private fun loadChatHistory() {
+        try {
+            if (!historyFile.exists()) return
+            val type = object : TypeToken<List<ChatMessage>>() {}.type
+            val loaded: List<ChatMessage>? = gson.fromJson(historyFile.readText(), type)
+            loaded?.let {
+                messageList.addAll(it.filter { m -> !m.isLoading })
+                _messages.value = messageList.toList()
+            }
+        } catch (e: Exception) { historyFile.delete() }
+    }
+
+    private fun saveChatHistory() {
+        try {
+            val toSave = messageList.filter { !it.isLoading }.takeLast(100)
+            historyFile.writeText(gson.toJson(toSave))
+        } catch (e: Exception) { Log.w(TAG, "Failed to save history", e) }
+    }
+
+    // ─── Process prompt ──────────────────────────────────────────────────────
 
     private fun isAskingForMoreDetail(prompt: String): Boolean {
         val p = prompt.lowercase()
@@ -111,8 +153,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             "detaliază", "povestește mai", "explain more", "more detail", "elaborate",
             "în detaliu", "cu mai multe", "extinde").any { p.contains(it) }
     }
-
-    // ─── Process prompt ──────────────────────────────────────────────────────
 
     fun processPrompt(userText: String, useDeviceImage: Boolean = true) {
         if (!settings.hasApiKey()) { addSystem("Configurează cheia API OpenRouter în Setări."); return }
@@ -132,9 +172,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
         val userMsg = ChatMessage(text = userText, time = now(), isUser = true, imageBase64 = imageBase64)
         val loading = ChatMessage(text = "…", time = now(), isUser = false, isLoading = true)
-        val newList = (_messages.value ?: emptyList()).toMutableList()
-        newList.add(userMsg); newList.add(loading)
-        _messages.value = newList  // single synchronous update — no postValue race
+        messageList.add(userMsg)
+        messageList.add(loading)
+        _messages.value = messageList.toList()
 
         _isProcessing.value = true
         _statusText.value = "Procesez…"
@@ -147,22 +187,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     fastWordLimit = 45, expertWordLimit = expertLimit, forceExpert = wantsDetail
                 )
                 val displayText = result.parsed.displayText
-
-                // Append action results to display text if any
                 val actionSuffix = if (result.actionResults.isNotEmpty()) {
                     "\n\n" + result.actionResults.joinToString("\n") { r ->
-                        if (r.success) "✓ ${r.message}" else "✗ ${r.message}"
+                        if (r.success) "OK: ${r.message}" else "Eroare: ${r.message}"
                     }
                 } else ""
 
-                val lumiMsg = ChatMessage(
-                    text = displayText + actionSuffix,
-                    time = now(), isUser = false, usedPro = result.usedExpert
-                )
-                replaceLoading(loading.id, lumiMsg)
+                val lumiMsg = ChatMessage(text = displayText + actionSuffix,
+                    time = now(), isUser = false, usedPro = result.usedExpert)
 
-                // If AI asked a clarifying question, park this exchange in the pending buffer
-                // so the next reply keeps it in context even with memory size = 0.
+                withContext(Dispatchers.Main) {
+                    val idx = messageList.indexOfFirst { it.id == loading.id }
+                    if (idx >= 0) messageList[idx] = lumiMsg else messageList.add(lumiMsg)
+                    _messages.value = messageList.toList()
+                }
+                saveChatHistory()
+
                 val aiAskedQuestion = displayText.trimEnd().endsWith("?")
                 if (aiAskedQuestion) {
                     memory.addPending(Interaction(userText, displayText, imageBase64, result.usedExpert))
@@ -171,15 +211,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     memory.add(Interaction(userText, displayText, imageBase64, result.usedExpert))
                 }
                 latestImageBase64 = null
-                _statusText.postValue(if (result.usedExpert) "Răspuns · Expert" else "Răspuns · Fast")
+                _statusText.postValue(if (result.usedExpert) "Raspuns Expert" else "Raspuns Fast")
 
-                // TTS: speak response if Lumi device is connected
                 if (bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED) {
                     tts.speak(displayText)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "AI error", e)
-                replaceLoading(loading.id, ChatMessage(text = "Eroare: ${e.message}", time = now(), isUser = false))
+                withContext(Dispatchers.Main) {
+                    val idx = messageList.indexOfFirst { it.id == loading.id }
+                    val errMsg = ChatMessage(text = "Eroare: ${e.message}", time = now(), isUser = false)
+                    if (idx >= 0) messageList[idx] = errMsg else messageList.add(errMsg)
+                    _messages.value = messageList.toList()
+                }
                 _statusText.postValue("Eroare")
             } finally {
                 _isProcessing.postValue(false)
@@ -189,21 +233,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun attachImage(base64: String) { pendingAttachImage = base64 }
 
-    fun clearHistory() { memory.clear(); wordLimitBonus = 0; _messages.value = emptyList() }
-    fun connectBluetooth() { if (settings.hasBtDevice()) bluetooth.connectToAddress(settings.btDeviceAddress) else bluetooth.startScan() }
-    fun disconnectBluetooth() = bluetooth.disconnect()
+    fun clearHistory() {
+        memory.clear(); wordLimitBonus = 0
+        messageList.clear()
+        _messages.value = emptyList()
+        historyFile.delete()
+    }
 
+    fun connectBluetooth() {
+        if (settings.hasBtDevice()) bluetooth.connectToAddress(settings.btDeviceAddress)
+        else bluetooth.startScan()
+    }
+    fun disconnectBluetooth() = bluetooth.disconnect()
     fun refreshMemorySize() = memory.updateMaxSize(settings.memorySizeHistory)
 
-    // ─── Bluetooth setup ─────────────────────────────────────────────────────
+    // ─── Bluetooth ───────────────────────────────────────────────────────────
 
     private fun setupBluetoothCallbacks() {
         bluetooth.setListener(object : LumiBluetoothManager.Listener {
             override fun onConnectionStateChanged(state: LumiBluetoothManager.ConnectionState) {
                 _btState.postValue(state)
                 _statusText.postValue(when (state) {
-                    LumiBluetoothManager.ConnectionState.SCANNING    -> "Caut dispozitiv Lumi…"
-                    LumiBluetoothManager.ConnectionState.CONNECTING  -> "Conectare…"
+                    LumiBluetoothManager.ConnectionState.SCANNING    -> "Caut dispozitiv Lumi..."
+                    LumiBluetoothManager.ConnectionState.CONNECTING  -> "Conectare..."
                     LumiBluetoothManager.ConnectionState.CONNECTED   -> "Conectat la Lumi"
                     LumiBluetoothManager.ConnectionState.DISCONNECTED -> "Deconectat"
                 })
@@ -216,15 +268,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         })
     }
 
-    // ─── Timer done callback ─────────────────────────────────────────────────
+    // ─── Timer callback ───────────────────────────────────────────────────────
 
     private fun setupTimerDoneCallback() {
         timerManager.onTimerDone = { timer ->
             val msg = "Aceasta este amintirea ta pentru ${timer.name}"
             tts.speak(msg)
-            // Also surface it in chat
-            appendMessage(ChatMessage(text = "⏰ $msg", time = now(), isUser = false))
-            // If BT connected, send TTS to device via command
+            addSystem("⏰ $msg")
             if (bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED) {
                 bluetooth.sendCommand(LumiBluetoothManager.CMD_SPEAK)
             }
@@ -235,8 +285,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context?, intent: Intent?) {
                 val name = intent?.getStringExtra(TimerReceiver.EXTRA_TIMER_NAME) ?: return
-                val timer = timerManager.getAll().firstOrNull { it.name.equals(name, ignoreCase = true) }
-                timer?.let { timerManager.onTimerDone?.invoke(it) }
+                timerManager.getAll().firstOrNull { it.name.equals(name, ignoreCase = true) }
+                    ?.let { timerManager.onTimerDone?.invoke(it) }
             }
         }
         app.registerReceiver(receiver, IntentFilter(TimerReceiver.ACTION_INTERNAL),
@@ -245,20 +295,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // ─── Message helpers ─────────────────────────────────────────────────────
 
-    private fun appendMessage(msg: ChatMessage) {
-        val list = _messages.value?.toMutableList() ?: mutableListOf()
-        list.add(msg)
-        _messages.postValue(list)
+    private fun addSystem(text: String) {
+        val msg = ChatMessage(text = text, time = now(), isUser = false)
+        messageList.add(msg)
+        _messages.postValue(messageList.toList())
+        saveChatHistory()
     }
 
-    private fun replaceLoading(id: Long, replacement: ChatMessage) {
-        val list = _messages.value?.toMutableList() ?: return
-        val idx = list.indexOfFirst { it.id == id }
-        if (idx >= 0) list[idx] = replacement else list.add(replacement)
-        _messages.postValue(list)
-    }
-
-    private fun addSystem(text: String) = appendMessage(ChatMessage(text = text, time = now(), isUser = false))
     private fun now() = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
 
     override fun onCleared() {

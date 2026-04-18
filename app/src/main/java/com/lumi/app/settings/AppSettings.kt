@@ -19,7 +19,8 @@ class AppSettings(context: Context) {
         const val KEY_SYSTEM_PROMPT       = "system_prompt"
         const val KEY_AUTO_CONNECT        = "auto_connect"
         const val KEY_MEMORY_SIZE         = "memory_size"
-        const val KEY_ACTION_MODE         = "action_mode"  // safety/action mode
+        const val KEY_ACTION_MODE         = "action_mode"
+        const val KEY_AUTONOMOUS_MODE     = "autonomous_mode"
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
@@ -80,10 +81,14 @@ Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
         get() = prefs.getInt(KEY_MEMORY_SIZE, 5)
         set(v) = prefs.edit().putInt(KEY_MEMORY_SIZE, v.coerceIn(0, 10)).apply()
 
-    /** Action mode: when true the AI can call, send messages, set timers, etc. */
     var actionModeEnabled: Boolean
         get() = prefs.getBoolean(KEY_ACTION_MODE, false)
         set(v) = prefs.edit().putBoolean(KEY_ACTION_MODE, v).apply()
+
+    /** Fully autonomous: act silently like a smartwatch, no confirmation dialogs. Only valid when actionModeEnabled=true. */
+    var autonomousMode: Boolean
+        get() = prefs.getBoolean(KEY_AUTONOMOUS_MODE, false) && actionModeEnabled
+        set(v) = prefs.edit().putBoolean(KEY_AUTONOMOUS_MODE, v).apply()
 
     fun hasApiKey() = openRouterApiKey.isNotBlank()
     fun hasBtDevice() = btDeviceAddress.isNotBlank()
