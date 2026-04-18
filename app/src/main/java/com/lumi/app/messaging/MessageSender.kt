@@ -10,7 +10,10 @@ import com.lumi.app.contacts.Contact
 import com.lumi.app.notifications.LumiNotificationService
 
 sealed class SendResult {
-    object Success : SendResult()
+    /** Message was delivered without opening any app UI. */
+    object SentSilently : SendResult()
+    /** App was opened with the message pre-filled; accessibility service must tap Send. */
+    object DeepLinkOpened : SendResult()
     data class Error(val reason: String) : SendResult()
 }
 
@@ -49,7 +52,7 @@ class MessageSender(private val context: Context) {
                 setPackage(WHATSAPP_PACKAGE)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             })
-            SendResult.Success
+            SendResult.DeepLinkOpened
         } catch (e: Exception) {
             Log.e(TAG, "WhatsApp deep-link failed", e)
             SendResult.Error("Nu s-a putut deschide WhatsApp: ${e.message}")
@@ -66,7 +69,7 @@ class MessageSender(private val context: Context) {
                 Bundle().apply { putCharSequence(reply.resultKey, message) }
             )
             reply.replyPendingIntent.send(context, 0, intent)
-            SendResult.Success
+            SendResult.SentSilently
         } catch (e: Exception) {
             Log.e(TAG, "Silent reply failed", e)
             SendResult.Error("Eroare la trimitere silențioasă: ${e.message}")
@@ -80,7 +83,7 @@ class MessageSender(private val context: Context) {
             @Suppress("DEPRECATION")
             val mgr = SmsManager.getDefault()
             mgr.sendMultipartTextMessage(phone, null, mgr.divideMessage(message), null, null)
-            SendResult.Success
+            SendResult.SentSilently
         } catch (e: Exception) {
             Log.e(TAG, "SMS failed", e)
             SendResult.Error("Eroare SMS: ${e.message}")
@@ -96,7 +99,7 @@ class MessageSender(private val context: Context) {
                 putExtra("sms_body", message)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             })
-            SendResult.Success
+            SendResult.DeepLinkOpened
         } catch (e: Exception) {
             SendResult.Error("Nu s-a putut deschide SMS.")
         }

@@ -1,13 +1,18 @@
 package com.lumi.app.notes
 
+import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+enum class NoteAppResult { SILENT, UI_OPENED, FAILED }
 
 data class LumiNote(
     val id: String = System.nanoTime().toString(),
@@ -36,6 +41,65 @@ class NotesHelper(private val context: Context) {
         save(all)
         return note
     }
+
+    /**
+     * Attempt to create the note in the user's real notes app.
+     * Priority: Samsung Notes content provider (silent) → Samsung Notes UI → Google Keep UI → generic share.
+     * Returns SILENT if saved without showing any UI, UI_OPENED if the notes app was launched,
+     * or FAILED if nothing worked.
+     */
+    fun createInApp(title: String, content: String): NoteAppResult {
+        // 1. Samsung Notes — try silent content provider insert first
+        val samsungProviderUris = listOf(
+            "content://com.samsung.android.snote.provider/notes",
+            "content://com.samsung.android.app.notes.sync.provider.SyncNoteProvider/SyncNote"
+        )
+        for (uriStr in samsungProviderUris) {
+            try {
+                val values = ContentValues().apply {
+                    put("title", title)
+                    put("memo_text", content)
+                    put("body_plain", content)
+                    put("modified_time", System.currentTimeMillis())
+                }
+                val inserted = context.contentResolver.insert(Uri.parse(uriStr), values)
+                if (inserted != null) return NoteAppResult.SILENT
+            } catch (_: Exception) {}
+        }
+        // 2. Samsung Notes — open via Intent.ACTION_SEND (app shows briefly, needs Save tap)
+        if (tryStartActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                setPackage("com.samsung.android.app.notes")
+                putExtra(Intent.EXTRA_SUBJECT, title)
+                putExtra(Intent.EXTRA_TEXT, content)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })) return NoteAppResult.UI_OPENED
+        // 3. Google Keep
+        if (tryStartActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                setPackage("com.google.android.keep")
+                putExtra(Intent.EXTRA_SUBJECT, title)
+                putExtra(Intent.EXTRA_TEXT, content)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })) return NoteAppResult.UI_OPENED
+        // 4. Any notes app that handles text/plain share
+        return try {
+            context.startActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, title)
+                putExtra(Intent.EXTRA_TEXT, if (title.isNotBlank()) "$title\n\n$content" else content)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            NoteAppResult.UI_OPENED
+        } catch (e: Exception) {
+            Log.e("NotesHelper", "createInApp failed: ${e.message}")
+            NoteAppResult.FAILED
+        }
+    }
+
+    private fun tryStartActivity(intent: Intent): Boolean = try {
+        context.startActivity(intent); true
+    } catch (_: Exception) { false }
 
     fun update(id: String, title: String? = null, content: String? = null): Boolean {
         val all = getAll().toMutableList()

@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.CountDownTimer
+import android.provider.AlarmClock
 import java.util.Calendar
 
 class TimerManager(private val context: Context) {
@@ -24,6 +25,15 @@ class TimerManager(private val context: Context) {
             durationMs = durationSeconds * 1000, remainingMs = durationSeconds * 1000)
         timers[timer.id] = timer
         startCountdown(timer)
+        // Also create in the system Clock app so it's visible to the user
+        try {
+            context.startActivity(Intent(AlarmClock.ACTION_SET_TIMER).apply {
+                putExtra(AlarmClock.EXTRA_LENGTH, durationSeconds.toInt())
+                putExtra(AlarmClock.EXTRA_MESSAGE, name)
+                putExtra(AlarmClock.EXTRA_SKIP_UI, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+        } catch (_: Exception) {}
         return timer
     }
 
@@ -41,6 +51,17 @@ class TimerManager(private val context: Context) {
         val timer = LumiTimer(name = name, type = TimerType.ALARM, alarmTimeMs = timeMs)
         timers[timer.id] = timer
         scheduleAlarm(timer)
+        // Also create in the system Clock app so it's visible to the user
+        val cal = Calendar.getInstance().apply { timeInMillis = timeMs }
+        try {
+            context.startActivity(Intent(AlarmClock.ACTION_SET_ALARM).apply {
+                putExtra(AlarmClock.EXTRA_HOUR, cal.get(Calendar.HOUR_OF_DAY))
+                putExtra(AlarmClock.EXTRA_MINUTES, cal.get(Calendar.MINUTE))
+                putExtra(AlarmClock.EXTRA_MESSAGE, name)
+                putExtra(AlarmClock.EXTRA_SKIP_UI, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+        } catch (_: Exception) {}
         return timer
     }
 

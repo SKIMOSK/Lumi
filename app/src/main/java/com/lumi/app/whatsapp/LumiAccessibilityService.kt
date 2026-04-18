@@ -30,6 +30,13 @@ class LumiAccessibilityService : AccessibilityService() {
          */
         fun sendCurrentMessage(text: String): Boolean =
             instance?.performSend(text) ?: false
+
+        /**
+         * Tap the Save / Done button in the currently visible Samsung Notes compose screen.
+         * Returns true on success.
+         */
+        fun saveSamsungNote(): Boolean =
+            instance?.performSamsungNoteSave() ?: false
     }
 
     override fun onServiceConnected() {
@@ -40,7 +47,11 @@ class LumiAccessibilityService : AccessibilityService() {
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             flags = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS or
                     AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
-            packageNames = arrayOf("com.whatsapp", "com.whatsapp.w4b")
+            // Watch WhatsApp AND Samsung Notes so we can auto-tap their buttons
+            packageNames = arrayOf(
+                "com.whatsapp", "com.whatsapp.w4b",
+                "com.samsung.android.app.notes"
+            )
         }
     }
 
@@ -81,5 +92,30 @@ class LumiAccessibilityService : AccessibilityService() {
         val sendNodes = root.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send")
             ?: return false
         return sendNodes.firstOrNull()?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+    }
+
+    private fun performSamsungNoteSave(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        // Try known Samsung Notes save/done button resource IDs
+        val saveIds = listOf(
+            "com.samsung.android.app.notes:id/action_bar_title_done",
+            "com.samsung.android.app.notes:id/done_button",
+            "com.samsung.android.app.notes:id/save_button",
+            "com.samsung.android.app.notes:id/menu_save"
+        )
+        for (resId in saveIds) {
+            root.findAccessibilityNodeInfosByViewId(resId)
+                ?.firstOrNull()
+                ?.let { if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true }
+        }
+        // Fallback: find a clickable node whose text matches common save labels
+        val saveLabels = listOf("Save", "Salvează", "Done", "Gata", "완료", "저장")
+        for (label in saveLabels) {
+            root.findAccessibilityNodeInfosByText(label)
+                ?.firstOrNull { it.isClickable }
+                ?.let { if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true }
+        }
+        // Last resort: simulate Back (Samsung Notes auto-saves on back)
+        return performGlobalAction(GLOBAL_ACTION_BACK)
     }
 }

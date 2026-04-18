@@ -8,9 +8,12 @@ import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.messaging.SendResult
+import com.lumi.app.notes.NoteAppResult
 import com.lumi.app.notes.NotesHelper
 import com.lumi.app.system.SystemSettingsHelper
 import com.lumi.app.timer.TimerManager
+import com.lumi.app.whatsapp.LumiAccessibilityService
+import kotlinx.coroutines.delay
 import java.util.Calendar
 
 class ActionExecutor(
@@ -112,8 +115,20 @@ class ActionExecutor(
                      else       "Urmezi sa trimit lui ${contact.name}: \"$msg\". Confirmi?"
         if (!consent.request(prompt, getMode())) return Result(a, false, "Anulat.")
         return when (val r = messenger.sendWhatsApp(contact, msg)) {
-            is SendResult.Success -> Result(a, true, "Mesaj trimis lui ${contact.name}.")
-            is SendResult.Error   -> Result(a, false, r.reason)
+            is SendResult.SentSilently -> Result(a, true, "Mesaj trimis lui ${contact.name}.")
+            is SendResult.DeepLinkOpened -> {
+                // WhatsApp was opened with the message pre-filled.
+                // If the accessibility service is active, wait for WhatsApp to load then tap Send.
+                if (LumiAccessibilityService.isAvailable()) {
+                    delay(2500)
+                    val sent = LumiAccessibilityService.sendCurrentMessage(msg)
+                    if (sent) Result(a, true, "Mesaj trimis lui ${contact.name}.")
+                    else Result(a, true, "WhatsApp deschis. Apasă Trimite manual.")
+                } else {
+                    Result(a, true, "WhatsApp deschis cu mesajul pre-completat. Apasă Trimite.")
+                }
+            }
+            is SendResult.Error -> Result(a, false, r.reason)
         }
     }
 
@@ -125,8 +140,9 @@ class ActionExecutor(
         if (!consent.request("Trimit SMS lui ${contact.name}: \"$msg\". Confirmi?", getMode()))
             return Result(a, false, "Anulat.")
         return when (val r = messenger.sendSms(contact, msg)) {
-            is SendResult.Success -> Result(a, true, "SMS trimis lui ${contact.name}.")
-            is SendResult.Error   -> Result(a, false, r.reason)
+            is SendResult.SentSilently -> Result(a, true, "SMS trimis lui ${contact.name}.")
+            is SendResult.DeepLinkOpened -> Result(a, true, "SMS deschis. Apasă Trimite.")
+            is SendResult.Error -> Result(a, false, r.reason)
         }
     }
 
@@ -147,7 +163,7 @@ class ActionExecutor(
 
     // ─── Notes ───────────────────────────────────────────────────────────────
 
-    private fun writeNote(a: LumiAction): Result {
+    private suspend fun writeNote(a: LumiAction): Result {
         val title   = a.params["title"] ?: ""
         val content = a.params["content"] ?: return Result(a, false, "Continut notita lipsa.")
         val id      = a.params["id"]
@@ -156,7 +172,14 @@ class ActionExecutor(
             Result(a, true, "Notita actualizata.")
         } else {
             val note = notes.create(title, content)
-            Result(a, true, "Notita \"${note.title}\" creata (ID:${note.id}).")
+            val effectiveTitle = title.ifBlank { note.title }
+            val appResult = notes.createInApp(effectiveTitle, content)
+            // If Samsung Notes (or Keep) opened its compose UI, use accessibility to auto-save
+            if (appResult == NoteAppResult.UI_OPENED && LumiAccessibilityService.isAvailable()) {
+                delay(2500)
+                LumiAccessibilityService.saveSamsungNote()
+            }
+            Result(a, true, "Notita \"${note.title}\" salvata.")
         }
     }
 
