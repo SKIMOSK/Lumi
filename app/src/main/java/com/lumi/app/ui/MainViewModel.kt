@@ -289,8 +289,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     ?.let { timerManager.onTimerDone?.invoke(it) }
             }
         }
-        app.registerReceiver(receiver, IntentFilter(TimerReceiver.ACTION_INTERNAL),
-            Context.RECEIVER_NOT_EXPORTED)
+        val filter = IntentFilter(TimerReceiver.ACTION_INTERNAL)
+        // 3-arg registerReceiver(flags) only exists on API 33+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            app.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            app.registerReceiver(receiver, filter)
+        }
     }
 
     // ─── Message helpers ─────────────────────────────────────────────────────
