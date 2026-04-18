@@ -4,22 +4,28 @@
     <color name="primary_dark">#16213E</color>
     <color name="accent">#7C4DFF</color>
     <color name="accent_light">#B388FF</color>
+    <color name="accent_soft">#EFE8FF</color>
+    <color name="accent_border">#D9C8FF</color>
 
     <color name="white">#FFFFFF</color>
     <color name="white_70">#B3FFFFFF</color>
 
-    <color name="bg_main">#F5F5F5</color>
+    <color name="bg_main">#F7F6FB</color>
+    <color name="card">#FFFFFF</color>
+    <color name="line">#E6E4F0</color>
+    <color name="color_ok">#22A06B</color>
+    <color name="color_ok_border">#CDE8DA</color>
+    <color name="color_warn">#D97A3D</color>
     <color name="input_bg">#FFFFFF</color>
-    <color name="status_bg">#F0F0F0</color>
+    <color name="status_bg">#F7F6FB</color>
 
     <color name="bubble_user">#7C4DFF</color>
     <color name="bubble_lumi">#FFFFFF</color>
 
     <color name="text_primary">#1A1A2E</color>
-    <color name="text_secondary">#666666</color>
-    <color name="text_hint">#AAAAAA</color>
+    <color name="text_secondary">#5B5B6E</color>
+    <color name="text_hint">#9A9AAB</color>
 
-    <!-- Status bar -->
     <color name="colorPrimaryVariant">#16213E</color>
     <color name="colorSecondary">#7C4DFF</color>
     <color name="colorOnPrimary">#FFFFFF</color>

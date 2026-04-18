@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Circular sweep-gradient avatar — matches the conic-gradient in the design -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="sweep"
+                android:startColor="#7C4DFF"
+                android:centerColor="#B388FF"
+                android:endColor="#7C4DFF"/>
+        </shape>
+    </item>
+    <!-- Inner white dot at ~45% diameter -->
+    <item
+        android:top="9dp"
+        android:left="9dp"
+        android:right="9dp"
+        android:bottom="9dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF"/>
+        </shape>
+    </item>
+</layer-list>

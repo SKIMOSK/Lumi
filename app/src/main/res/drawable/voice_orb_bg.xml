@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Radial gradient sphere matching the design's 3-D orb look -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="90%"
+        android:startColor="#B388FF"
+        android:centerColor="#7C4DFF"
+        android:endColor="#1A1A2E"/>
+</shape>

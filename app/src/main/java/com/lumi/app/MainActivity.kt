@@ -1,6 +1,7 @@
 package com.lumi.app
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -9,10 +10,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Base64
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -39,8 +43,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: MessageAdapter
     private lateinit var stt: RomanianSTT
     private var isListening = false
-    // Prevent re-showing the accessibility dialog on every resume until the next cold start
     private var accessibilityDialogShown = false
+    private var orbAnimator: ValueAnimator? = null
 
     // ─── Permissions ──────────────────────────────────────────────────────────
 
@@ -105,6 +109,7 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupButtons()
+        setupInputWatcher()
         observeViewModel()
         requestPermissionsIfNeeded()
     }
@@ -116,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         checkAccessibilityService()
     }
 
-    override fun onDestroy() { stt.destroy(); super.onDestroy() }
+    override fun onDestroy() { orbAnimator?.cancel(); stt.destroy(); super.onDestroy() }
 
     // ─── Setup ────────────────────────────────────────────────────────────────
 
@@ -137,7 +142,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnAttach.setOnClickListener { showImageSourcePicker() }
 
         binding.ivAttachedPreview.setOnClickListener {
-            viewModel.attachImage("") // clear
+            viewModel.attachImage("")
             binding.ivAttachedPreview.visibility = View.GONE
         }
 
@@ -148,6 +153,41 @@ class MainActivity : AppCompatActivity() {
                 else -> {}
             }
         }
+
+        // Settings icon in the new header
+        binding.btnHeaderSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
+        // Voice overlay buttons
+        binding.btnVoiceClose.setOnClickListener { stopListening() }
+        binding.btnVoiceCancel.setOnClickListener { stopListening() }
+        binding.btnVoiceSend.setOnClickListener {
+            val text = binding.etInput.text?.toString()?.trim() ?: ""
+            stopListening()
+            if (text.isNotBlank()) { binding.etInput.text?.clear(); viewModel.processPrompt(text) }
+        }
+
+        // BT chip also triggers connect
+        binding.chipBt.setOnClickListener {
+            when (viewModel.btState.value) {
+                LumiBluetoothManager.ConnectionState.DISCONNECTED -> connectBluetooth()
+                LumiBluetoothManager.ConnectionState.CONNECTED -> viewModel.disconnectBluetooth()
+                else -> {}
+            }
+        }
+    }
+
+    private fun setupInputWatcher() {
+        binding.etInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val hasText = !s.isNullOrBlank()
+                binding.btnSend.visibility = if (hasText) View.VISIBLE else View.GONE
+                binding.fabMic.visibility = if (hasText) View.GONE else View.VISIBLE
+            }
+        })
     }
 
     private fun showImageSourcePicker() {
@@ -166,13 +206,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
         viewModel.btState.observe(this) { state ->
-            binding.tvBtStatus.text = when (state) {
+            val statusText = when (state) {
                 LumiBluetoothManager.ConnectionState.CONNECTED   -> "Conectat"
                 LumiBluetoothManager.ConnectionState.SCANNING,
-                LumiBluetoothManager.ConnectionState.CONNECTING  -> "Conectare…"
+                LumiBluetoothManager.ConnectionState.CONNECTING  -> "Conectare\u2026"
                 else -> "Deconectat"
             }
+            binding.tvBtStatus.text = statusText
             binding.btnConnect.text = if (state == LumiBluetoothManager.ConnectionState.CONNECTED) "Deconectare" else "Conectare"
+            val (chipBg, chipColor) = when (state) {
+                LumiBluetoothManager.ConnectionState.CONNECTED -> R.drawable.chip_ok to R.color.color_ok
+                LumiBluetoothManager.ConnectionState.SCANNING,
+                LumiBluetoothManager.ConnectionState.CONNECTING -> R.drawable.chip_accent to R.color.accent
+                else -> R.drawable.chip_default to R.color.text_hint
+            }
+            binding.chipBt.text = statusText
+            binding.chipBt.background = ContextCompat.getDrawable(this, chipBg)
+            binding.chipBt.setTextColor(ContextCompat.getColor(this, chipColor))
         }
         viewModel.statusText.observe(this) { binding.tvStatus.text = it }
         viewModel.isProcessing.observe(this) { processing ->
@@ -199,22 +249,31 @@ class MainActivity : AppCompatActivity() {
     private fun startListening() {
         if (!stt.isAvailable()) { Toast.makeText(this, "STT indisponibil.", Toast.LENGTH_SHORT).show(); return }
         isListening = true
-        binding.fabMic.setImageResource(android.R.drawable.ic_media_pause)
-        binding.tvStatus.text = "Ascult…"
+        binding.voiceOverlay.visibility = View.VISIBLE
+        binding.tvVoiceStatus.text = "ASCULT"
+        binding.tvVoiceTranscript.text = "Asculta..."
+        startOrbAnimation()
         lifecycleScope.launch {
             try {
                 val text = stt.listenOnce(
-                    onPartialResult = { runOnUiThread { binding.etInput.setText(it) } },
-                    onReadyForSpeech = { runOnUiThread { binding.tvStatus.text = "Vorbește…" } }
+                    onPartialResult = { partial ->
+                        runOnUiThread {
+                            binding.tvVoiceTranscript.text = partial.ifBlank { "Asculta..." }
+                            binding.etInput.setText(partial)
+                        }
+                    },
+                    onReadyForSpeech = {
+                        runOnUiThread { binding.tvVoiceStatus.text = "VORBESTE" }
+                    }
                 )
                 isListening = false
-                binding.fabMic.setImageResource(android.R.drawable.ic_btn_speak_now)
+                stopOrbAnimation()
+                binding.voiceOverlay.visibility = View.GONE
                 if (text.isNotBlank()) { binding.etInput.text?.clear(); viewModel.processPrompt(text) }
-                else binding.tvStatus.text = "Nicio vorbire detectată."
             } catch (e: Exception) {
                 isListening = false
-                binding.fabMic.setImageResource(android.R.drawable.ic_btn_speak_now)
-                binding.tvStatus.text = "Eroare STT: ${e.message}"
+                stopOrbAnimation()
+                binding.voiceOverlay.visibility = View.GONE
             }
         }
     }
@@ -223,7 +282,8 @@ class MainActivity : AppCompatActivity() {
         stt.destroy(); stt = RomanianSTT(this).also { it.setLanguage(viewModel.settings.sttLanguage) }
         viewModel.consent.stt = stt
         isListening = false
-        binding.fabMic.setImageResource(android.R.drawable.ic_btn_speak_now)
+        stopOrbAnimation()
+        binding.voiceOverlay.visibility = View.GONE
     }
 
     // ─── Bluetooth ────────────────────────────────────────────────────────────
@@ -293,7 +353,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateNotificationBadge() {
-        binding.tvNotifStatus.text = if (LumiNotificationService.isEnabled(this)) "Notificări: ON" else "Notificări: OFF"
+        val enabled = LumiNotificationService.isEnabled(this)
+        binding.tvNotifStatus.text = if (enabled) "Notificari ON" else "Notificari OFF"
+        binding.tvNotifStatus.background = ContextCompat.getDrawable(this, if (enabled) R.drawable.chip_ok else R.drawable.chip_default)
+        binding.tvNotifStatus.setTextColor(ContextCompat.getColor(this, if (enabled) R.color.color_ok else R.color.text_hint))
+    }
+
+    // ─── Orb animation ───────────────────────────────────────────────────────
+
+    private fun startOrbAnimation() {
+        orbAnimator?.cancel()
+        orbAnimator = ValueAnimator.ofFloat(1f, 1.12f, 1f).apply {
+            duration = 900
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { anim ->
+                val s = anim.animatedValue as Float
+                binding.voiceOrb.scaleX = s; binding.voiceOrb.scaleY = s
+                binding.voiceRing1.scaleX = s; binding.voiceRing1.scaleY = s
+            }
+            start()
+        }
+    }
+
+    private fun stopOrbAnimation() {
+        orbAnimator?.cancel(); orbAnimator = null
+        binding.voiceOrb.scaleX = 1f; binding.voiceOrb.scaleY = 1f
+        binding.voiceRing1.scaleX = 1f; binding.voiceRing1.scaleY = 1f
     }
 
     // ─── Menu ─────────────────────────────────────────────────────────────────
