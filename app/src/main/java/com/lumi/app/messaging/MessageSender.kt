@@ -215,9 +215,7 @@ class MessageSender(private val context: Context) {
     }
 
     fun openNetflix(query: String? = null): SendResult {
-        val uri = if (query != null)
-            "nflx://www.netflix.com/search?q=${Uri.encode(query)}"
-        else "nflx://"
+        val uri = query?.let { "nflx://www.netflix.com/search?q=${Uri.encode(it)}" } ?: "nflx://"
         return openAppByPackage("com.netflix.mediaclient", uri, "Netflix nu este instalat.")
     }
 
@@ -313,16 +311,13 @@ class MessageSender(private val context: Context) {
     // ─── News ─────────────────────────────────────────────────────────────────
 
     fun openGoogleNews(topic: String? = null): SendResult {
-        val uri = if (topic != null)
-            "googlenews://section/topic/${Uri.encode(topic)}"
-        else "googlenews://topstories"
+        val uri = topic?.let { "googlenews://section/topic/${Uri.encode(it)}" } ?: "googlenews://topstories"
         return openAppByPackage("com.google.android.apps.magazines", uri,
             "Google News nu este instalat.").let { r ->
             if (r is SendResult.Error) {
                 try {
-                    val webUri = if (topic != null)
-                        "https://news.google.com/search?q=${Uri.encode(topic)}"
-                    else "https://news.google.com/"
+                    val webUri = topic?.let { "https://news.google.com/search?q=${Uri.encode(it)}" }
+                        ?: "https://news.google.com/"
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUri)).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     })

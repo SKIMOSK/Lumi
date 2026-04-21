@@ -216,11 +216,17 @@ class MainActivity : AppCompatActivity() {
             }
             binding.tvBtStatus.text = statusText
             binding.btnConnect.text = if (state == LumiBluetoothManager.ConnectionState.CONNECTED) "Deconectare" else "Conectare"
-            val (chipBg, chipColor) = when (state) {
-                LumiBluetoothManager.ConnectionState.CONNECTED -> R.drawable.chip_ok to R.color.color_ok
+            val chipBg = when (state) {
+                LumiBluetoothManager.ConnectionState.CONNECTED -> R.drawable.chip_ok
                 LumiBluetoothManager.ConnectionState.SCANNING,
-                LumiBluetoothManager.ConnectionState.CONNECTING -> R.drawable.chip_accent to R.color.accent
-                else -> R.drawable.chip_default to R.color.text_hint
+                LumiBluetoothManager.ConnectionState.CONNECTING -> R.drawable.chip_accent
+                else -> R.drawable.chip_default
+            }
+            val chipColor = when (state) {
+                LumiBluetoothManager.ConnectionState.CONNECTED -> R.color.color_ok
+                LumiBluetoothManager.ConnectionState.SCANNING,
+                LumiBluetoothManager.ConnectionState.CONNECTING -> R.color.accent
+                else -> R.color.text_hint
             }
             binding.chipBt.text = statusText
             binding.chipBt.background = ContextCompat.getDrawable(this, chipBg)
