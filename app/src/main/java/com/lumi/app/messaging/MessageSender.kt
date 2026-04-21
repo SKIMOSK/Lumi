@@ -210,9 +210,7 @@ class MessageSender(private val context: Context) {
     }
 
     fun openYouTubeMusic(query: String? = null): SendResult {
-        val uri = if (query != null)
-            "https://music.youtube.com/search?q=${Uri.encode(query)}"
-        else null
+        val uri: String? = query?.let { "https://music.youtube.com/search?q=${Uri.encode(it)}" }
         return openAppByPackage("com.google.android.apps.youtube.music", uri, "YouTube Music nu este instalat.")
     }
 
@@ -301,15 +299,15 @@ class MessageSender(private val context: Context) {
     // ─── Crypto ───────────────────────────────────────────────────────────────
 
     fun openCryptoApp(appName: String): SendResult {
-        val (pkg, uri, label) = when {
-            appName.contains("binance") -> Triple("com.binance.dev", "bnb://", "Binance")
+        val config: Triple<String, String?, String> = when {
+            appName.contains("binance")  -> Triple("com.binance.dev", "bnb://", "Binance")
             appName.contains("coinbase") -> Triple("com.coinbase.android", "coinbase://", "Coinbase")
             appName.contains("metamask") -> Triple("io.metamask", null, "MetaMask")
-            appName.contains("trust") -> Triple("com.wallet.crypto.trustapp", null, "Trust Wallet")
-            appName.contains("kraken") -> Triple("com.kraken.trade", null, "Kraken")
-            else -> Triple("com.binance.dev", "bnb://", "Binance")
+            appName.contains("trust")    -> Triple("com.wallet.crypto.trustapp", null, "Trust Wallet")
+            appName.contains("kraken")   -> Triple("com.kraken.trade", null, "Kraken")
+            else                         -> Triple("com.binance.dev", "bnb://", "Binance")
         }
-        return openAppByPackage(pkg, uri, "$label nu este instalat.")
+        return openAppByPackage(config.first, config.second, "${config.third} nu este instalat.")
     }
 
     // ─── News ─────────────────────────────────────────────────────────────────
