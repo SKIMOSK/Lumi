@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.lumi.app.databinding.ActivitySettingsBinding
 
@@ -55,10 +56,6 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchActionMode.isChecked = settings.actionModeEnabled
         binding.layoutAutonomous.visibility = if (settings.actionModeEnabled) View.VISIBLE else View.GONE
         binding.switchAutonomous.isChecked = settings.autonomousMode
-        binding.switchActionMode.setOnCheckedChangeListener { _, checked ->
-            binding.layoutAutonomous.visibility = if (checked) View.VISIBLE else View.GONE
-            if (!checked) binding.switchAutonomous.isChecked = false
-        }
         binding.seekBarMemory.progress = settings.memorySizeHistory
         binding.tvMemorySize.text = "Tururi reținute: ${settings.memorySizeHistory}"
         binding.seekBarMemory.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -84,6 +81,47 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnScanBt.setOnClickListener { loadPairedDevices() }
         binding.btnResetPrompt.setOnClickListener {
             binding.etSystemPrompt.setText(AppSettings.DEFAULT_SYSTEM_PROMPT)
+        }
+        setupActionModeSwitch()
+    }
+
+    private fun setupActionModeSwitch() {
+        var ignoreNext = false
+        binding.switchActionMode.setOnCheckedChangeListener { _, checked ->
+            if (ignoreNext) return@setOnCheckedChangeListener
+            if (checked) {
+                AlertDialog.Builder(this)
+                    .setTitle("Mod Acţiune — Informaţii")
+                    .setMessage(
+                        "Ce poate face Lumi:\n" +
+                        "• Trimite mesaje (WhatsApp, SMS, Instagram, Snapchat, Discord)\n" +
+                        "• Seta timere, alarme şi cronometru\n" +
+                        "• Naviga cu Google Maps sau Waze\n" +
+                        "• Controla VPN, muzică, luminozitate, volum\n" +
+                        "• Salva notiţe, crea şi citi calendar\n" +
+                        "• Efectua apeluri telefonice\n" +
+                        "• Deschide aplicaţii de streaming, sănătate, ştiri\n\n" +
+                        "Ce NU va face Lumi (sigură implicit):\n" +
+                        "• Nu plasează comenzi online\n" +
+                        "• Nu efectuează transferări bancare sau crypto\n" +
+                        "• Nu trimite mesaje fără confirmarea ta (dacă Mod Autonom este dezactivat)\n\n" +
+                        "Ai controlul total. Fiecare acţiune cere confirmare."
+                    )
+                    .setPositiveButton("Am înţeles, activează") { _, _ ->
+                        binding.layoutAutonomous.visibility = View.VISIBLE
+                    }
+                    .setNegativeButton("Anulează") { _, _ ->
+                        ignoreNext = true
+                        binding.switchActionMode.isChecked = false
+                        ignoreNext = false
+                        binding.layoutAutonomous.visibility = View.GONE
+                    }
+                    .setCancelable(false)
+                    .show()
+            } else {
+                binding.layoutAutonomous.visibility = View.GONE
+                binding.switchAutonomous.isChecked = false
+            }
         }
     }
 

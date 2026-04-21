@@ -108,6 +108,23 @@ Calendar: {"actions":[{"type":"READ_CALENDAR"}]}
 Luminozitate: {"actions":[{"type":"SET_BRIGHTNESS","level":"60"}]}
 Volum: {"actions":[{"type":"SET_VOLUME","stream":"media","level":"50"}]}
 Nu deranjati: {"actions":[{"type":"SET_DND","enabled":"true"}]}
+Spotify play/pauza: {"actions":[{"type":"MEDIA_CONTROL","app":"spotify","command":"play_pause"}]}
+Spotify urmatoarea: {"actions":[{"type":"MEDIA_CONTROL","app":"spotify","command":"next"}]}
+Spotify cauta: {"actions":[{"type":"MEDIA_CONTROL","app":"spotify","command":"search","query":"Coldplay"}]}
+YouTube Music: {"actions":[{"type":"MEDIA_CONTROL","app":"youtube_music","command":"open","query":"Lo-fi chill"}]}
+Netflix: {"actions":[{"type":"MEDIA_CONTROL","app":"netflix","command":"open","query":"Stranger Things"}]}
+Google Home: {"actions":[{"type":"HOME_CONTROL","app":"google_home","device":"Becuri living","action":"turn off"}]}
+Sanatate (Google Fit): {"actions":[{"type":"READ_HEALTH","app":"google_fit"}]}
+Sanatate (Strava): {"actions":[{"type":"READ_HEALTH","app":"strava"}]}
+Sold Revolut: {"actions":[{"type":"READ_BALANCE","app":"revolut"}]}
+Sold PayPal: {"actions":[{"type":"READ_BALANCE","app":"paypal"}]}
+Cauta Amazon: {"actions":[{"type":"SHOP_SEARCH","app":"amazon","query":"casti bluetooth"}]}
+Cauta eBay: {"actions":[{"type":"SHOP_SEARCH","app":"ebay","query":"iPhone 14"}]}
+Comenzi Amazon: {"actions":[{"type":"SHOP_TRACK","app":"amazon"}]}
+Crypto Binance: {"actions":[{"type":"READ_CRYPTO","app":"binance"}]}
+Crypto Coinbase: {"actions":[{"type":"READ_CRYPTO","app":"coinbase"}]}
+Stiri: {"actions":[{"type":"FETCH_NEWS"}]}
+Stiri despre topic: {"actions":[{"type":"FETCH_NEWS","topic":"tehnologie"}]}
 
 REGULI IMPORTANTE:
 - duration_seconds trebuie sa fie string intreg (ex: "300")
@@ -121,7 +138,7 @@ REGULI IMPORTANTE:
 
     private val classifyPrompt = """
 Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem, navigare GPS, VPN, calendar.
+SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem, navigare GPS, VPN, calendar, control media (play/pause/skip), smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi.
 COMPLEX: trimitere mesaje (WhatsApp/Instagram/Snapchat/Facebook/Discord/SMS/email), apeluri, cautare contacte, orchestrare multi-pas.
 Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()

@@ -78,6 +78,30 @@
         <!-- VPN -->
         <package android:name="com.surfshark.vpnclient.android"/>
         <package android:name="com.nordvpn.android"/>
+        <!-- Streaming -->
+        <package android:name="com.spotify.music"/>
+        <package android:name="com.google.android.apps.youtube.music"/>
+        <package android:name="com.netflix.mediaclient"/>
+        <!-- Smart Home -->
+        <package android:name="com.google.android.apps.chromecast.app"/>
+        <!-- Health -->
+        <package android:name="com.google.android.apps.healthdata"/>
+        <package android:name="com.google.android.apps.fitness"/>
+        <package android:name="com.strava"/>
+        <package android:name="com.myfitnesspal.android"/>
+        <!-- Banking -->
+        <package android:name="com.revolut.revolut"/>
+        <package android:name="com.transferwise.android"/>
+        <package android:name="com.paypal.android.p2pmobile"/>
+        <!-- Shopping -->
+        <package android:name="com.amazon.mShoppingApp"/>
+        <!-- Crypto -->
+        <package android:name="com.binance.dev"/>
+        <package android:name="com.coinbase.android"/>
+        <package android:name="io.metamask"/>
+        <package android:name="com.wallet.crypto.trustapp"/>
+        <!-- News -->
+        <package android:name="com.google.android.apps.magazines"/>
         <intent>
             <action android:name="android.intent.action.CALL"/>
         </intent>

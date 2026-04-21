@@ -56,7 +56,16 @@ class LumiAccessibilityService : AccessibilityService() {
                 "com.discord",
                 "com.google.android.gm",
                 "com.surfshark.vpnclient.android",
-                "com.nordvpn.android"
+                "com.nordvpn.android",
+                "com.spotify.music",
+                "com.google.android.apps.youtube.music",
+                "com.netflix.mediaclient",
+                "com.revolut.revolut",
+                "com.transferwise.android",
+                "com.paypal.android.p2pmobile",
+                "com.amazon.mShoppingApp",
+                "com.binance.dev",
+                "com.coinbase.android"
             )
         }
     }

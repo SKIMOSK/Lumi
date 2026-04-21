@@ -202,6 +202,135 @@ class MessageSender(private val context: Context) {
     fun openVpnApp(pkg: String): SendResult =
         openAppByPackage(pkg, null, "Aplicatia VPN nu este instalata.")
 
+    // ─── Streaming ────────────────────────────────────────────────────────────
+
+    fun openSpotify(query: String? = null): SendResult {
+        val uri = if (query != null) "spotify://search/${Uri.encode(query)}" else "spotify://"
+        return openAppByPackage("com.spotify.music", uri, "Spotify nu este instalat.")
+    }
+
+    fun openYouTubeMusic(query: String? = null): SendResult {
+        val uri = if (query != null)
+            "https://music.youtube.com/search?q=${Uri.encode(query)}"
+        else null
+        return openAppByPackage("com.google.android.apps.youtube.music", uri, "YouTube Music nu este instalat.")
+    }
+
+    fun openNetflix(query: String? = null): SendResult {
+        val uri = if (query != null)
+            "nflx://www.netflix.com/search?q=${Uri.encode(query)}"
+        else "nflx://"
+        return openAppByPackage("com.netflix.mediaclient", uri, "Netflix nu este instalat.")
+    }
+
+    // ─── Smart home ───────────────────────────────────────────────────────────
+
+    fun openGoogleHome(): SendResult =
+        openAppByPackage("com.google.android.apps.chromecast.app", null, "Google Home nu este instalat.")
+
+    // ─── Health ───────────────────────────────────────────────────────────────
+
+    fun openHealthConnect(): SendResult =
+        openAppByPackage("com.google.android.apps.healthdata", null, "Health Connect nu este instalat.")
+
+    fun openGoogleFit(): SendResult =
+        openAppByPackage("com.google.android.apps.fitness", null, "Google Fit nu este instalat.")
+
+    fun openStrava(): SendResult =
+        openAppByPackage("com.strava", null, "Strava nu este instalat.")
+
+    fun openMyFitnessPal(): SendResult =
+        openAppByPackage("com.myfitnesspal.android", null, "MyFitnessPal nu este instalat.")
+
+    // ─── Banking ─────────────────────────────────────────────────────────────
+
+    fun openRevolut(): SendResult =
+        openAppByPackage("com.revolut.revolut", "revolut://", "Revolut nu este instalat.")
+
+    fun openWise(): SendResult =
+        openAppByPackage("com.transferwise.android", null, "Wise nu este instalat.")
+
+    fun openPayPal(): SendResult =
+        openAppByPackage("com.paypal.android.p2pmobile", "paypal://", "PayPal nu este instalat.")
+
+    // ─── Shopping ─────────────────────────────────────────────────────────────
+
+    fun openAmazonSearch(query: String): SendResult {
+        val uri = "amazon://search/query?k=${Uri.encode(query)}"
+        return openAppByPackage("com.amazon.mShoppingApp", uri,
+            "Amazon nu este instalat.").let { r ->
+            if (r is SendResult.Error) {
+                // Fallback: web
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://www.amazon.com/s?k=${Uri.encode(query)}")).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                    SendResult.DeepLinkOpened
+                } catch (e: Exception) { r }
+            } else r
+        }
+    }
+
+    fun openAmazonOrders(): SendResult =
+        openAppByPackage("com.amazon.mShoppingApp", "amazon://orders", "Amazon nu este instalat.")
+
+    fun openEbaySearch(query: String): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.ebay.com/sch/i.html?_nkw=${Uri.encode(query)}")).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            SendResult.DeepLinkOpened
+        } catch (e: Exception) { SendResult.Error("Nu s-a putut deschide eBay: ${e.message}") }
+    }
+
+    fun openAliExpressSearch(query: String): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.aliexpress.com/wholesale?SearchText=${Uri.encode(query)}")).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            SendResult.DeepLinkOpened
+        } catch (e: Exception) { SendResult.Error("Nu s-a putut deschide AliExpress: ${e.message}") }
+    }
+
+    // ─── Crypto ───────────────────────────────────────────────────────────────
+
+    fun openCryptoApp(appName: String): SendResult {
+        val (pkg, uri, label) = when {
+            appName.contains("binance") -> Triple("com.binance.dev", "bnb://", "Binance")
+            appName.contains("coinbase") -> Triple("com.coinbase.android", "coinbase://", "Coinbase")
+            appName.contains("metamask") -> Triple("io.metamask", null, "MetaMask")
+            appName.contains("trust") -> Triple("com.wallet.crypto.trustapp", null, "Trust Wallet")
+            appName.contains("kraken") -> Triple("com.kraken.trade", null, "Kraken")
+            else -> Triple("com.binance.dev", "bnb://", "Binance")
+        }
+        return openAppByPackage(pkg, uri, "$label nu este instalat.")
+    }
+
+    // ─── News ─────────────────────────────────────────────────────────────────
+
+    fun openGoogleNews(topic: String? = null): SendResult {
+        val uri = if (topic != null)
+            "googlenews://section/topic/${Uri.encode(topic)}"
+        else "googlenews://topstories"
+        return openAppByPackage("com.google.android.apps.magazines", uri,
+            "Google News nu este instalat.").let { r ->
+            if (r is SendResult.Error) {
+                try {
+                    val webUri = if (topic != null)
+                        "https://news.google.com/search?q=${Uri.encode(topic)}"
+                    else "https://news.google.com/"
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(webUri)).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                    SendResult.DeepLinkOpened
+                } catch (e: Exception) { r }
+            } else r
+        }
+    }
+
     // ─── Generic helper ───────────────────────────────────────────────────────
 
     fun openAppByPackage(pkg: String, fallbackUri: String?, errorMsg: String): SendResult {

@@ -2,7 +2,9 @@ package com.lumi.app.actions
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.net.Uri
+import android.view.KeyEvent
 import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
@@ -61,6 +63,14 @@ class ActionExecutor(
         "SET_BRIGHTNESS"  -> setBrightness(a)
         "SET_VOLUME"      -> setVolume(a)
         "SET_DND"         -> setDND(a)
+        "MEDIA_CONTROL"   -> mediaControl(a)
+        "HOME_CONTROL"    -> homeControl(a)
+        "READ_HEALTH"     -> readHealth(a)
+        "READ_BALANCE"    -> readBalance(a)
+        "SHOP_SEARCH"     -> shopSearch(a)
+        "SHOP_TRACK"      -> shopTrack(a)
+        "READ_CRYPTO"     -> readCrypto(a)
+        "FETCH_NEWS"      -> fetchNews(a)
         else -> Result(a, false, "Actiune necunoscuta: ${a.type}")
     }
 
@@ -352,5 +362,137 @@ class ActionExecutor(
                 onSuccess = { Result(a, true, if (enabled) "Nu deranjati activat." else "Nu deranjati dezactivat.") },
                 onFailure = { Result(a, false, it.message ?: "Eroare DND.") }
             )
+    }
+
+    // ─── Media control ───────────────────────────────────────────────────────
+
+    private fun mediaControl(a: LumiAction): Result {
+        val command = a.params["command"]?.lowercase() ?: return Result(a, false, "Comanda media lipsa.")
+        val appName = a.params["app"]?.lowercase() ?: "spotify"
+        val query   = a.params["query"]
+
+        return when (command) {
+            "play", "resume" -> {
+                dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY)
+                Result(a, true, "Redare pornita.")
+            }
+            "pause" -> {
+                dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PAUSE)
+                Result(a, true, "Redare pusa pe pauza.")
+            }
+            "play_pause", "toggle" -> {
+                dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+                Result(a, true, "Redare comutata.")
+            }
+            "next", "skip" -> {
+                dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_NEXT)
+                Result(a, true, "Urmatoarea piesa.")
+            }
+            "previous", "prev" -> {
+                dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+                Result(a, true, "Piesa anterioara.")
+            }
+            "stop" -> {
+                dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_STOP)
+                Result(a, true, "Redare oprita.")
+            }
+            "open", "search", "queue" -> {
+                val r = when {
+                    appName.contains("netflix") -> messenger.openNetflix(query)
+                    appName.contains("youtube") -> messenger.openYouTubeMusic(query)
+                    else -> messenger.openSpotify(query)
+                }
+                if (r is SendResult.Error) Result(a, false, r.reason)
+                else Result(a, true, "Aplicatia deschisa${if (query != null) " cu cautarea: $query" else ""}.")
+            }
+            else -> Result(a, false, "Comanda necunoscuta: $command")
+        }
+    }
+
+    private fun dispatchMediaKey(keyCode: Int) {
+        val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+    }
+
+    // ─── Smart home ──────────────────────────────────────────────────────────
+
+    private fun homeControl(a: LumiAction): Result {
+        val appName = a.params["app"]?.lowercase() ?: "google_home"
+        val device  = a.params["device"] ?: ""
+        val action  = a.params["action"] ?: ""
+        val r = messenger.openGoogleHome()
+        return if (r is SendResult.Error) Result(a, false, r.reason)
+        else Result(a, true, "Google Home deschis. Controleaza manual: $device — $action.")
+    }
+
+    // ─── Health ──────────────────────────────────────────────────────────────
+
+    private fun readHealth(a: LumiAction): Result {
+        val appName = a.params["app"]?.lowercase() ?: "health_connect"
+        val r = when {
+            appName.contains("strava")         -> messenger.openStrava()
+            appName.contains("myfitnesspal")   -> messenger.openMyFitnessPal()
+            appName.contains("fit")            -> messenger.openGoogleFit()
+            else                               -> messenger.openHealthConnect()
+        }
+        return if (r is SendResult.Error) Result(a, false, r.reason)
+        else Result(a, true, "Aplicatia de sanatate deschisa.")
+    }
+
+    // ─── Banking balance ─────────────────────────────────────────────────────
+
+    private fun readBalance(a: LumiAction): Result {
+        val appName = a.params["app"]?.lowercase() ?: "revolut"
+        val r = when {
+            appName.contains("wise")    -> messenger.openWise()
+            appName.contains("paypal") -> messenger.openPayPal()
+            else                       -> messenger.openRevolut()
+        }
+        return if (r is SendResult.Error) Result(a, false, r.reason)
+        else Result(a, true, "Aplicatia bancara deschisa. Verifica soldul pe ecran.")
+    }
+
+    // ─── Shopping ────────────────────────────────────────────────────────────
+
+    private fun shopSearch(a: LumiAction): Result {
+        val appName = a.params["app"]?.lowercase() ?: "amazon"
+        val query   = a.params["query"] ?: return Result(a, false, "Termen de cautare lipsa.")
+        val r = when {
+            appName.contains("ebay")       -> messenger.openEbaySearch(query)
+            appName.contains("aliexpress") -> messenger.openAliExpressSearch(query)
+            else                           -> messenger.openAmazonSearch(query)
+        }
+        return if (r is SendResult.Error) Result(a, false, r.reason)
+        else Result(a, true, "Cautare deschisa pentru: $query")
+    }
+
+    private fun shopTrack(a: LumiAction): Result {
+        val appName = a.params["app"]?.lowercase() ?: "amazon"
+        val r = when {
+            appName.contains("ebay") -> messenger.openEbaySearch("my orders")
+            appName.contains("aliexpress") -> messenger.openAliExpressSearch("my orders")
+            else -> messenger.openAmazonOrders()
+        }
+        return if (r is SendResult.Error) Result(a, false, r.reason)
+        else Result(a, true, "Sectiunea de comenzi deschisa.")
+    }
+
+    // ─── Crypto balance ──────────────────────────────────────────────────────
+
+    private fun readCrypto(a: LumiAction): Result {
+        val appName = a.params["app"]?.lowercase() ?: "binance"
+        val r = messenger.openCryptoApp(appName)
+        return if (r is SendResult.Error) Result(a, false, r.reason)
+        else Result(a, true, "Aplicatia crypto deschisa. Verifica soldul pe ecran.")
+    }
+
+    // ─── News ────────────────────────────────────────────────────────────────
+
+    private fun fetchNews(a: LumiAction): Result {
+        val topic = a.params["topic"]
+        val r = messenger.openGoogleNews(topic)
+        return if (r is SendResult.Error) Result(a, false, r.reason)
+        else Result(a, true, "Stiri deschise${if (topic != null) " pentru: $topic" else ""}.")
     }
 }

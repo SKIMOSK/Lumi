@@ -347,7 +347,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isAccessibilityServiceEnabled(): Boolean {
-        val serviceName = "${packageName}/.whatsapp.LumiAccessibilityService"
+        val serviceName = android.content.ComponentName(
+            this, com.lumi.app.whatsapp.LumiAccessibilityService::class.java
+        ).flattenToString()
         val enabled = Settings.Secure.getString(
             contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
