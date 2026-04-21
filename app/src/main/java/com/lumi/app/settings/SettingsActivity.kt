@@ -95,17 +95,21 @@ class SettingsActivity : AppCompatActivity() {
                     .setMessage(
                         "Ce poate face Lumi:\n" +
                         "• Trimite mesaje (WhatsApp, SMS, Instagram, Snapchat, Discord)\n" +
+                        "• Efectua apeluri telefonice\n" +
                         "• Seta timere, alarme şi cronometru\n" +
                         "• Naviga cu Google Maps sau Waze\n" +
-                        "• Controla VPN, muzică, luminozitate, volum\n" +
-                        "• Salva notiţe, crea şi citi calendar\n" +
-                        "• Efectua apeluri telefonice\n" +
-                        "• Deschide aplicaţii de streaming, sănătate, ştiri\n\n" +
-                        "Ce NU va face Lumi (sigură implicit):\n" +
-                        "• Nu plasează comenzi online\n" +
-                        "• Nu efectuează transferări bancare sau crypto\n" +
-                        "• Nu trimite mesaje fără confirmarea ta (dacă Mod Autonom este dezactivat)\n\n" +
-                        "Ai controlul total. Fiecare acţiune cere confirmare."
+                        "• Controla VPN, luminozitate, volum, Do Not Disturb\n" +
+                        "• Controla redarea media (play/pauza/skip pe Spotify, Netflix etc.)\n" +
+                        "• Salva notiţe şi crea/citi evenimente calendar\n" +
+                        "• Deschide aplicaţii bancare (Revolut, BTpay, PayPal) — DOAR vizualizare\n" +
+                        "• Căuta produse pe Amazon, eBay, AliExpress\n" +
+                        "• Deschide aplicaţii crypto (Binance, Coinbase) — DOAR vizualizare sold\n" +
+                        "• Deschide Google News, Strava, Google Fit\n\n" +
+                        "Ce NU va face Lumi niciodată:\n" +
+                        "• Nu plasează comenzi sau cumpărături\n" +
+                        "• Nu efectuează transferuri bancare sau crypto de niciun fel\n" +
+                        "• Nu trimite mesaje fără confirmarea ta (dacă Mod Autonom e dezactivat)\n\n" +
+                        "Ai controlul total. Apasă Anulează oricând."
                     )
                     .setPositiveButton("Am înţeles, activează") { _, _ ->
                         binding.layoutAutonomous.visibility = View.VISIBLE

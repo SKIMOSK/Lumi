@@ -91,6 +91,7 @@
         <package android:name="com.myfitnesspal.android"/>
         <!-- Banking -->
         <package android:name="com.revolut.revolut"/>
+        <package android:name="ro.btrl.mobile"/>
         <package android:name="com.transferwise.android"/>
         <package android:name="com.paypal.android.p2pmobile"/>
         <!-- Shopping -->

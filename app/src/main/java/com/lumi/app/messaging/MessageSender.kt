@@ -247,6 +247,9 @@ class MessageSender(private val context: Context) {
     fun openRevolut(): SendResult =
         openAppByPackage("com.revolut.revolut", "revolut://", "Revolut nu este instalat.")
 
+    fun openBTpay(): SendResult =
+        openAppByPackage("ro.btrl.mobile", null, "BTpay (Banca Transilvania) nu este instalat.")
+
     fun openWise(): SendResult =
         openAppByPackage("com.transferwise.android", null, "Wise nu este instalat.")
 

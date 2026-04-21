@@ -116,8 +116,9 @@ Netflix: {"actions":[{"type":"MEDIA_CONTROL","app":"netflix","command":"open","q
 Google Home: {"actions":[{"type":"HOME_CONTROL","app":"google_home","device":"Becuri living","action":"turn off"}]}
 Sanatate (Google Fit): {"actions":[{"type":"READ_HEALTH","app":"google_fit"}]}
 Sanatate (Strava): {"actions":[{"type":"READ_HEALTH","app":"strava"}]}
-Sold Revolut: {"actions":[{"type":"READ_BALANCE","app":"revolut"}]}
-Sold PayPal: {"actions":[{"type":"READ_BALANCE","app":"paypal"}]}
+Deschide Revolut: {"actions":[{"type":"READ_BALANCE","app":"revolut"}]}
+Deschide BTpay: {"actions":[{"type":"READ_BALANCE","app":"btpay"}]}
+Deschide PayPal: {"actions":[{"type":"READ_BALANCE","app":"paypal"}]}
 Cauta Amazon: {"actions":[{"type":"SHOP_SEARCH","app":"amazon","query":"casti bluetooth"}]}
 Cauta eBay: {"actions":[{"type":"SHOP_SEARCH","app":"ebay","query":"iPhone 14"}]}
 Comenzi Amazon: {"actions":[{"type":"SHOP_TRACK","app":"amazon"}]}
@@ -133,6 +134,11 @@ REGULI IMPORTANTE:
 - Daca utilizatorul nu specifica aplicatia de mesagerie (WhatsApp/Instagram/Snapchat/Facebook/Discord/SMS), INTREABA care aplicatie doreste — nu ghici
 - "username" = handle/cont in aplicatie (optional, foloseste "contact" ca fallback)
 - Pentru VPN, "app" poate fi "surfshark" sau "nordvpn"
+- READ_BALANCE deschide DOAR aplicatia bancara; nu poate citi soldul programatic. Spune utilizatorului sa verifice pe ecran.
+- SHOP_SEARCH si SHOP_TRACK deschid aplicatia/site-ul; NU plaseaza comenzi si NU adauga in cos automat.
+- READ_CRYPTO deschide DOAR aplicatia crypto; nu poate citi soldul programatic si nu trimite crypto.
+- MEDIA_CONTROL command poate fi: play, pause, play_pause, next, previous, stop, open, search
+- Daca utilizatorul cere ceva ce nu poti face (transfer bancar, comanda online, trimitere crypto), refuza explicit si explica de ce.
 """.trimIndent()
     }
 

@@ -61,6 +61,7 @@ class LumiAccessibilityService : AccessibilityService() {
                 "com.google.android.apps.youtube.music",
                 "com.netflix.mediaclient",
                 "com.revolut.revolut",
+                "ro.btrl.mobile",
                 "com.transferwise.android",
                 "com.paypal.android.p2pmobile",
                 "com.amazon.mShoppingApp",
@@ -93,14 +94,26 @@ class LumiAccessibilityService : AccessibilityService() {
 
     private fun performSend(text: String): Boolean {
         val root = rootInActiveWindow ?: return false
-        val inputs = root.findAccessibilityNodeInfosByViewId("com.whatsapp:id/entry")
-            ?.takeIf { it.isNotEmpty() }
-            ?: root.findAccessibilityNodeInfosByViewId("com.whatsapp:id/input")
-            ?: return false
-        val inputNode = inputs.firstOrNull() ?: return false
+        // Try every known input field ID across WhatsApp versions
+        val inputIds = listOf(
+            "com.whatsapp:id/entry",
+            "com.whatsapp:id/input",
+            "com.whatsapp:id/compose_box_layout",
+            "com.whatsapp:id/message_edit_text",
+            "com.whatsapp:id/chat_input_field"
+        )
+        val inputNode = nodeByIds(root, inputIds) ?: findEditText(root) ?: return false
         setNodeText(inputNode, text)
-        val sendNodes = root.findAccessibilityNodeInfosByViewId("com.whatsapp:id/send") ?: return false
-        return sendNodes.firstOrNull()?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+        Thread.sleep(400)
+        val root2 = rootInActiveWindow ?: return false
+        val sendIds = listOf(
+            "com.whatsapp:id/send",
+            "com.whatsapp:id/send_button",
+            "com.whatsapp:id/compose_box_send_button"
+        )
+        val sendNode = nodeByIds(root2, sendIds)
+            ?: nodeByDescs(root2, listOf("Send", "Trimite", "Trimiteţi", "Send message"))
+        return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
     }
 
     // ─── Samsung Notes ────────────────────────────────────────────────────────
@@ -126,42 +139,52 @@ class LumiAccessibilityService : AccessibilityService() {
     // ─── Social media ─────────────────────────────────────────────────────────
 
     private fun performSocialSend(pkg: String, username: String, text: String): Boolean {
-        val root = rootInActiveWindow ?: return false
-
-        // Step 1: tap the compose / new-message button if visible
-        val composeNode = nodeByIds(root, socialComposeIds(pkg))
-            ?: nodeByDescs(root, listOf("New message", "New Chat", "Write message",
-                "Direct", "Compose", "Mesaj nou", "Chat nou"))
-        if (composeNode != null) {
-            composeNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            Thread.sleep(1000)
+        // Step 0: if the input field is already visible, skip the compose flow
+        val rootCheck = rootInActiveWindow
+        val directInput = rootCheck?.let { nodeByIds(it, socialInputIds(pkg)) ?: findEditText(it) }
+        if (directInput != null) {
+            setNodeText(directInput, text)
+            Thread.sleep(400)
+            val rootSend = rootInActiveWindow ?: return false
+            val sendNode = nodeByIds(rootSend, socialSendIds(pkg))
+                ?: nodeByDescs(rootSend, listOf("Send", "Trimite", "Send Message", "Envoyer"))
+            return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
         }
 
-        // Step 2: type username in search field
+        // Step 1: tap compose / new-message button
+        val root = rootInActiveWindow ?: return false
+        val composeNode = nodeByIds(root, socialComposeIds(pkg))
+            ?: nodeByDescs(root, listOf("New message", "New Chat", "Write message",
+                "Direct", "Compose", "Mesaj nou", "Chat nou", "New DM"))
+        if (composeNode != null) {
+            composeNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            Thread.sleep(1200)
+        }
+
+        // Step 2: find search field and type username
         val root2 = rootInActiveWindow ?: return false
-        val searchNode = nodeByIds(root2, socialSearchIds(pkg))
+        val searchNode = nodeByIds(root2, socialSearchIds(pkg)) ?: findEditText(root2)
         if (searchNode != null) {
             setNodeText(searchNode, username)
-            Thread.sleep(1500)
-            // Tap first result that contains the username
+            Thread.sleep(1800)
+            // Tap best matching result
             val root3 = rootInActiveWindow ?: return false
             val result = root3.findAccessibilityNodeInfosByText(username)
                 ?.firstOrNull { it.isClickable }
                 ?: firstClickableLeaf(root3)
             result?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            Thread.sleep(1000)
+            Thread.sleep(1200)
         }
 
-        // Step 3: type message in input field and tap send
+        // Step 3: find message input and send
         val root4 = rootInActiveWindow ?: return false
-        val inputNode = nodeByIds(root4, socialInputIds(pkg))
-            ?: findEditText(root4) ?: return false
+        val inputNode = nodeByIds(root4, socialInputIds(pkg)) ?: findEditText(root4) ?: return false
         setNodeText(inputNode, text)
-        Thread.sleep(400)
+        Thread.sleep(500)
 
         val root5 = rootInActiveWindow ?: return false
         val sendNode = nodeByIds(root5, socialSendIds(pkg))
-            ?: nodeByDescs(root5, listOf("Send", "Trimite", "Send Message"))
+            ?: nodeByDescs(root5, listOf("Send", "Trimite", "Send Message", "Envoyer"))
             ?: return false
         return sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
@@ -208,16 +231,22 @@ class LumiAccessibilityService : AccessibilityService() {
 
     private fun performVpnToggle(connect: Boolean): Boolean {
         val root = rootInActiveWindow ?: return false
-        val labels = if (connect)
-            listOf("Connect", "Quick Connect", "Conecteaza", "Conectare")
-        else
-            listOf("Disconnect", "Deconecteaza", "Deconectare")
+        val connectLabels   = listOf("Connect", "Quick Connect", "Conecteaza", "Conectare",
+            "Connect Now", "Turn On", "Enable", "Start VPN", "Activate")
+        val disconnectLabels = listOf("Disconnect", "Deconecteaza", "Deconectare",
+            "Turn Off", "Disable", "Stop VPN", "Deactivate")
+        val labels = if (connect) connectLabels else disconnectLabels
+        // Text search (case-insensitive via API)
         for (label in labels) {
             root.findAccessibilityNodeInfosByText(label)
                 ?.firstOrNull { it.isClickable }
                 ?.let { if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true }
         }
-        return nodeByDescs(root, labels)?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+        // Content-description search
+        nodeByDescs(root, labels)?.let { if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true }
+        // Last resort: find any large central button (toggle) that's clickable
+        val centralBtn = firstClickableLeaf(root) ?: return false
+        return centralBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
     // ─── Gmail ────────────────────────────────────────────────────────────────

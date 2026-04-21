@@ -143,10 +143,10 @@ class ActionExecutor(
             is SendResult.SentSilently -> Result(a, true, "Mesaj trimis lui ${contact.name}.")
             is SendResult.DeepLinkOpened -> {
                 if (LumiAccessibilityService.isAvailable()) {
-                    delay(2500)
+                    delay(3500)
                     val sent = LumiAccessibilityService.sendCurrentMessage(msg)
                     if (sent) Result(a, true, "Mesaj trimis lui ${contact.name}.")
-                    else Result(a, true, "WhatsApp deschis. Apasa Trimite manual.")
+                    else Result(a, true, "WhatsApp deschis. Apasa Trimite manual daca nu s-a trimis.")
                 } else {
                     Result(a, true, "WhatsApp deschis cu mesajul pre-completat. Apasa Trimite.")
                 }
@@ -188,10 +188,10 @@ class ActionExecutor(
         }
         if (openResult is SendResult.Error) return Result(a, false, openResult.reason)
         return if (LumiAccessibilityService.isAvailable()) {
-            delay(3000)
+            delay(4000)
             val sent = LumiAccessibilityService.sendSocialMessage(pkg, username, msg)
             if (sent) Result(a, true, "Mesaj trimis pe $displayName lui $username.")
-            else Result(a, true, "$displayName deschis. Navigheaza la conversatie si trimite manual.")
+            else Result(a, true, "$displayName deschis. Daca nu s-a trimis, apasa Send manual.")
         } else {
             Result(a, true, "$displayName deschis. Trimite mesajul manual.")
         }
@@ -440,17 +440,19 @@ class ActionExecutor(
         else Result(a, true, "Aplicatia de sanatate deschisa.")
     }
 
-    // ─── Banking balance ─────────────────────────────────────────────────────
+    // ─── Banking ─────────────────────────────────────────────────────────────
 
     private fun readBalance(a: LumiAction): Result {
         val appName = a.params["app"]?.lowercase() ?: "revolut"
         val r = when {
             appName.contains("wise")    -> messenger.openWise()
-            appName.contains("paypal") -> messenger.openPayPal()
-            else                       -> messenger.openRevolut()
+            appName.contains("paypal")  -> messenger.openPayPal()
+            appName.contains("bt") || appName.contains("banca") || appName.contains("transilvania") ->
+                messenger.openBTpay()
+            else -> messenger.openRevolut()
         }
         return if (r is SendResult.Error) Result(a, false, r.reason)
-        else Result(a, true, "Aplicatia bancara deschisa. Verifica soldul pe ecran.")
+        else Result(a, true, "Aplicatia bancara deschisa.")
     }
 
     // ─── Shopping ────────────────────────────────────────────────────────────
