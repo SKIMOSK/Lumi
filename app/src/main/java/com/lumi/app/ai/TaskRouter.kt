@@ -3,6 +3,7 @@ package com.lumi.app.ai
 import android.os.Build
 import com.lumi.app.actions.ActionExecutor
 import com.lumi.app.actions.ActionParser
+import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.notes.NotesHelper
 import com.lumi.app.notifications.LumiNotificationService
@@ -21,6 +22,7 @@ class TaskRouter(
     private val contacts: ContactsHelper,
     private val notes: NotesHelper,
     private val sysSettings: SystemSettingsHelper,
+    private val calendar: CalendarHelper,
     private val executor: ActionExecutor?
 ) {
     data class RouteResult(
@@ -54,19 +56,19 @@ ${settings.systemPrompt}
 $deviceContext
 
 Regula: Nu inventa informatii din telefon. Daca ai nevoie de date (notificari, contacte,
-WhatsApp, timere, notite), CERE-LE la SFARSITUL raspunsului tau folosind formatul de mai jos.
+WhatsApp, timere, notite, calendar), CERE-LE la SFARSITUL raspunsului tau folosind formatul de mai jos.
 Nu folosi simboluri markdown. Raspunde natural, ca si cand vorbesti.
 
 Cerere date (adauga LA FINAL daca ai nevoie):
 ___LUMI_REQUEST___
-{"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true,"notes":true,"notes_query":"cuvant cheie"}
+{"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true,"notes":true,"notes_query":"cuvant cheie","calendar":true}
 
 Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
 """.trimIndent()
 
     private val noActionModeNote get() = """
 
-IMPORTANT: Nu poti executa actiuni (timere, mesaje, apeluri, setari). Daca utilizatorul cere o actiune, spune-i sa activeze "Mod Actiune" din Setari.
+IMPORTANT: Nu poti executa actiuni (timere, mesaje, apeluri, navigare, VPN, calendar). Daca utilizatorul cere o actiune, spune-i sa activeze "Mod Actiune" din Setari.
 """.trimIndent()
 
     private val actionSystemPrompt get(): String {
@@ -74,7 +76,7 @@ IMPORTANT: Nu poti executa actiuni (timere, mesaje, apeluri, setari). Daca utili
         val behavior = if (autonomous)
             "Mod COMPLET AUTONOM. Executa actiunile imediat, fara sa ceri confirmare. Intreaba numai daca informatia critica (ex: destinatar, continut mesaj) lipseste complet."
         else
-            "Mod Actiune. Actiunile vor cere confirmare utilizatorului. Descrie ce vei face, apoi adauga blocul de actiuni."
+            "Mod Actiune. Actiunile vor ceri confirmare utilizatorului. Descrie ce vei face, apoi adauga blocul de actiuni."
         return """
 
 $behavior
@@ -88,21 +90,39 @@ Alarma: {"actions":[{"type":"SET_ALARM","name":"Dimineata","time_24h":"07:30"}]}
 Cronometru: {"actions":[{"type":"SET_STOPWATCH","name":"Alergare"}]}
 WhatsApp: {"actions":[{"type":"SEND_WHATSAPP","contact":"Mama","message":"Vin acasa","exact":"true"}]}
 SMS: {"actions":[{"type":"SEND_SMS","contact":"Ana","message":"Salut"}]}
+Instagram: {"actions":[{"type":"SEND_INSTAGRAM","contact":"Ana","username":"ana.ig","message":"Buna"}]}
+Snapchat: {"actions":[{"type":"SEND_SNAPCHAT","contact":"Ion","username":"ion_snap","message":"Salut"}]}
+Facebook Messenger: {"actions":[{"type":"SEND_FACEBOOK","contact":"Maria","message":"Ce faci?"}]}
+Discord: {"actions":[{"type":"SEND_DISCORD","contact":"Alex","username":"alex#1234","message":"Hey"}]}
+Email: {"actions":[{"type":"SEND_EMAIL","to":"ana@gmail.com","subject":"Re: intalnire","body":"Ne vedem maine la 10."}]}
+Citeste email: {"actions":[{"type":"READ_EMAIL"}]}
 Apel: {"actions":[{"type":"CALL","contact":"Tata"}]}
 Notita noua: {"actions":[{"type":"WRITE_NOTE","title":"Cumparaturi","content":"Lapte, oua, paine"}]}
 Actualizeaza notita: {"actions":[{"type":"WRITE_NOTE","id":"ID_NOTITA","content":"Text nou"}]}
+Google Maps: {"actions":[{"type":"NAVIGATE_MAPS","destination":"Piata Universitatii, Bucuresti"}]}
+Waze: {"actions":[{"type":"NAVIGATE_WAZE","destination":"Aeroportul Henri Coanda"}]}
+Surfshark conectare: {"actions":[{"type":"CONNECT_VPN","app":"surfshark","country":"Romania"}]}
+NordVPN deconectare: {"actions":[{"type":"DISCONNECT_VPN","app":"nordvpn"}]}
+Event calendar: {"actions":[{"type":"CREATE_EVENT","title":"Intalnire","description":"Discutie proiect","location":"Birou","start_datetime":"2024-01-15T14:00","end_datetime":"2024-01-15T15:00"}]}
+Calendar: {"actions":[{"type":"READ_CALENDAR"}]}
 Luminozitate: {"actions":[{"type":"SET_BRIGHTNESS","level":"60"}]}
 Volum: {"actions":[{"type":"SET_VOLUME","stream":"media","level":"50"}]}
 Nu deranjati: {"actions":[{"type":"SET_DND","enabled":"true"}]}
 
-REGULI: duration_seconds trebuie sa fie string intreg (ex: "300"). exact="false" daca mesajul nu e citat mot-a-mot.
+REGULI IMPORTANTE:
+- duration_seconds trebuie sa fie string intreg (ex: "300")
+- exact="false" daca mesajul nu e citat mot-a-mot
+- start_datetime format: "yyyy-MM-dd'T'HH:mm" (ex: "2024-01-15T14:00")
+- Daca utilizatorul nu specifica aplicatia de mesagerie (WhatsApp/Instagram/Snapchat/Facebook/Discord/SMS), INTREABA care aplicatie doreste — nu ghici
+- "username" = handle/cont in aplicatie (optional, foloseste "contact" ca fallback)
+- Pentru VPN, "app" poate fi "surfshark" sau "nordvpn"
 """.trimIndent()
     }
 
     private val classifyPrompt = """
 Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem.
-COMPLEX: trimitere mesaje, apeluri, cautare contacte, orchestrare multi-pas, acces WhatsApp.
+SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem, navigare GPS, VPN, calendar.
+COMPLEX: trimitere mesaje (WhatsApp/Instagram/Snapchat/Facebook/Discord/SMS/email), apeluri, cautare contacte, orchestrare multi-pas.
 Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()
 
@@ -186,7 +206,7 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
             sb.appendLine("=== Contacte ===")
             req.contacts.forEach { name ->
                 val found = contacts.findBestMatch(name)
-                if (found != null) sb.appendLine("$name → ${found.name} (${found.phoneNumbers.joinToString()})")
+                if (found != null) sb.appendLine("$name → ${found.name} (${found.phoneNumbers.joinToString()})${if (found.emails.isNotEmpty()) " email: ${found.emails.first()}" else ""}")
                 else sb.appendLine("$name → negasit")
             }
         }
@@ -217,12 +237,16 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
                 if (found.isEmpty()) "Nicio notita cu '$query'." else found.joinToString("\n---\n") { "${it.title}: ${it.content}" }
             } else notes.formatSummary()
             sb.appendLine(noteText)
-            // Attempt Samsung Notes
             val samsungNotes = notes.readSamsungNotes(5)
             if (samsungNotes.isNotEmpty()) {
                 sb.appendLine("=== Samsung Notes (recente) ===")
                 samsungNotes.forEach { sb.appendLine(it) }
             }
+        }
+
+        if (req.calendar) {
+            sb.appendLine("=== Evenimente viitoare ===")
+            sb.appendLine(calendar.formatSummary(10))
         }
 
         return sb.toString().trim()

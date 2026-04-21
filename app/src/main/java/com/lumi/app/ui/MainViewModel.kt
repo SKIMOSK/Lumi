@@ -19,6 +19,7 @@ import com.lumi.app.ai.ConversationMemory
 import com.lumi.app.ai.GeminiClient
 import com.lumi.app.ai.Interaction
 import com.lumi.app.ai.TaskRouter
+import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.bluetooth.LumiBluetoothManager
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
@@ -126,7 +127,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             ActionExecutor(getApplication(), timerManager, consent, contactsHelper,
                 messageSender, notesHelper, sysSettings, mode)
         } else null
-        return TaskRouter(client, settings, timerManager, contactsHelper, notesHelper, sysSettings, exec)
+        val calendarHelper = CalendarHelper(getApplication())
+        return TaskRouter(client, settings, timerManager, contactsHelper, notesHelper, sysSettings, calendarHelper, exec)
     }
 
     private fun loadChatHistory() {

@@ -51,6 +51,8 @@ class MainActivity : AppCompatActivity() {
     private val requiredPermissions get() = buildList {
         add(Manifest.permission.RECORD_AUDIO)
         add(Manifest.permission.READ_CONTACTS)
+        add(Manifest.permission.READ_CALENDAR)
+        add(Manifest.permission.WRITE_CALENDAR)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             add(Manifest.permission.BLUETOOTH_SCAN)
             add(Manifest.permission.BLUETOOTH_CONNECT)
