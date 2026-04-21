@@ -26,14 +26,14 @@ class AppSettings(context: Context) {
 
         const val MODEL_FASTER        = "google/gemini-2.0-flash"        // fastest — no thinking overhead
         const val MODEL_FAST          = "google/gemini-2.5-flash"
-        const val MODEL_EXPERT_PRO    = "google/gemini-2.5-pro-preview"
-        const val MODEL_EXPERT_OPUS   = "anthropic/claude-opus-4-7"
+        const val MODEL_EXPERT_PRO    = "google/gemini-3.1-pro-preview"
+        const val MODEL_EXPERT_OPUS   = "anthropic/claude-opus-4-6"
         const val MODEL_EXPERT_SONNET = "anthropic/claude-sonnet-4-6"
 
         val FAST_MODELS  = listOf(MODEL_FASTER, MODEL_FAST)
         val FAST_LABELS  = listOf("Fastest (Gemini 2.0 Flash)", "Fast (Gemini 2.5 Flash)")
         val EXPERT_MODELS  = listOf(MODEL_EXPERT_PRO, MODEL_EXPERT_OPUS, MODEL_EXPERT_SONNET)
-        val EXPERT_LABELS  = listOf("Balanced — Gemini 2.5 Pro", "Higher End — Claude Opus 4", "Cost Efficient — Claude Sonnet")
+        val EXPERT_LABELS  = listOf("Balanced — Gemini 3.1 Pro", "Higher End — Claude Opus 4.6", "Cost Efficient — Claude Sonnet")
 
         const val DEFAULT_SYSTEM_PROMPT = """Ești Lumi, un asistent AI personal integrat în dispozitivul Lumi.
 Răspunzi în română (sau în limba în care ți se vorbește).
