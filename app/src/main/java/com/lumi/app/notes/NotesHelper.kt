@@ -128,6 +128,44 @@ class NotesHelper(private val context: Context) {
         }
     }
 
+    /**
+     * Create a note in a specific app by name.
+     * Supported: samsung, keep, onenote, notion, obsidian, standard (Standard Notes).
+     */
+    fun createInSpecificApp(app: String, title: String, content: String): NoteAppResult {
+        val a = app.lowercase()
+        return when {
+            a.contains("obsidian") -> {
+                // Obsidian URI scheme for creating new notes
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW,
+                        Uri.parse("obsidian://new?name=${Uri.encode(title)}&content=${Uri.encode(content)}")).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                    NoteAppResult.UI_OPENED
+                } catch (_: Exception) {
+                    openNoteViaShare("md.obsidian", title, content)
+                }
+            }
+            a.contains("onenote") -> openNoteViaShare("com.microsoft.office.onenote", title, content)
+            a.contains("notion")  -> openNoteViaShare("notion.id", title, content)
+            a.contains("standard") -> openNoteViaShare("com.standardnotes.standardnotes", title, content)
+            a.contains("keep")    -> openNoteViaShare("com.google.android.keep", title, content)
+            a.contains("samsung") -> createInApp(title, content)
+            else                  -> createInApp(title, content)
+        }
+    }
+
+    private fun openNoteViaShare(pkg: String, title: String, content: String): NoteAppResult {
+        return if (tryStartActivity(Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            setPackage(pkg)
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            putExtra(Intent.EXTRA_TEXT, if (title.isNotBlank()) "$title\n\n$content" else content)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        })) NoteAppResult.UI_OPENED else NoteAppResult.FAILED
+    }
+
     /** Attempt to read Samsung Notes — silently returns empty on non-Samsung devices. */
     fun readSamsungNotes(limit: Int = 10): List<String> {
         return try {

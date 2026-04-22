@@ -3,9 +3,11 @@ package com.lumi.app.ai
 import android.os.Build
 import com.lumi.app.actions.ActionExecutor
 import com.lumi.app.actions.ActionParser
+import com.lumi.app.bluetooth.BluetoothDeviceManager
 import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.notes.NotesHelper
+import com.lumi.app.notes.UserMemory
 import com.lumi.app.notifications.LumiNotificationService
 import com.lumi.app.settings.AppSettings
 import com.lumi.app.system.SystemSettingsHelper
@@ -23,7 +25,9 @@ class TaskRouter(
     private val notes: NotesHelper,
     private val sysSettings: SystemSettingsHelper,
     private val calendar: CalendarHelper,
-    private val executor: ActionExecutor?
+    private val executor: ActionExecutor?,
+    private val userMemory: UserMemory,
+    private val btDeviceManager: BluetoothDeviceManager
 ) {
     data class RouteResult(
         val response: GeminiResponse,
@@ -41,10 +45,15 @@ class TaskRouter(
         val volumeMedia = sysSettings.getVolume("media")
         val volumeRing  = sysSettings.getVolume("ring")
         val dnd = if (sysSettings.isDNDEnabled()) "activat" else "dezactivat"
+        val batterySaver = if (sysSettings.isBatterySaverEnabled()) "activat" else "dezactivat"
+        val btDevices = btDeviceManager.formatDeviceList()
+        val mem = userMemory.load()
+        val memSection = if (mem.isNotBlank()) "\n\nPreferinte utilizator memorate:\n$mem" else ""
         return """
 Data si ora: $now
 Dispozitiv: $model
-Luminozitate: $brightness% | Volum media: $volumeMedia% | Volum sonerie: $volumeRing% | Nu deranjati: $dnd
+Luminozitate: $brightness% | Volum media: $volumeMedia% | Volum sonerie: $volumeRing% | Nu deranjati: $dnd | Economisire baterie: $batterySaver
+Bluetooth: $btDevices$memSection
 """.trimIndent()
     }
 
@@ -126,6 +135,29 @@ Crypto Binance: {"actions":[{"type":"READ_CRYPTO","app":"binance"}]}
 Crypto Coinbase: {"actions":[{"type":"READ_CRYPTO","app":"coinbase"}]}
 Stiri: {"actions":[{"type":"FETCH_NEWS"}]}
 Stiri despre topic: {"actions":[{"type":"FETCH_NEWS","topic":"tehnologie"}]}
+Telegram mesaj: {"actions":[{"type":"SEND_TELEGRAM","contact":"Ana","message":"Salut!"}]}
+Slack mesaj: {"actions":[{"type":"SEND_SLACK","channel":"#general","message":"Buna ziua echipa"}]}
+Notita in Keep: {"actions":[{"type":"WRITE_NOTE_APP","app":"keep","title":"Idee","content":"Cumpar lapte"}]}
+Notita in OneNote: {"actions":[{"type":"WRITE_NOTE_APP","app":"onenote","title":"Meeting","content":"Note importante"}]}
+Notita in Obsidian: {"actions":[{"type":"WRITE_NOTE_APP","app":"obsidian","title":"Idee","content":"Continut"}]}
+Memorie utilizator: {"actions":[{"type":"REMEMBER_FACT","fact":"Nu imi plac castravetii"}]}
+Economisire baterie on: {"actions":[{"type":"SET_BATTERY_SAVER","enabled":"true"}]}
+Economisire baterie off: {"actions":[{"type":"SET_BATTERY_SAVER","enabled":"false"}]}
+Viteza voce mai repede: {"actions":[{"type":"SET_TTS_SPEED","direction":"faster"}]}
+Viteza voce mai incet: {"actions":[{"type":"SET_TTS_SPEED","direction":"slower"}]}
+YouTube cautare: {"actions":[{"type":"YOUTUBE_SEARCH","query":"tutoriale programare"}]}
+YouTube Watch Later (cu cautare): {"actions":[{"type":"YOUTUBE_WATCH_LATER","query":"film documentar natura"}]}
+YouTube Watch Later (deschide lista): {"actions":[{"type":"YOUTUBE_WATCH_LATER"}]}
+YouTube Library: {"actions":[{"type":"YOUTUBE_LIBRARY"}]}
+Uber (locatie curenta -> destinatie): {"actions":[{"type":"RIDESHARE","app":"uber","destination":"Aeroportul Otopeni"}]}
+Uber (cu punct de start): {"actions":[{"type":"RIDESHARE","app":"uber","pickup":"Piata Unirii","destination":"Gara de Nord","ride_type":"UberX"}]}
+Lyft: {"actions":[{"type":"RIDESHARE","app":"lyft","destination":"Downtown","ride_type":"xl"}]}
+Uber Eats burger fara castraveti: {"actions":[{"type":"FOOD_DELIVERY","app":"ubereats","food":"burger","customization":"fara castraveti"}]}
+DoorDash pizza: {"actions":[{"type":"FOOD_DELIVERY","app":"doordash","food":"pizza margherita","restaurant":"Pizza Hut"}]}
+BT dispozitive: {"actions":[{"type":"BT_LIST_DEVICES"}]}
+BT conectare: {"actions":[{"type":"BT_CONNECT","device":"Casti Sony"}]}
+BT deconectare: {"actions":[{"type":"BT_DISCONNECT","device":"Casti JBL"}]}
+BT asociere: {"actions":[{"type":"BT_PAIR","device":"Casti noi"}]}
 
 REGULI IMPORTANTE:
 - duration_seconds trebuie sa fie string intreg (ex: "300")
@@ -139,13 +171,20 @@ REGULI IMPORTANTE:
 - READ_CRYPTO deschide DOAR aplicatia crypto; nu poate citi soldul programatic si nu trimite crypto.
 - MEDIA_CONTROL command poate fi: play, pause, play_pause, next, previous, stop, open, search
 - Daca utilizatorul cere ceva ce nu poti face (transfer bancar, comanda online, trimitere crypto), refuza explicit si explica de ce.
+- REMEMBER_FACT: foloseste cand utilizatorul spune "retine ca", "tine minte ca", "nu uit ca" sau variante.
+- FOOD_DELIVERY nu finalizeaza plata — deschide aplicatia cu cautarea si lasa utilizatorul sa confirme.
+- RIDESHARE nu confirma comanda — deschide aplicatia cu destinatia setata si lasa utilizatorul sa apese Confirma.
+- BT_CONNECT/BT_DISCONNECT deschide Setarile Bluetooth (aplicatia nu poate conecta programatic dispozitive non-BLE).
+- YOUTUBE_SEARCH si YOUTUBE_WATCH_LATER nu redau video automat — cauta/afiseaza doar.
+- SET_TTS_SPEED: "faster"/"slower" ajusteaza relativ; "speed" (0.5-2.0) seteaza absolut.
+- Daca utilizatorul intreaba despre vreme sau traducere, AI-ul poate raspunde direct fara actiuni.
 """.trimIndent()
     }
 
     private val classifyPrompt = """
 Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem, navigare GPS, VPN, calendar, control media (play/pause/skip), smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi.
-COMPLEX: trimitere mesaje (WhatsApp/Instagram/Snapchat/Facebook/Discord/SMS/email), apeluri, cautare contacte, orchestrare multi-pas.
+SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS, VPN, calendar, control media (play/pause/skip), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator.
+COMPLEX: trimitere mesaje (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas.
 Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()
 

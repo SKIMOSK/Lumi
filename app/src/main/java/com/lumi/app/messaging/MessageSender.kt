@@ -327,6 +327,147 @@ class MessageSender(private val context: Context) {
         }
     }
 
+    // ─── Telegram ─────────────────────────────────────────────────────────────
+
+    fun sendTelegram(contact: Contact, message: String): SendResult {
+        val phone = contact.phoneNumbers.firstOrNull()
+        if (phone != null) {
+            val clean = phone.replace(Regex("[^\\d+]"), "")
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW,
+                    Uri.parse("tg://msg?to=$clean&text=${Uri.encode(message)}")).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                })
+                return SendResult.DeepLinkOpened
+            } catch (_: Exception) {}
+        }
+        return openAppByPackage("org.telegram.messenger", null, "Telegram nu este instalat.")
+    }
+
+    // ─── Slack ────────────────────────────────────────────────────────────────
+
+    fun openSlack(channel: String?, message: String): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                setPackage("com.Slack")
+                putExtra(Intent.EXTRA_TEXT, message)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            SendResult.DeepLinkOpened
+        } catch (_: Exception) {
+            openAppByPackage("com.Slack", null, "Slack nu este instalat.")
+        }
+    }
+
+    // ─── YouTube ──────────────────────────────────────────────────────────────
+
+    fun openYouTubeSearch(query: String): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_SEARCH).apply {
+                setPackage("com.google.android.youtube")
+                putExtra("query", query)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            SendResult.DeepLinkOpened
+        } catch (_: Exception) {
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://www.youtube.com/results?search_query=${Uri.encode(query)}")).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                })
+                SendResult.DeepLinkOpened
+            } catch (e: Exception) {
+                SendResult.Error("Nu s-a putut deschide YouTube: ${e.message}")
+            }
+        }
+    }
+
+    fun openYouTubeWatchLater(): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://www.youtube.com/playlist?list=WL")).apply {
+                setPackage("com.google.android.youtube")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            SendResult.DeepLinkOpened
+        } catch (_: Exception) {
+            openAppByPackage("com.google.android.youtube", null, "YouTube nu este instalat.")
+        }
+    }
+
+    fun openYouTubeLibrary(): SendResult =
+        openAppByPackage("com.google.android.youtube", "vnd.youtube://library", "YouTube nu este instalat.")
+
+    // ─── Ride sharing ─────────────────────────────────────────────────────────
+
+    fun openUber(pickup: String?, destination: String): SendResult {
+        val pickupParam: String = if (!pickup.isNullOrBlank() &&
+            !pickup.lowercase().contains("here") &&
+            !pickup.lowercase().contains("current"))
+            "&pickup[formatted_address]=${Uri.encode(pickup)}"
+        else "&pickup=my_location"
+        return try {
+            context.startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("uber://?action=setPickup$pickupParam&dropoff[formatted_address]=${Uri.encode(destination)}")).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            SendResult.DeepLinkOpened
+        } catch (_: Exception) {
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://m.uber.com/ul/?action=setPickup$pickupParam&dropoff[formatted_address]=${Uri.encode(destination)}")).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                })
+                SendResult.DeepLinkOpened
+            } catch (e: Exception) { SendResult.Error("Uber nu este instalat.") }
+        }
+    }
+
+    fun openLyft(pickup: String?, destination: String, rideType: String?): SendResult {
+        val rideId = when {
+            rideType?.lowercase()?.contains("xl") == true  -> "lyft_plus"
+            rideType?.lowercase()?.contains("lux") == true -> "lyft_premier"
+            else -> "lyft"
+        }
+        val pickupParam: String = if (!pickup.isNullOrBlank() &&
+            !pickup.lowercase().contains("here") &&
+            !pickup.lowercase().contains("current"))
+            "&pickup[address]=${Uri.encode(pickup)}"
+        else ""
+        return try {
+            context.startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("lyft://ridetype?id=$rideId$pickupParam&destination[address]=${Uri.encode(destination)}")).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            SendResult.DeepLinkOpened
+        } catch (_: Exception) { SendResult.Error("Lyft nu este instalat.") }
+    }
+
+    // ─── Food delivery ────────────────────────────────────────────────────────
+
+    fun openFoodDelivery(app: String, foodQuery: String, restaurant: String?): SendResult {
+        val searchQuery = restaurant ?: foodQuery
+        return when {
+            app.contains("doordash") ->
+                openAppByPackage("com.dd.consumer", null, "DoorDash nu este instalat.")
+            app.contains("deliveroo") ->
+                openAppByPackage("com.deliveroo.orderapp", null, "Deliveroo nu este instalat.")
+            else -> {
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://www.ubereats.com/search?q=${Uri.encode(searchQuery)}")).apply {
+                        setPackage("com.ubercab.eats")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    })
+                    SendResult.DeepLinkOpened
+                } catch (_: Exception) {
+                    openAppByPackage("com.ubercab.eats", null, "Uber Eats nu este instalat.")
+                }
+            }
+        }
+    }
+
     // ─── Generic helper ───────────────────────────────────────────────────────
 
     fun openAppByPackage(pkg: String, fallbackUri: String?, errorMsg: String): SendResult {

@@ -256,6 +256,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startListening() {
         if (!stt.isAvailable()) { Toast.makeText(this, "STT indisponibil.", Toast.LENGTH_SHORT).show(); return }
+        viewModel.tts.stopWithInterrupt()
         isListening = true
         binding.voiceOverlay.visibility = View.VISIBLE
         binding.tvVoiceStatus.text = "ASCULT"

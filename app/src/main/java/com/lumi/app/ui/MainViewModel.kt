@@ -19,13 +19,15 @@ import com.lumi.app.ai.ConversationMemory
 import com.lumi.app.ai.GeminiClient
 import com.lumi.app.ai.Interaction
 import com.lumi.app.ai.TaskRouter
-import com.lumi.app.calendar.CalendarHelper
+import com.lumi.app.bluetooth.BluetoothDeviceManager
 import com.lumi.app.bluetooth.LumiBluetoothManager
+import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.notes.NotesHelper
+import com.lumi.app.notes.UserMemory
 import com.lumi.app.settings.AppSettings
 import com.lumi.app.system.SystemSettingsHelper
 import com.lumi.app.timer.TimerManager
@@ -46,12 +48,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val TAG = "MainViewModel"
     val settings    = AppSettings(app)
     val bluetooth   = LumiBluetoothManager(app)
-    val tts         = LumiTTS(app).also { it.setLanguage(settings.sttLanguage) }
+    val tts         = LumiTTS(app).also {
+        it.setLanguage(settings.sttLanguage)
+        it.speechRate = settings.ttsSpeed
+    }
     val timerManager = TimerManager(app)
-    private val contactsHelper  = ContactsHelper(app)
-    private val messageSender   = MessageSender(app)
-    private val notesHelper     = NotesHelper(app)
-    private val sysSettings     = SystemSettingsHelper(app)
+    private val contactsHelper    = ContactsHelper(app)
+    private val messageSender     = MessageSender(app)
+    private val notesHelper       = NotesHelper(app)
+    private val sysSettings       = SystemSettingsHelper(app)
+    val userMemory                = UserMemory(app)
+    private val btDeviceManager   = BluetoothDeviceManager(app)
     val consent = ConsentManager(tts, null)
 
     private val memory = ConversationMemory(settings.memorySizeHistory)
@@ -124,11 +131,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         val exec: ActionExecutor? = if (settings.actionModeEnabled) {
-            ActionExecutor(getApplication<Application>(), timerManager, consent, contactsHelper,
-                messageSender, notesHelper, sysSettings, mode)
+            ActionExecutor(
+                getApplication<Application>(), timerManager, consent, contactsHelper,
+                messageSender, notesHelper, sysSettings, mode,
+                userMemory, btDeviceManager, settings.btDeviceAddress,
+                tts, settings
+            )
         } else null
         val calendarHelper = CalendarHelper(getApplication<Application>())
-        return TaskRouter(client, settings, timerManager, contactsHelper, notesHelper, sysSettings, calendarHelper, exec)
+        return TaskRouter(
+            client, settings, timerManager, contactsHelper, notesHelper,
+            sysSettings, calendarHelper, exec, userMemory, btDeviceManager
+        )
     }
 
     private fun loadChatHistory() {
@@ -159,9 +173,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             "în detaliu", "cu mai multe", "extinde").any { p.contains(it) }
     }
 
+    private fun isTtsSpeedCommand(text: String): Boolean {
+        val t = text.lowercase().trim()
+        return listOf(
+            "mai repede", "mai incet", "mai rapid", "mai lent",
+            "faster", "slower", "speak faster", "speak slower",
+            "talk faster", "talk slower", "vorbeste mai repede", "vorbeste mai incet"
+        ).any { t.contains(it) }
+    }
+
+    private fun isFasterCommand(text: String): Boolean {
+        val t = text.lowercase()
+        return listOf("mai repede", "mai rapid", "faster", "repede").any { t.contains(it) }
+    }
+
     fun processPrompt(userText: String, useDeviceImage: Boolean = true) {
         if (!settings.hasApiKey()) { addSystem("Configurează cheia API OpenRouter în Setări."); return }
         if (userText.isBlank()) return
+
+        // TTS speed interrupt: user stopped speech and asks to change speed
+        if (tts.wasInterrupted && isTtsSpeedCommand(userText)) {
+            val faster = isFasterCommand(userText)
+            val newRate = (settings.ttsSpeed * (if (faster) 1.25f else 0.8f)).coerceIn(0.5f, 2.0f)
+            settings.ttsSpeed = newRate
+            tts.speechRate = newRate
+            tts.wasInterrupted = false
+            tts.resumeFromLastPosition()
+            return
+        }
+        tts.wasInterrupted = false
 
         val wantsDetail = isAskingForMoreDetail(userText)
         if (wantsDetail) wordLimitBonus += 50 else wordLimitBonus = 0

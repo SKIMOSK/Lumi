@@ -5,6 +5,7 @@ import android.content.Intent
 import android.media.AudioManager
 import android.net.Uri
 import android.view.KeyEvent
+import com.lumi.app.bluetooth.BluetoothDeviceManager
 import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
@@ -13,8 +14,11 @@ import com.lumi.app.messaging.MessageSender
 import com.lumi.app.messaging.SendResult
 import com.lumi.app.notes.NoteAppResult
 import com.lumi.app.notes.NotesHelper
+import com.lumi.app.notes.UserMemory
+import com.lumi.app.settings.AppSettings
 import com.lumi.app.system.SystemSettingsHelper
 import com.lumi.app.timer.TimerManager
+import com.lumi.app.tts.LumiTTS
 import com.lumi.app.whatsapp.LumiAccessibilityService
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -29,7 +33,12 @@ class ActionExecutor(
     private val messenger: MessageSender,
     private val notes: NotesHelper,
     private val sysSettings: SystemSettingsHelper,
-    private val getMode: () -> ConsentMode
+    private val getMode: () -> ConsentMode,
+    private val userMemory: UserMemory,
+    private val btDeviceManager: BluetoothDeviceManager,
+    private val lumiDeviceAddress: String,
+    private val tts: LumiTTS? = null,
+    private val appSettings: AppSettings? = null
 ) {
     data class Result(val action: LumiAction, val success: Boolean, val message: String)
 
@@ -44,33 +53,48 @@ class ActionExecutor(
         "RESUME_TIMER", "RESUME_STOPWATCH" -> resumeTimer(a)
         "CANCEL_TIMER", "CANCEL_STOPWATCH", "CANCEL_ALARM" -> cancelTimer(a)
         "RESET_TIMER", "RESET_STOPWATCH"   -> resetTimer(a)
-        "SEND_WHATSAPP"   -> sendWhatsApp(a)
-        "SEND_SMS"        -> sendSms(a)
-        "SEND_INSTAGRAM"  -> sendSocialApp(a, "Instagram", "com.instagram.android")
-        "SEND_SNAPCHAT"   -> sendSocialApp(a, "Snapchat", "com.snapchat.android")
-        "SEND_FACEBOOK"   -> sendSocialApp(a, "Messenger", "com.facebook.orca")
-        "SEND_DISCORD"    -> sendSocialApp(a, "Discord", "com.discord")
-        "SEND_EMAIL"      -> sendEmail(a)
-        "READ_EMAIL"      -> readEmail(a)
-        "CALL"            -> call(a)
-        "WRITE_NOTE"      -> writeNote(a)
-        "NAVIGATE_MAPS"   -> navigateMaps(a)
-        "NAVIGATE_WAZE"   -> navigateWaze(a)
-        "CONNECT_VPN"     -> toggleVpn(a, true)
-        "DISCONNECT_VPN"  -> toggleVpn(a, false)
-        "CREATE_EVENT"    -> createEvent(a)
-        "READ_CALENDAR"   -> readCalendar(a)
-        "SET_BRIGHTNESS"  -> setBrightness(a)
-        "SET_VOLUME"      -> setVolume(a)
-        "SET_DND"         -> setDND(a)
-        "MEDIA_CONTROL"   -> mediaControl(a)
-        "HOME_CONTROL"    -> homeControl(a)
-        "READ_HEALTH"     -> readHealth(a)
-        "READ_BALANCE"    -> readBalance(a)
-        "SHOP_SEARCH"     -> shopSearch(a)
-        "SHOP_TRACK"      -> shopTrack(a)
-        "READ_CRYPTO"     -> readCrypto(a)
-        "FETCH_NEWS"      -> fetchNews(a)
+        "SEND_WHATSAPP"        -> sendWhatsApp(a)
+        "SEND_SMS"             -> sendSms(a)
+        "SEND_INSTAGRAM"       -> sendSocialApp(a, "Instagram", "com.instagram.android")
+        "SEND_SNAPCHAT"        -> sendSocialApp(a, "Snapchat", "com.snapchat.android")
+        "SEND_FACEBOOK"        -> sendSocialApp(a, "Messenger", "com.facebook.orca")
+        "SEND_DISCORD"         -> sendSocialApp(a, "Discord", "com.discord")
+        "SEND_TELEGRAM"        -> sendTelegram(a)
+        "SEND_SLACK"           -> sendSlack(a)
+        "SEND_EMAIL"           -> sendEmail(a)
+        "READ_EMAIL"           -> readEmail(a)
+        "CALL"                 -> call(a)
+        "WRITE_NOTE"           -> writeNote(a)
+        "WRITE_NOTE_APP"       -> writeNoteInApp(a)
+        "REMEMBER_FACT"        -> rememberFact(a)
+        "NAVIGATE_MAPS"        -> navigateMaps(a)
+        "NAVIGATE_WAZE"        -> navigateWaze(a)
+        "CONNECT_VPN"          -> toggleVpn(a, true)
+        "DISCONNECT_VPN"       -> toggleVpn(a, false)
+        "CREATE_EVENT"         -> createEvent(a)
+        "READ_CALENDAR"        -> readCalendar(a)
+        "SET_BRIGHTNESS"       -> setBrightness(a)
+        "SET_VOLUME"           -> setVolume(a)
+        "SET_DND"              -> setDND(a)
+        "SET_BATTERY_SAVER"    -> setBatterySaver(a)
+        "SET_TTS_SPEED"        -> setTtsSpeed(a)
+        "MEDIA_CONTROL"        -> mediaControl(a)
+        "YOUTUBE_SEARCH"       -> youtubeSearch(a)
+        "YOUTUBE_WATCH_LATER"  -> youtubeWatchLater(a)
+        "YOUTUBE_LIBRARY"      -> youtubeLibrary(a)
+        "HOME_CONTROL"         -> homeControl(a)
+        "READ_HEALTH"          -> readHealth(a)
+        "READ_BALANCE"         -> readBalance(a)
+        "SHOP_SEARCH"          -> shopSearch(a)
+        "SHOP_TRACK"           -> shopTrack(a)
+        "READ_CRYPTO"          -> readCrypto(a)
+        "FETCH_NEWS"           -> fetchNews(a)
+        "FOOD_DELIVERY"        -> foodDelivery(a)
+        "RIDESHARE"            -> rideshare(a)
+        "BT_LIST_DEVICES"      -> btListDevices(a)
+        "BT_CONNECT"           -> btConnect(a)
+        "BT_DISCONNECT"        -> btDisconnect(a)
+        "BT_PAIR"              -> btPair(a)
         else -> Result(a, false, "Actiune necunoscuta: ${a.type}")
     }
 
@@ -496,5 +520,203 @@ class ActionExecutor(
         val r = messenger.openGoogleNews(topic)
         return if (r is SendResult.Error) Result(a, false, r.reason)
         else Result(a, true, "Stiri deschise${if (topic != null) " pentru: $topic" else ""}.")
+    }
+
+    // ─── Telegram ────────────────────────────────────────────────────────────
+
+    private suspend fun sendTelegram(a: LumiAction): Result {
+        val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsa.")
+        val msg   = a.params["message"] ?: return Result(a, false, "Mesaj lipsa.")
+        val contact = contacts.findBestMatch(cName)
+            ?: return Result(a, false, "Contactul \"$cName\" negasit.")
+        if (!consent.request("Trimit mesaj Telegram lui ${contact.name}: \"$msg\". Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+        return when (val r = messenger.sendTelegram(contact, msg)) {
+            is SendResult.DeepLinkOpened -> {
+                if (LumiAccessibilityService.isAvailable()) {
+                    delay(3000)
+                    val sent = LumiAccessibilityService.sendSocialMessage("org.telegram.messenger", contact.name, msg)
+                    if (sent) Result(a, true, "Mesaj Telegram trimis lui ${contact.name}.")
+                    else Result(a, true, "Telegram deschis cu mesajul pre-completat. Apasa Trimite.")
+                } else {
+                    Result(a, true, "Telegram deschis. Apasa Trimite.")
+                }
+            }
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> Result(a, true, "Telegram deschis.")
+        }
+    }
+
+    // ─── Slack ───────────────────────────────────────────────────────────────
+
+    private suspend fun sendSlack(a: LumiAction): Result {
+        val channel = a.params["channel"] ?: a.params["contact"]
+        val msg     = a.params["message"] ?: return Result(a, false, "Mesaj lipsa.")
+        val target  = channel ?: "canal"
+        if (!consent.request("Trimit pe Slack in $target: \"$msg\". Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+        return when (val r = messenger.openSlack(channel, msg)) {
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> {
+                if (LumiAccessibilityService.isAvailable()) {
+                    delay(3000)
+                    val sent = LumiAccessibilityService.sendSocialMessage("com.Slack", target, msg)
+                    if (sent) Result(a, true, "Mesaj Slack trimis in $target.")
+                    else Result(a, true, "Slack deschis. Apasa Trimite.")
+                } else {
+                    Result(a, true, "Slack deschis. Apasa Trimite.")
+                }
+            }
+        }
+    }
+
+    // ─── Note apps ───────────────────────────────────────────────────────────
+
+    private suspend fun writeNoteInApp(a: LumiAction): Result {
+        val app     = a.params["app"] ?: return Result(a, false, "Aplicatia lipsa.")
+        val title   = a.params["title"] ?: ""
+        val content = a.params["content"] ?: return Result(a, false, "Continut lipsa.")
+        val note    = notes.create(title, content)
+        val appResult = notes.createInSpecificApp(app, title.ifBlank { note.title }, content)
+        if (appResult == NoteAppResult.UI_OPENED && LumiAccessibilityService.isAvailable()) {
+            delay(2500)
+            LumiAccessibilityService.saveSamsungNote()
+        }
+        return Result(a, true, "Notita \"${note.title}\" salvata in $app.")
+    }
+
+    // ─── User memory ─────────────────────────────────────────────────────────
+
+    private fun rememberFact(a: LumiAction): Result {
+        val fact = a.params["fact"] ?: return Result(a, false, "Fapt lipsa.")
+        val msg = userMemory.remember(fact)
+        return Result(a, true, msg)
+    }
+
+    // ─── Battery saver ───────────────────────────────────────────────────────
+
+    private fun setBatterySaver(a: LumiAction): Result {
+        val enabled = a.params["enabled"]?.lowercase() == "true"
+        return sysSettings.setBatterySaver(enabled).fold(
+            onSuccess = {
+                Result(a, true, if (enabled) "Economisire baterie activata." else "Economisire baterie dezactivata.")
+            },
+            onFailure = { Result(a, false, it.message ?: "Eroare economisire baterie.") }
+        )
+    }
+
+    // ─── TTS speed ───────────────────────────────────────────────────────────
+
+    private fun setTtsSpeed(a: LumiAction): Result {
+        val direction = a.params["direction"]?.lowercase()
+        val speedParam = a.params["speed"]?.toFloatOrNull()
+        val current = tts?.speechRate ?: appSettings?.ttsSpeed ?: 1.0f
+        val newRate: Float = when {
+            speedParam != null -> speedParam.coerceIn(0.5f, 2.0f)
+            direction?.contains("faster") == true || direction?.contains("repede") == true ||
+                direction?.contains("rapid") == true -> (current * 1.25f).coerceIn(0.5f, 2.0f)
+            direction?.contains("slower") == true || direction?.contains("incet") == true ||
+                direction?.contains("lent") == true -> (current * 0.8f).coerceIn(0.5f, 2.0f)
+            else -> 1.0f
+        }
+        appSettings?.ttsSpeed = newRate
+        tts?.speechRate = newRate
+        return Result(a, true, "Viteza vocii: ${(newRate * 100).toInt()}%.")
+    }
+
+    // ─── YouTube ─────────────────────────────────────────────────────────────
+
+    private fun youtubeSearch(a: LumiAction): Result {
+        val query = a.params["query"] ?: return Result(a, false, "Termen de cautare lipsa.")
+        return when (val r = messenger.openYouTubeSearch(query)) {
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> Result(a, true, "YouTube deschis cu cautarea: $query")
+        }
+    }
+
+    private fun youtubeWatchLater(a: LumiAction): Result {
+        val query = a.params["query"]
+        if (!query.isNullOrBlank()) {
+            messenger.openYouTubeSearch(query)
+            return Result(a, true, "YouTube deschis cu cautarea \"$query\". Apasa pe videoclip si salveaza-l in Watch Later.")
+        }
+        return when (val r = messenger.openYouTubeWatchLater()) {
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> Result(a, true, "Lista Watch Later deschisa.")
+        }
+    }
+
+    private fun youtubeLibrary(a: LumiAction): Result {
+        return when (val r = messenger.openYouTubeLibrary()) {
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> Result(a, true, "Biblioteca YouTube deschisa.")
+        }
+    }
+
+    // ─── Food delivery ───────────────────────────────────────────────────────
+
+    private suspend fun foodDelivery(a: LumiAction): Result {
+        val app           = a.params["app"]?.lowercase() ?: "ubereats"
+        val food          = a.params["food"] ?: return Result(a, false, "Aliment lipsa.")
+        val restaurant    = a.params["restaurant"]
+        val customization = a.params["customization"]
+        val appLabel = when {
+            app.contains("doordash")  -> "DoorDash"
+            app.contains("deliveroo") -> "Deliveroo"
+            else -> "Uber Eats"
+        }
+        val customNote = if (!customization.isNullOrBlank()) " (personalizare: $customization)" else ""
+        if (!consent.request("Deschid $appLabel si caut $food$customNote. Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+        return when (val r = messenger.openFoodDelivery(app, food, restaurant)) {
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> Result(a, true, "$appLabel deschis cu cautarea \"$food\"$customNote. Finalizeaza comanda si plata in aplicatie.")
+        }
+    }
+
+    // ─── Ride sharing ────────────────────────────────────────────────────────
+
+    private suspend fun rideshare(a: LumiAction): Result {
+        val app         = a.params["app"]?.lowercase() ?: "uber"
+        val destination = a.params["destination"] ?: return Result(a, false, "Destinatie lipsa.")
+        val pickup      = a.params["pickup"]
+        val rideType    = a.params["ride_type"]
+        val appLabel    = if (app.contains("lyft")) "Lyft" else "Uber"
+        val rideLabel   = rideType?.let { " ($it)" } ?: ""
+        if (!consent.request("Deschid $appLabel catre $destination$rideLabel. Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+        val r = if (app.contains("lyft"))
+            messenger.openLyft(pickup, destination, rideType)
+        else
+            messenger.openUber(pickup, destination)
+        return when (r) {
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> Result(a, true, "$appLabel deschis catre $destination. Confirma comanda in aplicatie.")
+        }
+    }
+
+    // ─── Bluetooth devices ───────────────────────────────────────────────────
+
+    private fun btListDevices(a: LumiAction): Result {
+        val list = btDeviceManager.formatDeviceList()
+        return Result(a, true, list)
+    }
+
+    private fun btConnect(a: LumiAction): Result {
+        val name = a.params["device"] ?: return Result(a, false, "Nume dispozitiv lipsa.")
+        val msg  = btDeviceManager.guideConnect(name, lumiDeviceAddress)
+        return Result(a, true, msg)
+    }
+
+    private fun btDisconnect(a: LumiAction): Result {
+        val name = a.params["device"] ?: return Result(a, false, "Nume dispozitiv lipsa.")
+        val msg  = btDeviceManager.guideDisconnect(name, lumiDeviceAddress)
+        return Result(a, true, msg)
+    }
+
+    private fun btPair(a: LumiAction): Result {
+        val name = a.params["device"] ?: return Result(a, false, "Nume dispozitiv lipsa.")
+        val msg  = btDeviceManager.guidePair(name)
+        return Result(a, true, msg)
     }
 }

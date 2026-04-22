@@ -2,7 +2,9 @@ package com.lumi.app.system
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
+import android.os.PowerManager
 import android.provider.Settings
 
 class SystemSettingsHelper(private val context: Context) {
@@ -71,5 +73,34 @@ class SystemSettingsHelper(private val context: Context) {
     fun isDNDEnabled(): Boolean {
         val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         return mgr.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_NONE
+    }
+
+    // ─── Battery saver ────────────────────────────────────────────────────────
+
+    fun isBatterySaverEnabled(): Boolean =
+        (context.getSystemService(Context.POWER_SERVICE) as PowerManager).isPowerSaveMode
+
+    fun setBatterySaver(enabled: Boolean): Result<Unit> {
+        // Try WRITE_SECURE_SETTINGS (grantable via ADB; silent on most user devices)
+        return try {
+            val result = Settings.Global.putInt(
+                context.contentResolver, "low_power", if (enabled) 1 else 0
+            )
+            if (result) Result.success(Unit)
+            else openBatterySaverSettings()
+        } catch (e: Exception) {
+            openBatterySaverSettings()
+        }
+    }
+
+    private fun openBatterySaverSettings(): Result<Unit> {
+        return try {
+            context.startActivity(Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(SecurityException("Nu s-a putut deschide setarile economisire baterie."))
+        }
     }
 }

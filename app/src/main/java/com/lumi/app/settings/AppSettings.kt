@@ -21,6 +21,7 @@ class AppSettings(context: Context) {
         const val KEY_MEMORY_SIZE         = "memory_size"
         const val KEY_ACTION_MODE         = "action_mode"
         const val KEY_AUTONOMOUS_MODE     = "autonomous_mode"
+        const val KEY_TTS_SPEED           = "tts_speed"
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
@@ -84,6 +85,10 @@ Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
     var actionModeEnabled: Boolean
         get() = prefs.getBoolean(KEY_ACTION_MODE, false)
         set(v) = prefs.edit().putBoolean(KEY_ACTION_MODE, v).apply()
+
+    var ttsSpeed: Float
+        get() = prefs.getFloat(KEY_TTS_SPEED, 1.0f)
+        set(v) = prefs.edit().putFloat(KEY_TTS_SPEED, v.coerceIn(0.5f, 2.0f)).apply()
 
     /** Fully autonomous: act silently like a smartwatch, no confirmation dialogs. Only valid when actionModeEnabled=true. */
     var autonomousMode: Boolean
