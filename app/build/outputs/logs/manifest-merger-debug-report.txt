@@ -1,0 +1,735 @@
+-- Merging decision tree log ---
+manifest
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:2:1-200:12
+INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:2:1-200:12
+INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:2:1-200:12
+INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:2:1-200:12
+MERGED from [androidx.databinding:viewbinding:8.2.2] C:\Users\skimo\.gradle\caches\transforms-4\11d0c5ed7068e4432508b1dc17cfd274\transformed\viewbinding-8.2.2\AndroidManifest.xml:2:1-7:12
+MERGED from [com.google.android.material:material:1.11.0] C:\Users\skimo\.gradle\caches\transforms-4\f04cd6244f4b9203b834102570208274\transformed\material-1.11.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\skimo\.gradle\caches\transforms-4\86bfb9c6cbf6dcc0f919c8a4c2bdee9a\transformed\constraintlayout-2.1.4\AndroidManifest.xml:2:1-11:12
+MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\skimo\.gradle\caches\transforms-4\a2effb24373d90904639b656431cebb1\transformed\appcompat-resources-1.6.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.preference:preference-ktx:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\4f782b3fdd2bbe50868d760d5d328eb8\transformed\preference-ktx-1.2.1\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.preference:preference:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\c8ea5d7fa792f44a15cb98c9f7e54269\transformed\preference-1.2.1\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.appcompat:appcompat:1.6.1] C:\Users\skimo\.gradle\caches\transforms-4\04b980f1254cb7db2dd2d6314bcaaa48\transformed\appcompat-1.6.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.viewpager2:viewpager2:1.1.0-beta02] C:\Users\skimo\.gradle\caches\transforms-4\3e5e49bab3f1858529ca2a4b8bb2f35e\transformed\viewpager2-1.1.0-beta02\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.recyclerview:recyclerview:1.3.2] C:\Users\skimo\.gradle\caches\transforms-4\8f69106836313605a6fb73f412bbb648\transformed\recyclerview-1.3.2\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\ecaa314fd3ddca34cdc452136ec400b9\transformed\emoji2-views-helper-1.2.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.fragment:fragment-ktx:1.3.6] C:\Users\skimo\.gradle\caches\transforms-4\3e85ef703fe02ba9d52200779a237de0\transformed\fragment-ktx-1.3.6\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.fragment:fragment:1.3.6] C:\Users\skimo\.gradle\caches\transforms-4\bfcef85b21341bb92958a54034d168b7\transformed\fragment-1.3.6\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.activity:activity-ktx:1.8.0] C:\Users\skimo\.gradle\caches\transforms-4\de2c730f9e2b5c4972e9cbbc21969cdf\transformed\activity-ktx-1.8.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.activity:activity:1.8.0] C:\Users\skimo\.gradle\caches\transforms-4\6d0450a5c7c5c64ae57dffb1c0be58c8\transformed\activity-1.8.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\75f1d7c1fa855c3e6f9373470c869021\transformed\drawerlayout-1.1.1\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\4ec00e92be83ed569fa7f7acb9d67ce7\transformed\coordinatorlayout-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\c3ed37dda94e88d0b98a04ead7515d79\transformed\dynamicanimation-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\173d9d90209cdff6b2cea39a6e5bf930\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\37176d6578c9f51776c101994e829207\transformed\vectordrawable-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\5c90098c09811c0d65e1b89a6fc7ee0d\transformed\viewpager-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\2fa48c763ec7da4edc27f77bb3e3ac4f\transformed\legacy-support-core-utils-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\85e0e3e5a2814d5554940d4530127193\transformed\loader-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\220a40073a6e93753f6c722ddb4b590b\transformed\slidingpanelayout-1.2.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.customview:customview:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\9fb27ecfbd9befbbfb2b5cca3351ff59\transformed\customview-1.1.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.transition:transition:1.4.1] C:\Users\skimo\.gradle\caches\transforms-4\7b775dbc7149963f90cfeb3df42d729e\transformed\transition-1.4.1\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:17:1-33:12
+MERGED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:17:1-30:12
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\bdc15ba41bf7957901125cbdc34b1619\transformed\customview-poolingcontainer-1.0.0\AndroidManifest.xml:17:1-23:12
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\4c83c12a238307586527fac47f93463b\transformed\savedstate-ktx-1.2.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\516efb3d3a238c3666ed93fe91029e8b\transformed\savedstate-1.2.1\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\edf4a6e04ad464e246f1e2a28a0d0dd2\transformed\lifecycle-livedata-core-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\e5cf2c2a3ff3a21395271098a52f5169\transformed\lifecycle-livedata-core-ktx-2.7.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\8114781622a086bf4640e112fe5c11d1\transformed\lifecycle-livedata-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\eb1a178e961017315b0d0ed01920a494\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\4c067798b116d1dca42756b34c2fa986\transformed\lifecycle-viewmodel-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-livedata-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\11ba771cf5860de4864fa1ebed548cce\transformed\lifecycle-livedata-ktx-2.7.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\f60e69af8efb8752e76b28fd171c7bc5\transformed\lifecycle-viewmodel-ktx-2.7.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\109b4029b0fd736712f39c9c89e5dad4\transformed\lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\e9fc9f9d9dd97f8f1afc59d5ce9fc5f0\transformed\lifecycle-viewmodel-savedstate-2.7.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.core:core-ktx:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\c09329484dcd00e7a76f56b58cb46b39\transformed\core-ktx-1.12.0\AndroidManifest.xml:2:1-7:12
+MERGED from [androidx.annotation:annotation-experimental:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\4f6c470698b39c16d1e946a68206d4db\transformed\annotation-experimental-1.3.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\7649d2ec4cbba44168d290ae7f55ccad\transformed\cursoradapter-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.cardview:cardview:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\070a417d856d1e1df6b1918c18f2b65b\transformed\cardview-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\d45a7c677d91c951f5832f34c25a8185\transformed\interpolator-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\6be89ced282cae3b3423ea4fee05a46c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:17:1-27:12
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:17:1-55:12
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\02ed6d41773700a081f70f79a51300d9\transformed\startup-runtime-1.1.1\AndroidManifest.xml:17:1-33:12
+MERGED from [androidx.tracing:tracing:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\571015eb63d19a6833e41364435760be\transformed\tracing-1.0.0\AndroidManifest.xml:17:1-24:12
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\skimo\.gradle\caches\transforms-4\c91e80576179a6a4ae95983ec3843c93\transformed\core-runtime-2.2.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.documentfile:documentfile:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\237ecf9d300eac8603d493b0530d41e7\transformed\documentfile-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f77237f31a6a915b7222d995eb11c8bf\transformed\localbroadcastmanager-1.0.0\AndroidManifest.xml:17:1-22:12
+MERGED from [androidx.print:print:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\a77de0a243164e9bbb7a8f85adefeedc\transformed\print-1.0.0\AndroidManifest.xml:17:1-22:12
+	package
+		INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml
+	android:versionName
+		INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml
+	android:versionCode
+		INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml
+	xmlns:android
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:2:11-69
+uses-permission#android.permission.BLUETOOTH
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:5:5-94
+	android:maxSdkVersion
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:5:66-92
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:5:22-65
+uses-permission#android.permission.BLUETOOTH_ADMIN
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:6:5-100
+	android:maxSdkVersion
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:6:72-98
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:6:22-71
+uses-permission#android.permission.BLUETOOTH_SCAN
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:7:5-119
+	android:usesPermissionFlags
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:7:71-117
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:7:22-70
+uses-permission#android.permission.BLUETOOTH_CONNECT
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:8:5-75
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:8:22-73
+uses-permission#android.permission.BLUETOOTH_ADVERTISE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:9:5-77
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:9:22-75
+uses-feature#android.hardware.bluetooth_le
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:10:5-89
+	android:required
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:10:64-87
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:10:19-63
+uses-permission#android.permission.RECORD_AUDIO
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:13:5-70
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:13:22-68
+uses-permission#android.permission.MODIFY_AUDIO_SETTINGS
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:14:5-79
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:14:22-77
+uses-permission#android.permission.CAMERA
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:17:5-64
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:17:22-62
+uses-feature#android.hardware.camera
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:18:5-84
+	android:required
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:18:58-82
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:18:19-57
+uses-permission#android.permission.READ_CONTACTS
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:21:5-71
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:21:22-69
+uses-permission#android.permission.RECEIVE_SMS
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:24:5-69
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:24:22-67
+uses-permission#android.permission.READ_SMS
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:25:5-66
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:25:22-64
+uses-permission#android.permission.SEND_SMS
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:26:5-66
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:26:22-64
+uses-permission#android.permission.POST_NOTIFICATIONS
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:27:5-76
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:27:22-74
+uses-permission#android.permission.CALL_PHONE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:28:5-68
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:28:22-66
+uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:31:5-80
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:31:22-78
+uses-permission#android.permission.USE_EXACT_ALARM
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:32:5-73
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:32:22-71
+uses-permission#android.permission.SCHEDULE_EXACT_ALARM
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:33:5-78
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:33:22-76
+uses-permission#android.permission.SET_ALARM
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:34:5-67
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:34:22-65
+uses-permission#android.permission.WRITE_SETTINGS
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:37:5-72
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:37:22-70
+uses-permission#android.permission.ACCESS_NOTIFICATION_POLICY
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:38:5-84
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:38:22-82
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:39:5-106
+	android:maxSdkVersion
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:39:78-104
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:39:22-77
+uses-permission#android.permission.READ_CALENDAR
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:42:5-71
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:42:22-69
+uses-permission#android.permission.WRITE_CALENDAR
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:43:5-72
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:43:22-70
+uses-permission#android.permission.INTERNET
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:46:5-66
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:46:22-64
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:47:5-78
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:47:22-76
+uses-permission#android.permission.ACCESS_FINE_LOCATION
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:50:5-105
+	android:maxSdkVersion
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:50:77-103
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:50:22-76
+uses-permission#android.permission.ACCESS_COARSE_LOCATION
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:51:5-107
+	android:maxSdkVersion
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:51:79-105
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:51:22-78
+uses-permission#android.permission.WAKE_LOCK
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:54:5-67
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:54:22-65
+uses-permission#android.permission.FOREGROUND_SERVICE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:55:5-76
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:55:22-74
+uses-permission#android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:56:5-93
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:56:22-91
+uses-permission#android.permission.VIBRATE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:59:5-65
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:59:22-63
+queries
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:62:5-128:15
+package#com.whatsapp
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:64:9-47
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:64:18-45
+package#com.whatsapp.w4b
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:65:9-51
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:65:18-49
+package#com.instagram.android
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:66:9-56
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:66:18-54
+package#com.snapchat.android
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:67:9-55
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:67:18-53
+package#com.facebook.orca
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:68:9-52
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:68:18-50
+package#com.discord
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:69:9-46
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:69:18-44
+package#com.samsung.android.app.notes
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:71:9-64
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:71:18-62
+package#com.google.android.keep
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:72:9-58
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:72:18-56
+package#com.google.android.gm
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:74:9-56
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:74:18-54
+package#com.google.android.apps.maps
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:76:9-63
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:76:18-61
+package#com.waze
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:77:9-43
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:77:18-41
+package#com.surfshark.vpnclient.android
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:79:9-66
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:79:18-64
+package#com.nordvpn.android
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:80:9-54
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:80:18-52
+package#com.spotify.music
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:82:9-52
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:82:18-50
+package#com.google.android.apps.youtube.music
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:83:9-72
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:83:18-70
+package#com.netflix.mediaclient
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:84:9-58
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:84:18-56
+package#com.google.android.apps.chromecast.app
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:86:9-73
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:86:18-71
+package#com.google.android.apps.healthdata
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:88:9-69
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:88:18-67
+package#com.google.android.apps.fitness
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:89:9-66
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:89:18-64
+package#com.strava
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:90:9-45
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:90:18-43
+package#com.myfitnesspal.android
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:91:9-59
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:91:18-57
+package#com.revolut.revolut
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:93:9-54
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:93:18-52
+package#ro.btrl.mobile
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:94:9-49
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:94:18-47
+package#com.transferwise.android
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:95:9-59
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:95:18-57
+package#com.paypal.android.p2pmobile
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:96:9-63
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:96:18-61
+package#com.amazon.mShoppingApp
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:98:9-58
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:98:18-56
+package#com.binance.dev
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:100:9-50
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:100:18-48
+package#com.coinbase.android
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:101:9-55
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:101:18-53
+package#io.metamask
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:102:9-46
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:102:18-44
+package#com.wallet.crypto.trustapp
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:103:9-61
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:103:18-59
+package#com.google.android.apps.magazines
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:105:9-68
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:105:18-66
+intent#action:name:android.intent.action.CALL
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:106:9-108:18
+action#android.intent.action.CALL
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:107:13-64
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:107:21-62
+intent#action:name:android.intent.action.VIEW+data:scheme:https
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:109:9-112:18
+action#android.intent.action.VIEW
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:110:13-64
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:110:21-62
+data
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:111:13-43
+	android:scheme
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:111:19-41
+	android:mimeType
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:115:19-48
+intent#action:name:android.intent.action.SEND+data:mimeType:text/plain
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:113:9-116:18
+action#android.intent.action.SEND
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:114:13-64
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:114:21-62
+intent#action:name:android.intent.action.SENDTO+data:scheme:mailto
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:117:9-120:18
+action#android.intent.action.SENDTO
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:118:13-66
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:118:21-64
+intent#action:name:android.intent.action.INSERT+data:mimeType:vnd.android.cursor.dir/event
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:121:9-124:18
+action#android.intent.action.INSERT
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:122:13-66
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:122:21-64
+intent#action:name:android.provider.AlarmClock.SET_TIMER
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:125:9-127:18
+action#android.provider.AlarmClock.SET_TIMER
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:126:13-75
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:126:21-73
+application
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:5-199:19
+INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:5-199:19
+MERGED from [com.google.android.material:material:1.11.0] C:\Users\skimo\.gradle\caches\transforms-4\f04cd6244f4b9203b834102570208274\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
+MERGED from [com.google.android.material:material:1.11.0] C:\Users\skimo\.gradle\caches\transforms-4\f04cd6244f4b9203b834102570208274\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\skimo\.gradle\caches\transforms-4\86bfb9c6cbf6dcc0f919c8a4c2bdee9a\transformed\constraintlayout-2.1.4\AndroidManifest.xml:9:5-20
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\skimo\.gradle\caches\transforms-4\86bfb9c6cbf6dcc0f919c8a4c2bdee9a\transformed\constraintlayout-2.1.4\AndroidManifest.xml:9:5-20
+MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:24:5-31:19
+MERGED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:24:5-31:19
+MERGED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:28:5-89
+MERGED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:28:5-89
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:23:5-33:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\6be89ced282cae3b3423ea4fee05a46c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\6be89ced282cae3b3423ea4fee05a46c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:24:5-25:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:23:5-53:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\02ed6d41773700a081f70f79a51300d9\transformed\startup-runtime-1.1.1\AndroidManifest.xml:25:5-31:19
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\02ed6d41773700a081f70f79a51300d9\transformed\startup-runtime-1.1.1\AndroidManifest.xml:25:5-31:19
+	android:extractNativeLibs
+		INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml
+	android:appComponentFactory
+		ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+	android:supportsRtl
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:136:9-35
+	android:label
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:134:9-41
+	android:roundIcon
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:135:9-54
+	android:icon
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:133:9-43
+	android:allowBackup
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:132:9-35
+	android:theme
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:137:9-42
+	android:usesCleartextTraffic
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:138:9-45
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:131:9-40
+activity#com.lumi.app.MainActivity
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:140:9-149:20
+	android:screenOrientation
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:143:13-49
+	android:windowSoftInputMode
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:144:13-55
+	android:exported
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:142:13-36
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:141:13-41
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:145:13-148:29
+action#android.intent.action.MAIN
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:146:17-68
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:146:25-66
+category#android.intent.category.LAUNCHER
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:147:17-76
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:147:27-74
+activity#com.lumi.app.settings.SettingsActivity
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:151:9-154:57
+	android:parentActivityName
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:154:13-55
+	android:exported
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:153:13-37
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:152:13-54
+service#com.lumi.app.notifications.LumiNotificationService
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:157:9-168:19
+	android:label
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:160:13-64
+	android:exported
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:159:13-36
+	android:permission
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:161:13-87
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:158:13-66
+intent-filter#action:name:android.service.notification.NotificationListenerService
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:162:13-164:29
+action#android.service.notification.NotificationListenerService
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:163:17-98
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:163:25-96
+meta-data#android.service.notification.default_filter_types
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:165:13-167:57
+	android:value
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:167:17-55
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:166:17-81
+service#com.lumi.app.bluetooth.LumiBluetoothService
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:171:9-174:62
+	android:exported
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:173:13-37
+	android:foregroundServiceType
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:174:13-60
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:172:13-59
+receiver#com.lumi.app.timer.TimerReceiver
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:177:9-183:20
+	android:exported
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:179:13-37
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:178:13-48
+intent-filter#action:name:com.lumi.app.ACTION_TIMER_DONE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:180:13-182:29
+action#com.lumi.app.ACTION_TIMER_DONE
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:181:17-72
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:181:25-70
+service#com.lumi.app.whatsapp.LumiAccessibilityService
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:186:9-197:19
+	android:label
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:189:13-48
+	android:exported
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:188:13-36
+	android:permission
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:190:13-79
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:187:13-62
+intent-filter#action:name:android.accessibilityservice.AccessibilityService
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:191:13-193:29
+action#android.accessibilityservice.AccessibilityService
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:192:17-91
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:192:25-89
+meta-data#android.accessibilityservice
+ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:194:13-196:71
+	android:resource
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:196:17-69
+	android:name
+		ADDED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:195:17-60
+uses-sdk
+INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml
+INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml
+MERGED from [androidx.databinding:viewbinding:8.2.2] C:\Users\skimo\.gradle\caches\transforms-4\11d0c5ed7068e4432508b1dc17cfd274\transformed\viewbinding-8.2.2\AndroidManifest.xml:5:5-44
+MERGED from [androidx.databinding:viewbinding:8.2.2] C:\Users\skimo\.gradle\caches\transforms-4\11d0c5ed7068e4432508b1dc17cfd274\transformed\viewbinding-8.2.2\AndroidManifest.xml:5:5-44
+MERGED from [com.google.android.material:material:1.11.0] C:\Users\skimo\.gradle\caches\transforms-4\f04cd6244f4b9203b834102570208274\transformed\material-1.11.0\AndroidManifest.xml:20:5-44
+MERGED from [com.google.android.material:material:1.11.0] C:\Users\skimo\.gradle\caches\transforms-4\f04cd6244f4b9203b834102570208274\transformed\material-1.11.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\skimo\.gradle\caches\transforms-4\86bfb9c6cbf6dcc0f919c8a4c2bdee9a\transformed\constraintlayout-2.1.4\AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\skimo\.gradle\caches\transforms-4\86bfb9c6cbf6dcc0f919c8a4c2bdee9a\transformed\constraintlayout-2.1.4\AndroidManifest.xml:5:5-7:41
+MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\skimo\.gradle\caches\transforms-4\a2effb24373d90904639b656431cebb1\transformed\appcompat-resources-1.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\skimo\.gradle\caches\transforms-4\a2effb24373d90904639b656431cebb1\transformed\appcompat-resources-1.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.preference:preference-ktx:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\4f782b3fdd2bbe50868d760d5d328eb8\transformed\preference-ktx-1.2.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.preference:preference-ktx:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\4f782b3fdd2bbe50868d760d5d328eb8\transformed\preference-ktx-1.2.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.preference:preference:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\c8ea5d7fa792f44a15cb98c9f7e54269\transformed\preference-1.2.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.preference:preference:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\c8ea5d7fa792f44a15cb98c9f7e54269\transformed\preference-1.2.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.appcompat:appcompat:1.6.1] C:\Users\skimo\.gradle\caches\transforms-4\04b980f1254cb7db2dd2d6314bcaaa48\transformed\appcompat-1.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.appcompat:appcompat:1.6.1] C:\Users\skimo\.gradle\caches\transforms-4\04b980f1254cb7db2dd2d6314bcaaa48\transformed\appcompat-1.6.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.viewpager2:viewpager2:1.1.0-beta02] C:\Users\skimo\.gradle\caches\transforms-4\3e5e49bab3f1858529ca2a4b8bb2f35e\transformed\viewpager2-1.1.0-beta02\AndroidManifest.xml:5:5-44
+MERGED from [androidx.viewpager2:viewpager2:1.1.0-beta02] C:\Users\skimo\.gradle\caches\transforms-4\3e5e49bab3f1858529ca2a4b8bb2f35e\transformed\viewpager2-1.1.0-beta02\AndroidManifest.xml:5:5-44
+MERGED from [androidx.recyclerview:recyclerview:1.3.2] C:\Users\skimo\.gradle\caches\transforms-4\8f69106836313605a6fb73f412bbb648\transformed\recyclerview-1.3.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.recyclerview:recyclerview:1.3.2] C:\Users\skimo\.gradle\caches\transforms-4\8f69106836313605a6fb73f412bbb648\transformed\recyclerview-1.3.2\AndroidManifest.xml:20:5-44
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\ecaa314fd3ddca34cdc452136ec400b9\transformed\emoji2-views-helper-1.2.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2-views-helper:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\ecaa314fd3ddca34cdc452136ec400b9\transformed\emoji2-views-helper-1.2.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.fragment:fragment-ktx:1.3.6] C:\Users\skimo\.gradle\caches\transforms-4\3e85ef703fe02ba9d52200779a237de0\transformed\fragment-ktx-1.3.6\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment-ktx:1.3.6] C:\Users\skimo\.gradle\caches\transforms-4\3e85ef703fe02ba9d52200779a237de0\transformed\fragment-ktx-1.3.6\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment:1.3.6] C:\Users\skimo\.gradle\caches\transforms-4\bfcef85b21341bb92958a54034d168b7\transformed\fragment-1.3.6\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.fragment:fragment:1.3.6] C:\Users\skimo\.gradle\caches\transforms-4\bfcef85b21341bb92958a54034d168b7\transformed\fragment-1.3.6\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.activity:activity-ktx:1.8.0] C:\Users\skimo\.gradle\caches\transforms-4\de2c730f9e2b5c4972e9cbbc21969cdf\transformed\activity-ktx-1.8.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity-ktx:1.8.0] C:\Users\skimo\.gradle\caches\transforms-4\de2c730f9e2b5c4972e9cbbc21969cdf\transformed\activity-ktx-1.8.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.activity:activity:1.8.0] C:\Users\skimo\.gradle\caches\transforms-4\6d0450a5c7c5c64ae57dffb1c0be58c8\transformed\activity-1.8.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.activity:activity:1.8.0] C:\Users\skimo\.gradle\caches\transforms-4\6d0450a5c7c5c64ae57dffb1c0be58c8\transformed\activity-1.8.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\75f1d7c1fa855c3e6f9373470c869021\transformed\drawerlayout-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.drawerlayout:drawerlayout:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\75f1d7c1fa855c3e6f9373470c869021\transformed\drawerlayout-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\4ec00e92be83ed569fa7f7acb9d67ce7\transformed\coordinatorlayout-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.coordinatorlayout:coordinatorlayout:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\4ec00e92be83ed569fa7f7acb9d67ce7\transformed\coordinatorlayout-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\c3ed37dda94e88d0b98a04ead7515d79\transformed\dynamicanimation-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\c3ed37dda94e88d0b98a04ead7515d79\transformed\dynamicanimation-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\173d9d90209cdff6b2cea39a6e5bf930\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\173d9d90209cdff6b2cea39a6e5bf930\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\37176d6578c9f51776c101994e829207\transformed\vectordrawable-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\37176d6578c9f51776c101994e829207\transformed\vectordrawable-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\5c90098c09811c0d65e1b89a6fc7ee0d\transformed\viewpager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\5c90098c09811c0d65e1b89a6fc7ee0d\transformed\viewpager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\2fa48c763ec7da4edc27f77bb3e3ac4f\transformed\legacy-support-core-utils-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\2fa48c763ec7da4edc27f77bb3e3ac4f\transformed\legacy-support-core-utils-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\85e0e3e5a2814d5554940d4530127193\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\85e0e3e5a2814d5554940d4530127193\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\220a40073a6e93753f6c722ddb4b590b\transformed\slidingpanelayout-1.2.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.slidingpanelayout:slidingpanelayout:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\220a40073a6e93753f6c722ddb4b590b\transformed\slidingpanelayout-1.2.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\9fb27ecfbd9befbbfb2b5cca3351ff59\transformed\customview-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.customview:customview:1.1.0] C:\Users\skimo\.gradle\caches\transforms-4\9fb27ecfbd9befbbfb2b5cca3351ff59\transformed\customview-1.1.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.4.1] C:\Users\skimo\.gradle\caches\transforms-4\7b775dbc7149963f90cfeb3df42d729e\transformed\transition-1.4.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.transition:transition:1.4.1] C:\Users\skimo\.gradle\caches\transforms-4\7b775dbc7149963f90cfeb3df42d729e\transformed\transition-1.4.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\bdc15ba41bf7957901125cbdc34b1619\transformed\customview-poolingcontainer-1.0.0\AndroidManifest.xml:20:5-21:38
+MERGED from [androidx.customview:customview-poolingcontainer:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\bdc15ba41bf7957901125cbdc34b1619\transformed\customview-poolingcontainer-1.0.0\AndroidManifest.xml:20:5-21:38
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\4c83c12a238307586527fac47f93463b\transformed\savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\4c83c12a238307586527fac47f93463b\transformed\savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\516efb3d3a238c3666ed93fe91029e8b\transformed\savedstate-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\skimo\.gradle\caches\transforms-4\516efb3d3a238c3666ed93fe91029e8b\transformed\savedstate-1.2.1\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\edf4a6e04ad464e246f1e2a28a0d0dd2\transformed\lifecycle-livedata-core-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\edf4a6e04ad464e246f1e2a28a0d0dd2\transformed\lifecycle-livedata-core-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\e5cf2c2a3ff3a21395271098a52f5169\transformed\lifecycle-livedata-core-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\e5cf2c2a3ff3a21395271098a52f5169\transformed\lifecycle-livedata-core-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\8114781622a086bf4640e112fe5c11d1\transformed\lifecycle-livedata-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\8114781622a086bf4640e112fe5c11d1\transformed\lifecycle-livedata-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\eb1a178e961017315b0d0ed01920a494\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\eb1a178e961017315b0d0ed01920a494\transformed\lifecycle-runtime-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\4c067798b116d1dca42756b34c2fa986\transformed\lifecycle-viewmodel-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\4c067798b116d1dca42756b34c2fa986\transformed\lifecycle-viewmodel-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\11ba771cf5860de4864fa1ebed548cce\transformed\lifecycle-livedata-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-livedata-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\11ba771cf5860de4864fa1ebed548cce\transformed\lifecycle-livedata-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\f60e69af8efb8752e76b28fd171c7bc5\transformed\lifecycle-viewmodel-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\f60e69af8efb8752e76b28fd171c7bc5\transformed\lifecycle-viewmodel-ktx-2.7.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\109b4029b0fd736712f39c9c89e5dad4\transformed\lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-runtime-ktx:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\109b4029b0fd736712f39c9c89e5dad4\transformed\lifecycle-runtime-ktx-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\e9fc9f9d9dd97f8f1afc59d5ce9fc5f0\transformed\lifecycle-viewmodel-savedstate-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\e9fc9f9d9dd97f8f1afc59d5ce9fc5f0\transformed\lifecycle-viewmodel-savedstate-2.7.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.core:core-ktx:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\c09329484dcd00e7a76f56b58cb46b39\transformed\core-ktx-1.12.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.core:core-ktx:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\c09329484dcd00e7a76f56b58cb46b39\transformed\core-ktx-1.12.0\AndroidManifest.xml:5:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\4f6c470698b39c16d1e946a68206d4db\transformed\annotation-experimental-1.3.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.annotation:annotation-experimental:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\4f6c470698b39c16d1e946a68206d4db\transformed\annotation-experimental-1.3.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\7649d2ec4cbba44168d290ae7f55ccad\transformed\cursoradapter-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.cursoradapter:cursoradapter:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\7649d2ec4cbba44168d290ae7f55ccad\transformed\cursoradapter-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.cardview:cardview:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\070a417d856d1e1df6b1918c18f2b65b\transformed\cardview-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.cardview:cardview:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\070a417d856d1e1df6b1918c18f2b65b\transformed\cardview-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\d45a7c677d91c951f5832f34c25a8185\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.interpolator:interpolator:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\d45a7c677d91c951f5832f34c25a8185\transformed\interpolator-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\6be89ced282cae3b3423ea4fee05a46c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\6be89ced282cae3b3423ea4fee05a46c\transformed\versionedparcelable-1.1.1\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\02ed6d41773700a081f70f79a51300d9\transformed\startup-runtime-1.1.1\AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\02ed6d41773700a081f70f79a51300d9\transformed\startup-runtime-1.1.1\AndroidManifest.xml:21:5-23:41
+MERGED from [androidx.tracing:tracing:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\571015eb63d19a6833e41364435760be\transformed\tracing-1.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.tracing:tracing:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\571015eb63d19a6833e41364435760be\transformed\tracing-1.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\skimo\.gradle\caches\transforms-4\c91e80576179a6a4ae95983ec3843c93\transformed\core-runtime-2.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.arch.core:core-runtime:2.2.0] C:\Users\skimo\.gradle\caches\transforms-4\c91e80576179a6a4ae95983ec3843c93\transformed\core-runtime-2.2.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\237ecf9d300eac8603d493b0530d41e7\transformed\documentfile-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.documentfile:documentfile:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\237ecf9d300eac8603d493b0530d41e7\transformed\documentfile-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f77237f31a6a915b7222d995eb11c8bf\transformed\localbroadcastmanager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.localbroadcastmanager:localbroadcastmanager:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f77237f31a6a915b7222d995eb11c8bf\transformed\localbroadcastmanager-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\a77de0a243164e9bbb7a8f85adefeedc\transformed\print-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.print:print:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\a77de0a243164e9bbb7a8f85adefeedc\transformed\print-1.0.0\AndroidManifest.xml:20:5-44
+	android:targetSdkVersion
+		INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from C:\Users\skimo\StudioProjects\Lumi\app\src\main\AndroidManifest.xml
+provider#androidx.startup.InitializationProvider
+ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:24:9-32:20
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\02ed6d41773700a081f70f79a51300d9\transformed\startup-runtime-1.1.1\AndroidManifest.xml:26:9-30:34
+MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\skimo\.gradle\caches\transforms-4\02ed6d41773700a081f70f79a51300d9\transformed\startup-runtime-1.1.1\AndroidManifest.xml:26:9-30:34
+	tools:node
+		ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:28:13-31
+	android:authorities
+		ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:26:13-68
+	android:exported
+		ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:25:13-67
+meta-data#androidx.emoji2.text.EmojiCompatInitializer
+ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\skimo\.gradle\caches\transforms-4\5484b64c7630c501c275b954b4844268\transformed\emoji2-1.2.0\AndroidManifest.xml:30:17-75
+uses-library#androidx.window.extensions
+ADDED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:25:9-27:40
+	android:required
+		ADDED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:27:13-37
+	android:name
+		ADDED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:26:13-54
+uses-library#androidx.window.sidecar
+ADDED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:28:9-30:40
+	android:required
+		ADDED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:30:13-37
+	android:name
+		ADDED from [androidx.window:window:1.0.0] C:\Users\skimo\.gradle\caches\transforms-4\f3d232fb6c5541bfa784c7d920e66bd2\transformed\window-1.0.0\AndroidManifest.xml:29:13-51
+permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+permission#com.lumi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+	android:protectionLevel
+		ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+	android:name
+		ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+uses-permission#${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+uses-permission#com.lumi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+	android:name
+		ADDED from [androidx.core:core:1.12.0] C:\Users\skimo\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+meta-data#androidx.lifecycle.ProcessLifecycleInitializer
+ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\skimo\.gradle\caches\transforms-4\b6072b9bebaaad68060e6654c7a1ebbd\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
+meta-data#androidx.profileinstaller.ProfileInstallerInitializer
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
+	android:value
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
+receiver#androidx.profileinstaller.ProfileInstallReceiver
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
+	android:enabled
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
+	android:exported
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
+	android:permission
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
+	android:directBootAware
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
+intent-filter#action:name:androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
+action#androidx.profileinstaller.action.INSTALL_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
+intent-filter#action:name:androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
+action#androidx.profileinstaller.action.SKIP_FILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+intent-filter#action:name:androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
+action#androidx.profileinstaller.action.SAVE_PROFILE
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
+intent-filter#action:name:androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
+action#androidx.profileinstaller.action.BENCHMARK_OPERATION
+ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
+	android:name
+		ADDED from [androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\skimo\.gradle\caches\transforms-4\c1edb1fc1b894212c2fcf69d95dd268b\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:25-92

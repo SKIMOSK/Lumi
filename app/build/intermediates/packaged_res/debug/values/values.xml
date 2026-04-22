@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="accent">#7C4DFF</color>
+    <color name="accent_border">#D9C8FF</color>
+    <color name="accent_light">#B388FF</color>
+    <color name="accent_soft">#EFE8FF</color>
+    <color name="bg_main">#F7F6FB</color>
+    <color name="bubble_lumi">#FFFFFF</color>
+    <color name="bubble_user">#7C4DFF</color>
+    <color name="card">#FFFFFF</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorPrimaryVariant">#16213E</color>
+    <color name="colorSecondary">#7C4DFF</color>
+    <color name="color_ok">#22A06B</color>
+    <color name="color_ok_border">#CDE8DA</color>
+    <color name="color_warn">#D97A3D</color>
+    <color name="input_bg">#FFFFFF</color>
+    <color name="line">#E6E4F0</color>
+    <color name="primary">#1A1A2E</color>
+    <color name="primary_dark">#16213E</color>
+    <color name="status_bg">#F7F6FB</color>
+    <color name="text_hint">#9A9AAB</color>
+    <color name="text_primary">#1A1A2E</color>
+    <color name="text_secondary">#5B5B6E</color>
+    <color name="white">#FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <string name="accessibility_service_description">Lumi folosește serviciul de accesibilitate pentru a citi mesajele WhatsApp și a trimite răspunsuri în numele tău, fără a debloca ecranul.</string>
+    <string name="action_clear">Șterge conversația</string>
+    <string name="action_settings">Setări</string>
+    <string name="app_name">Lumi</string>
+    <string name="bt_connected">Conectat la Lumi</string>
+    <string name="bt_disconnected">Deconectat</string>
+    <string name="bt_scanning">Caut dispozitiv…</string>
+    <string name="listening">Ascult…</string>
+    <string name="no_api_key">Configurează cheia API în Setări</string>
+    <string name="notification_listener_label">Lumi Notificări</string>
+    <string name="processing">Procesez…</string>
+    <style name="SectionHeader" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">16dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:textColor">@color/accent</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="Theme.Lumi" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:editTextColor">@color/text_primary</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:navigationBarColor">@color/primary</item>
+    </style>
+</resources>

@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.lumi.app-mergeDebugResources-40:/values-ldltr-v21/values-ldltr-v21.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\skimo\\.gradle\\caches\\transforms-4\\04b980f1254cb7db2dd2d6314bcaaa48\\transformed\\appcompat-1.6.1\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "112",
+                        "endOffsets": "163"
+                    }
+                }
+            ]
+        }
+    ]
+}

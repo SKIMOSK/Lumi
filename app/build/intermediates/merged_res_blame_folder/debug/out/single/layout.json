@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.lumi.app-mergeDebugResources-41:/layout/item_message_user.xml",
+        "source": "com.lumi.app-main-44:/layout/item_message_user.xml"
+    },
+    {
+        "merged": "com.lumi.app-mergeDebugResources-41:/layout/activity_main.xml",
+        "source": "com.lumi.app-main-44:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.lumi.app-mergeDebugResources-41:/layout/item_message_lumi.xml",
+        "source": "com.lumi.app-main-44:/layout/item_message_lumi.xml"
+    },
+    {
+        "merged": "com.lumi.app-mergeDebugResources-41:/layout/activity_settings.xml",
+        "source": "com.lumi.app-main-44:/layout/activity_settings.xml"
+    }
+]

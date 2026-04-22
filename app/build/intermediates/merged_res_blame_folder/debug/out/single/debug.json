@@ -1,0 +1,98 @@
+[
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\xml_accessibility_service_config.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\xml\\accessibility_service_config.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\layout_activity_settings.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\layout\\activity_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_chip_default.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\chip_default.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_voice_orb_ring.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\voice_orb_ring.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_bubble_user.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\bubble_user.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_bubble_lumi.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\bubble_lumi.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_lumi_glyph_bg.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\lumi_glyph_bg.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_icon_btn_dark_bg.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\icon_btn_dark_bg.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_spinner_bg.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\spinner_bg.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\menu_main_menu.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\menu\\main_menu.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_appbar_bg.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\appbar_bg.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_chip_accent.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\chip_accent.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\xml_notification_listener_config.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\xml\\notification_listener_config.xml"
+    },
+    {
+        "merged": "com.lumi.app-merged_res-42:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.lumi.app-main-44:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_badge_bg.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\badge_bg.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_chip_ok.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\chip_ok.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\layout_item_message_lumi.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\layout\\item_message_lumi.xml"
+    },
+    {
+        "merged": "com.lumi.app-merged_res-42:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.lumi.app-main-44:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_voice_orb_bg.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\voice_orb_bg.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\layout_item_message_user.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\layout\\item_message_user.xml"
+    },
+    {
+        "merged": "com.lumi.app-merged_res-42:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.lumi.app-main-44:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.lumi.app-merged_res-42:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.lumi.app-main-44:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-merged_res-42:\\drawable_input_pill_bg.xml.flat",
+        "source": "C:\\Users\\skimo\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\drawable\\input_pill_bg.xml"
+    }
+]
