@@ -262,8 +262,8 @@ class MainActivity : AppCompatActivity() {
         binding.tvVoiceTranscript.text = "Asculta..."
         startOrbAnimation()
         lifecycleScope.launch {
-            try {
-                val text = stt.listenOnce(
+            val finalText: String = try {
+                stt.listenOnce(
                     onPartialResult = { partial ->
                         runOnUiThread {
                             binding.tvVoiceTranscript.text = partial.ifBlank { "Asculta..." }
@@ -274,14 +274,15 @@ class MainActivity : AppCompatActivity() {
                         runOnUiThread { binding.tvVoiceStatus.text = "VORBESTE" }
                     }
                 )
-                isListening = false
-                stopOrbAnimation()
-                binding.voiceOverlay.visibility = View.GONE
-                if (text.isNotBlank()) { binding.etInput.text?.clear(); viewModel.processPrompt(text) }
             } catch (e: Exception) {
-                isListening = false
-                stopOrbAnimation()
-                binding.voiceOverlay.visibility = View.GONE
+                ""
+            }
+            isListening = false
+            stopOrbAnimation()
+            binding.voiceOverlay.visibility = View.GONE
+            if (finalText.isNotBlank()) {
+                binding.etInput.text?.clear()
+                viewModel.processPrompt(finalText)
             }
         }
     }
