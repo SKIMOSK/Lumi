@@ -123,11 +123,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 else -> ConsentMode.IN_APP
             }
         }
-        val exec = if (settings.actionModeEnabled) {
-            ActionExecutor(getApplication(), timerManager, consent, contactsHelper,
+        val exec: ActionExecutor? = if (settings.actionModeEnabled) {
+            ActionExecutor(getApplication<Application>(), timerManager, consent, contactsHelper,
                 messageSender, notesHelper, sysSettings, mode)
         } else null
-        val calendarHelper = CalendarHelper(getApplication())
+        val calendarHelper = CalendarHelper(getApplication<Application>())
         return TaskRouter(client, settings, timerManager, contactsHelper, notesHelper, sysSettings, calendarHelper, exec)
     }
 
