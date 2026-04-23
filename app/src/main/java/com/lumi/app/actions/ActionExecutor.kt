@@ -5,11 +5,13 @@ import android.content.Intent
 import android.media.AudioManager
 import android.net.Uri
 import android.view.KeyEvent
+import androidx.core.content.FileProvider
 import com.lumi.app.bluetooth.BluetoothDeviceManager
 import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
+import com.lumi.app.gallery.GallerySearchHelper
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.messaging.SendResult
 import com.lumi.app.notes.NoteAppResult
@@ -38,12 +40,17 @@ class ActionExecutor(
     private val btDeviceManager: BluetoothDeviceManager,
     private val lumiDeviceAddress: String,
     private val tts: LumiTTS? = null,
-    private val appSettings: AppSettings? = null
+    private val appSettings: AppSettings? = null,
+    private val gallerySearchHelper: GallerySearchHelper? = null
 ) {
     data class Result(val action: LumiAction, val success: Boolean, val message: String)
 
-    suspend fun executeAll(actions: List<LumiAction>): List<Result> =
-        actions.map { runCatching { execute(it) }.getOrElse { e -> Result(it, false, "Eroare: ${e.message}") } }
+    private var currentImageBase64: String? = null
+
+    suspend fun executeAll(actions: List<LumiAction>, imageBase64: String? = null): List<Result> {
+        currentImageBase64 = imageBase64
+        return actions.map { runCatching { execute(it) }.getOrElse { e -> Result(it, false, "Eroare: ${e.message}") } }
+    }
 
     private suspend fun execute(a: LumiAction): Result = when (a.type.uppercase()) {
         "SET_TIMER"       -> setTimer(a)
@@ -95,6 +102,8 @@ class ActionExecutor(
         "BT_CONNECT"           -> btConnect(a)
         "BT_DISCONNECT"        -> btDisconnect(a)
         "BT_PAIR"              -> btPair(a)
+        "GALLERY_SEARCH"       -> gallerySearch(a)
+        "SEND_IMAGE"           -> sendImage(a)
         else -> Result(a, false, "Actiune necunoscuta: ${a.type}")
     }
 
@@ -718,5 +727,65 @@ class ActionExecutor(
         val name = a.params["device"] ?: return Result(a, false, "Nume dispozitiv lipsa.")
         val msg  = btDeviceManager.guidePair(name)
         return Result(a, true, msg)
+    }
+
+    // ─── Gallery ─────────────────────────────────────────────────────────────
+
+    private suspend fun gallerySearch(a: LumiAction): Result {
+        val helper = gallerySearchHelper ?: return Result(a, false, "Galerie indisponibila.")
+        val query    = a.params["query"]
+        val fromDate = a.params["from_date"]
+        val toDate   = a.params["to_date"]
+        val limit    = a.params["limit"]?.toIntOrNull() ?: 10
+
+        val all      = helper.queryRecent(GallerySearchHelper.MAX_SCAN)
+        val fromMs   = GallerySearchHelper.parseDateString(fromDate)
+        val toMs     = GallerySearchHelper.parseDateString(toDate)
+        val filtered = helper.filterByDateRange(all, fromMs, toMs)
+        val results  = if (!query.isNullOrBlank()) helper.findByLabel(filtered, query, limit)
+                       else filtered.take(limit)
+
+        if (results.isEmpty()) return Result(a, true, "Nu s-au gasit imagini.")
+        return Result(a, true, helper.formatSummary(results))
+    }
+
+    private suspend fun sendImage(a: LumiAction): Result {
+        val app        = a.params["app"]?.lowercase() ?: "whatsapp"
+        val imageIdStr = a.params["image_id"]
+        val usePending = a.params["use_pending"]?.lowercase() == "true"
+        val cName      = a.params["contact"]
+
+        val imageUri: Uri = when {
+            usePending && currentImageBase64 != null -> {
+                val file = gallerySearchHelper?.saveBase64ToCache(currentImageBase64!!)
+                    ?: return Result(a, false, "Nu s-a putut salva imaginea temporar.")
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            }
+            imageIdStr != null -> {
+                val id = imageIdStr.toLongOrNull()
+                    ?: return Result(a, false, "ID imagine invalid.")
+                gallerySearchHelper?.getUri(id)
+                    ?: return Result(a, false, "Gallery helper indisponibil.")
+            }
+            else -> return Result(a, false, "Nicio imagine specificata (image_id sau use_pending=true).")
+        }
+
+        val appLabel   = when { app.contains("instagram") -> "Instagram"; app.contains("telegram") -> "Telegram"; else -> "WhatsApp" }
+        val contactInfo = if (cName != null) " lui $cName" else ""
+        if (!consent.request("Trimit imaginea pe $appLabel$contactInfo. Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+
+        val contact = if (cName != null) contacts.findBestMatch(cName) else null
+        val result = when {
+            app.contains("instagram") -> messenger.sendInstagramImage(imageUri)
+            app.contains("telegram")  -> messenger.sendTelegramImage(contact, imageUri)
+            else -> if (contact != null) messenger.sendWhatsAppImage(contact, imageUri)
+                    else messenger.shareImageToApp(imageUri, MessageSender.WHATSAPP_PACKAGE, "WhatsApp")
+        }
+
+        return when (result) {
+            is SendResult.Error -> Result(a, false, result.reason)
+            else -> Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
+        }
     }
 }

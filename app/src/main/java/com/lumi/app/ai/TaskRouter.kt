@@ -6,6 +6,7 @@ import com.lumi.app.actions.ActionParser
 import com.lumi.app.bluetooth.BluetoothDeviceManager
 import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.contacts.ContactsHelper
+import com.lumi.app.gallery.GallerySearchHelper
 import com.lumi.app.notes.NotesHelper
 import com.lumi.app.notes.UserMemory
 import com.lumi.app.notifications.LumiNotificationService
@@ -27,7 +28,8 @@ class TaskRouter(
     private val calendar: CalendarHelper,
     private val executor: ActionExecutor?,
     private val userMemory: UserMemory,
-    private val btDeviceManager: BluetoothDeviceManager
+    private val btDeviceManager: BluetoothDeviceManager,
+    private val gallerySearchHelper: GallerySearchHelper? = null
 ) {
     data class RouteResult(
         val response: GeminiResponse,
@@ -65,14 +67,16 @@ ${settings.systemPrompt}
 $deviceContext
 
 Regula: Nu inventa informatii din telefon. Daca ai nevoie de date (notificari, contacte,
-WhatsApp, timere, notite, calendar), CERE-LE la SFARSITUL raspunsului tau folosind formatul de mai jos.
+WhatsApp, timere, notite, calendar, galerie foto), CERE-LE la SFARSITUL raspunsului tau folosind formatul de mai jos.
 Nu folosi simboluri markdown. Raspunde natural, ca si cand vorbesti.
 
 Cerere date (adauga LA FINAL daca ai nevoie):
 ___LUMI_REQUEST___
-{"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true,"notes":true,"notes_query":"cuvant cheie","calendar":true}
+{"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true,"notes":true,"notes_query":"cuvant cheie","calendar":true,"gallery":{"query":"plaja","from_date":"2024-06-01","to_date":"2024-09-01","limit":10}}
 
 Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
+
+Galerie foto: Inainte de a cauta imagini, INTREABA utilizatorul perioada (cand) si subiectul/locul (ce) daca nu le-a specificat. Cauta doar in top 1000 imagini recente.
 """.trimIndent()
 
     private val noActionModeNote get() = """
@@ -158,6 +162,10 @@ BT dispozitive: {"actions":[{"type":"BT_LIST_DEVICES"}]}
 BT conectare: {"actions":[{"type":"BT_CONNECT","device":"Casti Sony"}]}
 BT deconectare: {"actions":[{"type":"BT_DISCONNECT","device":"Casti JBL"}]}
 BT asociere: {"actions":[{"type":"BT_PAIR","device":"Casti noi"}]}
+Cauta imagini galerie: {"actions":[{"type":"GALLERY_SEARCH","query":"plaja","from_date":"2024-06-01","to_date":"2024-09-01","limit":"10"}]}
+Trimite imagine atasata pe WhatsApp: {"actions":[{"type":"SEND_IMAGE","app":"whatsapp","contact":"Ana","use_pending":"true"}]}
+Trimite imagine din galerie (dupa ID din cautare): {"actions":[{"type":"SEND_IMAGE","app":"instagram","image_id":"123456"}]}
+Trimite imagine pe Telegram: {"actions":[{"type":"SEND_IMAGE","app":"telegram","contact":"Ion","image_id":"789012"}]}
 
 REGULI IMPORTANTE:
 - duration_seconds trebuie sa fie string intreg (ex: "300")
@@ -178,13 +186,17 @@ REGULI IMPORTANTE:
 - YOUTUBE_SEARCH si YOUTUBE_WATCH_LATER nu redau video automat — cauta/afiseaza doar.
 - SET_TTS_SPEED: "faster"/"slower" ajusteaza relativ; "speed" (0.5-2.0) seteaza absolut.
 - Daca utilizatorul intreaba despre vreme sau traducere, AI-ul poate raspunde direct fara actiuni.
+- GALLERY_SEARCH: cauta in galerie. Inainte de a cauta, intreaba perioada (cand) si subiectul/locul (ce) daca nu sunt specificate. Raspunde cu lista de imagini gasite (ID, data, nume), apoi intreaba ce vrea sa faca cu ele.
+- SEND_IMAGE: trimite imaginea atasata (use_pending=true) sau o imagine din galerie (image_id=ID din cautare anterioara). Specifica intotdeauna app si contact (unde e necesar).
+- Daca utilizatorul a atasat o imagine si cere sa o trimita, foloseste SEND_IMAGE cu use_pending=true.
+- Nu trimite imagini fara confirmare explicita din partea utilizatorului.
 """.trimIndent()
     }
 
     private val classifyPrompt = """
 Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS, VPN, calendar, control media (play/pause/skip), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator.
-COMPLEX: trimitere mesaje (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas.
+SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS, VPN, calendar, control media (play/pause/skip), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator, cautare galerie foto.
+COMPLEX: trimitere mesaje (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), trimitere imagini, apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas.
 Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()
 
@@ -233,7 +245,7 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         val cleanParsed = parsed.copy(displayText = stripMarkdown(parsed.displayText))
 
         val actionResults = if (settings.actionModeEnabled && cleanParsed.actions.isNotEmpty()) {
-            executor?.executeAll(cleanParsed.actions) ?: emptyList()
+            executor?.executeAll(cleanParsed.actions, imageBase64) ?: emptyList()
         } else emptyList()
 
         return RouteResult(firstResponse, cleanParsed, useExpert, actionResults)
@@ -255,7 +267,7 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 
     // ─── Data fulfillment ────────────────────────────────────────────────────
 
-    private fun buildDataContext(req: com.lumi.app.actions.DataRequest): String {
+    private suspend fun buildDataContext(req: com.lumi.app.actions.DataRequest): String {
         val sb = StringBuilder()
 
         if (req.notifications) {
@@ -309,6 +321,23 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         if (req.calendar) {
             sb.appendLine("=== Evenimente viitoare ===")
             sb.appendLine(calendar.formatSummary(10))
+        }
+
+        req.gallery?.let { gr ->
+            sb.appendLine("=== Imagini Galerie ===")
+            val helper = gallerySearchHelper
+            if (helper == null) {
+                sb.appendLine("Galerie indisponibila.")
+            } else {
+                val all      = helper.queryRecent(GallerySearchHelper.MAX_SCAN)
+                val fromMs   = GallerySearchHelper.parseDateString(gr.from_date)
+                val toMs     = GallerySearchHelper.parseDateString(gr.to_date)
+                val filtered = helper.filterByDateRange(all, fromMs, toMs)
+                val results  = if (!gr.query.isNullOrBlank()) helper.findByLabel(filtered, gr.query, gr.limit)
+                               else filtered.take(gr.limit)
+                if (results.isEmpty()) sb.appendLine("Nu s-au gasit imagini.")
+                else sb.appendLine(helper.formatSummary(results))
+            }
         }
 
         return sb.toString().trim()

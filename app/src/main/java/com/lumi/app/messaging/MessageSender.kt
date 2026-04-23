@@ -468,6 +468,70 @@ class MessageSender(private val context: Context) {
         }
     }
 
+    // ─── Image sharing ───────────────────────────────────────────────────────
+
+    fun sendWhatsAppImage(contact: Contact, imageUri: android.net.Uri): SendResult {
+        if (!isWhatsAppInstalled()) return SendResult.Error("WhatsApp nu este instalat.")
+        val phone = contact.phoneNumbers.firstOrNull()
+            ?: return SendResult.Error("Contactul nu are număr de telefon.")
+        val clean = phone.replace(Regex("[^\\d+]"), "")
+        return try {
+            context.startActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                setPackage(WHATSAPP_PACKAGE)
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                putExtra("jid", "$clean@s.whatsapp.net")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            })
+            SendResult.DeepLinkOpened
+        } catch (e: Exception) {
+            Log.e(TAG, "WhatsApp image share failed", e)
+            SendResult.Error("Nu s-a putut trimite imaginea pe WhatsApp: ${e.message}")
+        }
+    }
+
+    fun sendInstagramImage(imageUri: android.net.Uri): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                setPackage("com.instagram.android")
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            })
+            SendResult.DeepLinkOpened
+        } catch (e: Exception) {
+            SendResult.Error("Nu s-a putut trimite imaginea pe Instagram: ${e.message}")
+        }
+    }
+
+    fun sendTelegramImage(contact: Contact?, imageUri: android.net.Uri): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                setPackage("org.telegram.messenger")
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            })
+            SendResult.DeepLinkOpened
+        } catch (e: Exception) {
+            SendResult.Error("Nu s-a putut trimite imaginea pe Telegram: ${e.message}")
+        }
+    }
+
+    fun shareImageToApp(imageUri: android.net.Uri, pkg: String, appName: String): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                setPackage(pkg)
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            })
+            SendResult.DeepLinkOpened
+        } catch (e: Exception) {
+            SendResult.Error("Nu s-a putut trimite imaginea pe $appName: ${e.message}")
+        }
+    }
+
     // ─── Generic helper ───────────────────────────────────────────────────────
 
     fun openAppByPackage(pkg: String, fallbackUri: String?, errorMsg: String): SendResult {

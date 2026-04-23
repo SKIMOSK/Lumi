@@ -25,7 +25,7 @@ class AppSettings(context: Context) {
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
-        const val MODEL_FASTER        = "anthropic/claude-haiku-4-5-20251001"  // fastest non-Google
+        const val MODEL_FASTER        = "anthropic/claude-haiku-4-5"          // fixed: no date suffix
         const val MODEL_FAST          = "google/gemini-2.5-flash"
         const val MODEL_EXPERT_PRO    = "google/gemini-3.1-pro-preview"
         const val MODEL_EXPERT_OPUS   = "anthropic/claude-opus-4-6"
@@ -50,7 +50,11 @@ Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
         set(v) = prefs.edit().putString(KEY_OPENROUTER_BASE_URL, v).apply()
 
     var fastModel: String
-        get() = prefs.getString(KEY_FAST_MODEL, MODEL_FASTER) ?: MODEL_FASTER
+        get() {
+            val v = prefs.getString(KEY_FAST_MODEL, MODEL_FAST) ?: MODEL_FAST
+            // Migrate from old broken date-suffixed Haiku ID
+            return if (v == "anthropic/claude-haiku-4-5-20251001") MODEL_FASTER else v
+        }
         set(v) = prefs.edit().putString(KEY_FAST_MODEL, v).apply()
 
     var expertModel: String

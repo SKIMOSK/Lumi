@@ -62,10 +62,12 @@ class GeminiClient(
         // Current user turn
         val currentContent = mutableListOf<Map<String, Any>>()
         currentContent.add(mapOf("type" to "text", "text" to prompt))
-        imageBase64?.let { img ->
+        // Only include image if it passes basic validity checks
+        imageBase64?.takeIf { isValidImageBase64(it) }?.let { img ->
+            val mimeType = if (img.startsWith("iVBOR")) "image/png" else "image/jpeg"
             currentContent.add(mapOf(
                 "type" to "image_url",
-                "image_url" to mapOf("url" to "data:image/jpeg;base64,$img")
+                "image_url" to mapOf("url" to "data:$mimeType;base64,$img")
             ))
         }
         messages.add(mapOf("role" to "user", "content" to currentContent))
@@ -124,6 +126,13 @@ class GeminiClient(
             usage?.get("prompt_tokens")?.asInt ?: 0,
             usage?.get("completion_tokens")?.asInt ?: 0
         )
+    }
+
+    /** JPEG base64 starts with /9j/, PNG with iVBOR. Rejects empty or corrupted data. */
+    private fun isValidImageBase64(b64: String): Boolean {
+        if (b64.isBlank() || b64.length < 32) return false
+        val head = b64.trimStart().take(8)
+        return head.startsWith("/9j/") || head.startsWith("iVBOR")
     }
 
     private fun parseError(json: String): String = try {

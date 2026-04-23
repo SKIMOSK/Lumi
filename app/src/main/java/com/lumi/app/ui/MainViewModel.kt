@@ -25,6 +25,7 @@ import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
+import com.lumi.app.gallery.GallerySearchHelper
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.notes.NotesHelper
 import com.lumi.app.notes.UserMemory
@@ -59,6 +60,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val sysSettings       = SystemSettingsHelper(app)
     val userMemory                = UserMemory(app)
     private val btDeviceManager   = BluetoothDeviceManager(app)
+    private val gallerySearchHelper = GallerySearchHelper(app)
     val consent = ConsentManager(tts, null)
 
     private val memory = ConversationMemory(settings.memorySizeHistory)
@@ -135,13 +137,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 getApplication<Application>(), timerManager, consent, contactsHelper,
                 messageSender, notesHelper, sysSettings, mode,
                 userMemory, btDeviceManager, settings.btDeviceAddress,
-                tts, settings
+                tts, settings, gallerySearchHelper
             )
         } else null
         val calendarHelper = CalendarHelper(getApplication<Application>())
         return TaskRouter(
             client, settings, timerManager, contactsHelper, notesHelper,
-            sysSettings, calendarHelper, exec, userMemory, btDeviceManager
+            sysSettings, calendarHelper, exec, userMemory, btDeviceManager,
+            gallerySearchHelper
         )
     }
 
@@ -214,6 +217,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
         val imageBase64 = pendingAttachImage ?: (if (useDeviceImage) latestImageBase64 else null)
         pendingAttachImage = null
+        // Clear immediately — a bad BLE frame must not poison the next request
+        latestImageBase64 = null
 
         val userMsg = ChatMessage(text = userText, time = now(), isUser = true, imageBase64 = imageBase64)
         val loading = ChatMessage(text = "…", time = now(), isUser = false, isLoading = true)
@@ -255,7 +260,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     memory.clearPending()
                     memory.add(Interaction(userText, displayText, imageBase64, result.usedExpert))
                 }
-                latestImageBase64 = null
                 _statusText.postValue(if (result.usedExpert) "Raspuns Expert" else "Raspuns Fast")
 
                 if (bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED) {

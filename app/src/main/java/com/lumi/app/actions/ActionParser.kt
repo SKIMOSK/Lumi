@@ -15,10 +15,18 @@ data class DataRequest(
     val timers: Boolean = false,
     val notes: Boolean = false,
     val notes_query: String? = null,
-    val calendar: Boolean = false
+    val calendar: Boolean = false,
+    val gallery: GalleryRequest? = null
 )
 
 data class WhatsAppRequest(val contact: String, val limit: Int = 25)
+
+data class GalleryRequest(
+    val query: String? = null,
+    val from_date: String? = null,
+    val to_date: String? = null,
+    val limit: Int = 20
+)
 
 data class ParsedAIResponse(
     val displayText: String,
