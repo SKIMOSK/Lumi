@@ -29,7 +29,8 @@ class TaskRouter(
     private val executor: ActionExecutor?,
     private val userMemory: UserMemory,
     private val btDeviceManager: BluetoothDeviceManager,
-    private val gallerySearchHelper: GallerySearchHelper? = null
+    private val gallerySearchHelper: GallerySearchHelper? = null,
+    private val documentHelper: com.lumi.app.system.DocumentHelper
 ) {
     data class RouteResult(
         val response: GeminiResponse,
@@ -75,7 +76,7 @@ Nu folosi simboluri markdown. Raspunde natural, ca si cand vorbesti.
 
 Cerere date (adauga LA FINAL daca ai nevoie):
 ___LUMI_REQUEST___
-{"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true,"notes":true,"notes_query":"cuvant cheie","calendar":true,"gallery":{"query":"plaja","from_date":"2024-06-01","to_date":"2024-09-01","limit":10}}
+{"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true,"notes":true,"notes_query":"cuvant cheie","calendar":true,"gallery":{"query":"plaja","from_date":"2024-06-01","to_date":"2024-09-01","limit":10},"file_query":"nume document/fisier sau recent"}
 
 Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
 
@@ -168,7 +169,8 @@ BT asociere: {"actions":[{"type":"BT_PAIR","device":"Casti noi"}]}
 Cauta imagini galerie: {"actions":[{"type":"GALLERY_SEARCH","query":"plaja","from_date":"2024-06-01","to_date":"2024-09-01","limit":"10"}]}
 Trimite imagine atasata pe WhatsApp: {"actions":[{"type":"SEND_IMAGE","app":"whatsapp","contact":"Ana","use_pending":"true"}]}
 Trimite imagine din galerie (dupa ID din cautare): {"actions":[{"type":"SEND_IMAGE","app":"instagram","image_id":"123456"}]}
-Trimite imagine pe Telegram: {"actions":[{"type":"SEND_IMAGE","app":"telegram","contact":"Ion","image_id":"789012"}]}
+Trimite fisier existent: {"actions":[{"type":"FORWARD_FILE","app":"whatsapp","contact":"Seful","query":"nume document"}]}
+Creeaza si trimite fisier nou (ex. corectat): {"actions":[{"type":"CREATE_FORWARD_FILE","app":"email","contact":"sefu@firma.ro","filename":"nume original.pdf","new_content":"continutul corectat"}]}
 
 REGULI IMPORTANTE:
 - duration_seconds trebuie sa fie string intreg (ex: "300")
@@ -357,6 +359,19 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
                 lastGalleryIds = results.map { it.id }
                 if (results.isEmpty()) sb.appendLine("Nu s-au gasit imagini.")
                 else sb.appendLine(helper.formatSummary(results))
+            }
+        }
+
+        req.file_query?.let { fq ->
+            sb.appendLine("=== Continut Fisier/Document ===")
+            val file = documentHelper.findRecentFile(fq)
+            if (file == null) {
+                sb.appendLine("Nu am gasit niciun fisier cu numele/cererea '$fq' in folderele de fisiere.")
+            } else {
+                sb.appendLine("Fisier gasit: ${file.name} (Modificat: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(file.lastModified()))})")
+                val txt = documentHelper.extractText(file)
+                sb.appendLine("--- Continut ---")
+                sb.appendLine(txt.take(15000)) // limit to 15000 chars to avoid prompt overflow
             }
         }
 

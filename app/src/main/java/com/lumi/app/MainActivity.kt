@@ -121,6 +121,7 @@ class MainActivity : AppCompatActivity() {
         updateNotificationBadge()
         viewModel.refreshMemorySize()
         checkAccessibilityService()
+        checkManageExternalStorage()
     }
 
     override fun onDestroy() { orbAnimator?.cancel(); stt.destroy(); super.onDestroy() }
@@ -366,6 +367,32 @@ class MainActivity : AppCompatActivity() {
             contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
         return enabled.split(":").any { it.trim().equals(serviceName, ignoreCase = true) }
+    }
+
+    private fun checkManageExternalStorage() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!android.os.Environment.isExternalStorageManager()) {
+                if (accessibilityDialogShown) return // don't stack dialogs
+                accessibilityDialogShown = true
+                AlertDialog.Builder(this)
+                    .setTitle("Acces fisiere necesar")
+                    .setMessage("Lumi are nevoie de acces la fisiere (MANAGE_EXTERNAL_STORAGE) pentru a putea citi documentele tale (.pdf, .docx).")
+                    .setPositiveButton("Setari") { _, _ ->
+                        try {
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                            intent.addCategory("android.intent.category.DEFAULT")
+                            intent.data = Uri.parse(String.format("package:%s", applicationContext.packageName))
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            val intent = Intent()
+                            intent.action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                            startActivity(intent)
+                        }
+                    }
+                    .setNegativeButton("Mai tarziu", null)
+                    .show()
+            }
+        }
     }
 
     private fun updateNotificationBadge() {

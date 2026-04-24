@@ -534,6 +534,21 @@ class MessageSender(private val context: Context) {
         }
     }
 
+    fun shareDocumentToApp(fileUri: android.net.Uri, pkg: String?, appName: String): SendResult {
+        return try {
+            context.startActivity(Intent(Intent.ACTION_SEND).apply {
+                type = "*/*"
+                if (pkg != null) setPackage(pkg)
+                putExtra(Intent.EXTRA_STREAM, fileUri)
+                clipData = android.content.ClipData.newRawUri("document", fileUri)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            })
+            SendResult.DeepLinkOpened
+        } catch (e: Exception) {
+            SendResult.Error("Nu s-a putut trimite fisierul pe $appName: ${e.message}")
+        }
+    }
+
     // ─── Generic helper ───────────────────────────────────────────────────────
 
     fun openAppByPackage(pkg: String, fallbackUri: String?, errorMsg: String): SendResult {

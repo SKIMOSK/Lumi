@@ -16,6 +16,7 @@ class LumiApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        com.tom_roush.pdfbox.android.PDFBoxResourceLoader.init(this)
         createNotificationChannels()
     }
 

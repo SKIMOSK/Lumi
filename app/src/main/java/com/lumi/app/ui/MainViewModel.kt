@@ -61,6 +61,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val userMemory                = UserMemory(app)
     private val btDeviceManager   = BluetoothDeviceManager(app)
     private val gallerySearchHelper = GallerySearchHelper(app)
+    private val documentHelper    = com.lumi.app.system.DocumentHelper(app)
     val consent = ConsentManager(tts, null)
 
     private val memory = ConversationMemory(settings.memorySizeHistory)
@@ -137,14 +138,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 getApplication<Application>(), timerManager, consent, contactsHelper,
                 messageSender, notesHelper, sysSettings, mode,
                 userMemory, btDeviceManager, settings.btDeviceAddress,
-                tts, settings, gallerySearchHelper
+                tts, settings, gallerySearchHelper, documentHelper
             )
         } else null
         val calendarHelper = CalendarHelper(getApplication<Application>())
         return TaskRouter(
             client, settings, timerManager, contactsHelper, notesHelper,
             sysSettings, calendarHelper, exec, userMemory, btDeviceManager,
-            gallerySearchHelper
+            gallerySearchHelper, documentHelper
         )
     }
 

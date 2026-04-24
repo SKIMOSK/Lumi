@@ -26,6 +26,7 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.io.File
 
 class ActionExecutor(
     private val context: Context,
@@ -41,7 +42,8 @@ class ActionExecutor(
     private val lumiDeviceAddress: String,
     private val tts: LumiTTS? = null,
     private val appSettings: AppSettings? = null,
-    private val gallerySearchHelper: GallerySearchHelper? = null
+    private val gallerySearchHelper: GallerySearchHelper? = null,
+    private val documentHelper: com.lumi.app.system.DocumentHelper
 ) {
     data class Result(val action: LumiAction, val success: Boolean, val message: String, val galleryImageIds: List<Long>? = null)
 
@@ -104,6 +106,8 @@ class ActionExecutor(
         "BT_PAIR"              -> btPair(a)
         "GALLERY_SEARCH"       -> gallerySearch(a)
         "SEND_IMAGE"           -> sendImage(a)
+        "FORWARD_FILE"         -> forwardFile(a)
+        "CREATE_FORWARD_FILE"  -> createAndForwardFile(a)
         else -> Result(a, false, "Actiune necunoscuta: ${a.type}")
     }
 
@@ -129,12 +133,19 @@ class ActionExecutor(
         val parts = time.split(":")
         val h = parts.getOrNull(0)?.toIntOrNull() ?: return Result(a, false, "Ora invalida.")
         val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
-        val cal = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, m); set(Calendar.SECOND, 0)
-            if (timeInMillis < System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
+        try {
+            val intent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM).apply {
+                putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, name)
+                putExtra(android.provider.AlarmClock.EXTRA_HOUR, h)
+                putExtra(android.provider.AlarmClock.EXTRA_MINUTES, m)
+                putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            return Result(a, true, "Alarma \"$name\" setata la $time in aplicatia ceas.")
+        } catch (e: Exception) {
+            return Result(a, false, "Nu s-a putut seta alarma in aplicatia ceas.")
         }
-        timers.setAlarm(name, cal.timeInMillis)
-        return Result(a, true, "Alarma \"$name\" setata la $time.")
     }
 
     private fun pauseTimer(a: LumiAction): Result {
@@ -806,6 +817,68 @@ class ActionExecutor(
                 } else {
                     Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
                 }
+            }
+        }
+    }
+
+    private suspend fun forwardFile(a: LumiAction): Result {
+        val app = a.params["app"]?.lowercase() ?: return Result(a, false, "Aplicatia lipsa.")
+        val cName = a.params["contact"] ?: return Result(a, false, "Contactul lipsa.")
+        val query = a.params["query"] ?: return Result(a, false, "Nume fisier lipsa.")
+
+        val file = documentHelper.findRecentFile(query)
+            ?: return Result(a, false, "Fisierul nu a putut fi gasit in telefon.")
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+
+        return forwardFileUri(a, uri, app, cName)
+    }
+
+    private suspend fun createAndForwardFile(a: LumiAction): Result {
+        val app = a.params["app"]?.lowercase() ?: return Result(a, false, "Aplicatia lipsa.")
+        val cName = a.params["contact"] ?: return Result(a, false, "Contactul lipsa.")
+        val filename = a.params["filename"] ?: return Result(a, false, "Nume fisier lipsa.")
+        val content = a.params["new_content"] ?: return Result(a, false, "Continut lipsa.")
+
+        val originalFile = documentHelper.findRecentFile(filename)
+        val destFile = if (originalFile != null) {
+            documentHelper.writeTextToNewFile(originalFile, content)
+        } else {
+            val dest = File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), filename + "_corectat.txt")
+            dest.writeText(content)
+            dest
+        }
+
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", destFile)
+        return forwardFileUri(a, uri, app, cName)
+    }
+
+    private suspend fun forwardFileUri(a: LumiAction, uri: Uri, app: String, cName: String): Result {
+        val appLabel = app.replaceFirstChar { if (it.isLowerCase()) it.titlecase(java.util.Locale.getDefault()) else it.toString() }
+        if (!consent.request("Trimit fisier pe $appLabel catre $cName. Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+
+        val contact = contacts.findBestMatch(cName)
+        
+        val pkg = when {
+            app.contains("whatsapp") -> "com.whatsapp"
+            app.contains("telegram") -> "org.telegram.messenger"
+            app.contains("discord") -> "com.discord"
+            app.contains("slack") -> "com.Slack"
+            app.contains("email") || app.contains("gmail") -> "com.google.android.gm"
+            app.contains("outlook") -> "com.microsoft.office.outlook"
+            else -> null
+        }
+
+        val result = messenger.shareDocumentToApp(uri, pkg, appLabel)
+        
+        return when (result) {
+            is SendResult.Error -> Result(a, false, result.reason)
+            else -> {
+                if (pkg == "com.whatsapp" && contact != null && LumiAccessibilityService.isAvailable()) {
+                    delay(3500)
+                    LumiAccessibilityService.tapWhatsAppShareContact(contact.name)
+                }
+                Result(a, true, "Fisier pregatit pentru trimitere pe $appLabel. Finalizeaza manual daca e nevoie.")
             }
         }
     }

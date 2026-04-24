@@ -16,7 +16,8 @@ data class DataRequest(
     val notes: Boolean = false,
     val notes_query: String? = null,
     val calendar: Boolean = false,
-    val gallery: GalleryRequest? = null
+    val gallery: GalleryRequest? = null,
+    val file_query: String? = null
 )
 
 data class WhatsAppRequest(val contact: String, val limit: Int = 25)
