@@ -29,7 +29,8 @@ data class CapturedNotification(
 ) {
     fun formatted(): String {
         val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
-        return "[$time] $appName — $title: $text"
+        val replyable = if (directReply != null) " [replyable]" else ""
+        return "[$time] $appName — $title: $text$replyable"
     }
 }
 
@@ -53,6 +54,30 @@ class LumiNotificationService : NotificationListenerService() {
                 n.directReply != null &&
                 (contactHint == null || n.title.contains(contactHint, ignoreCase = true))
             }
+
+        fun findByKey(key: String): CapturedNotification? =
+            synchronized(recent) { recent.firstOrNull { it.key == key } }
+
+        /** Find last replyable notification across apps, optionally filtered by contact. */
+        fun findLastReplyable(contactHint: String? = null): CapturedNotification? =
+            synchronized(recent) {
+                recent.toList().asReversed().firstOrNull { n ->
+                    n.directReply != null &&
+                    (contactHint == null || n.title.contains(contactHint, ignoreCase = true))
+                }
+            }
+
+        /** Send reply via the notification's direct-reply PendingIntent. */
+        fun sendReply(context: Context, notification: CapturedNotification, replyText: String): Boolean {
+            val dr = notification.directReply ?: return false
+            return try {
+                val bundle = Bundle().apply { putCharSequence(dr.resultKey, replyText) }
+                val intent = Intent()
+                RemoteInput.addResultsToIntent(arrayOf(dr.remoteInput), intent, bundle)
+                dr.replyPendingIntent.send(context, 0, intent)
+                true
+            } catch (e: Exception) { false }
+        }
 
         fun isEnabled(context: Context): Boolean {
             val flat = android.provider.Settings.Secure.getString(

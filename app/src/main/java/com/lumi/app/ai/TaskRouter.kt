@@ -106,6 +106,9 @@ Exemple JSON:
 Timer 5 min: {"actions":[{"type":"SET_TIMER","name":"Paste","duration_seconds":"300"}]}
 Alarma: {"actions":[{"type":"SET_ALARM","name":"Dimineata","time_24h":"07:30"}]}
 Cronometru: {"actions":[{"type":"SET_STOPWATCH","name":"Alergare"}]}
+Pauza timer dupa nume: {"actions":[{"type":"PAUSE_TIMER","name":"Paste"}]}
+Opreste al doilea timer (index 1-based): {"actions":[{"type":"CANCEL_TIMER","index":"2"}]}
+Reseteaza ultimul timer activ: {"actions":[{"type":"RESET_TIMER"}]}
 WhatsApp: {"actions":[{"type":"SEND_WHATSAPP","contact":"Mama","message":"Vin acasa","exact":"true"}]}
 SMS: {"actions":[{"type":"SEND_SMS","contact":"Ana","message":"Salut"}]}
 Instagram: {"actions":[{"type":"SEND_INSTAGRAM","contact":"Ana","username":"ana.ig","message":"Buna"}]}
@@ -116,13 +119,19 @@ Email: {"actions":[{"type":"SEND_EMAIL","to":"ana@gmail.com","subject":"Re: inta
 Citeste email: {"actions":[{"type":"READ_EMAIL"}]}
 Apel: {"actions":[{"type":"CALL","contact":"Tata"}]}
 Notita noua: {"actions":[{"type":"WRITE_NOTE","title":"Cumparaturi","content":"Lapte, oua, paine"}]}
-Actualizeaza notita: {"actions":[{"type":"WRITE_NOTE","id":"ID_NOTITA","content":"Text nou"}]}
+Actualizeaza notita (dupa ID din cautare/listare): {"actions":[{"type":"WRITE_NOTE","id":"ID_NOTITA","content":"Text nou"}]}
+Sterge notita (dupa ID): {"actions":[{"type":"DELETE_NOTE","id":"ID_NOTITA"}]}
+Sterge notita (dupa titlu): {"actions":[{"type":"DELETE_NOTE","title":"Cumparaturi"}]}
 Google Maps: {"actions":[{"type":"NAVIGATE_MAPS","destination":"Piata Universitatii, Bucuresti"}]}
 Waze: {"actions":[{"type":"NAVIGATE_WAZE","destination":"Aeroportul Henri Coanda"}]}
 Surfshark conectare: {"actions":[{"type":"CONNECT_VPN","app":"surfshark","country":"Romania"}]}
 NordVPN deconectare: {"actions":[{"type":"DISCONNECT_VPN","app":"nordvpn"}]}
 Event calendar: {"actions":[{"type":"CREATE_EVENT","title":"Intalnire","description":"Discutie proiect","location":"Birou","start_datetime":"2024-01-15T14:00","end_datetime":"2024-01-15T15:00"}]}
 Calendar: {"actions":[{"type":"READ_CALENDAR"}]}
+Sterge eveniment (dupa ID din READ_CALENDAR): {"actions":[{"type":"DELETE_EVENT","id":"12345"}]}
+Sterge eveniment (dupa titlu, daca nu ai ID): {"actions":[{"type":"DELETE_EVENT","title":"Intalnire"}]}
+Actualizeaza eveniment: {"actions":[{"type":"UPDATE_EVENT","id":"12345","new_title":"Intalnire amanata","start_datetime":"2024-01-15T16:00","end_datetime":"2024-01-15T17:00"}]}
+Muta eveniment dupa titlu: {"actions":[{"type":"UPDATE_EVENT","lookup_title":"Intalnire","start_datetime":"2024-01-16T14:00","end_datetime":"2024-01-16T15:00"}]}
 Luminozitate: {"actions":[{"type":"SET_BRIGHTNESS","level":"60"}]}
 Volum: {"actions":[{"type":"SET_VOLUME","stream":"media","level":"50"}]}
 Nu deranjati: {"actions":[{"type":"SET_DND","enabled":"true"}]}
@@ -177,6 +186,9 @@ Trimite fisier de pe telefon: {"actions":[{"type":"FORWARD_FILE","app":"whatsapp
 Creeaza/modifica fisier si trimite: {"actions":[{"type":"CREATE_FORWARD_FILE","app":"email","contact":"sefu@firma.ro","filename":"lista.txt","new_content":"Lapte\nOua\nPaine"}]}
 Trimite fisier atasat via buton: {"actions":[{"type":"SEND_FILE","app":"whatsapp","contact":"Ana"}]}
 Editeaza fisier atasat via buton: {"actions":[{"type":"EDIT_FILE","new_content":"continut complet nou"}]}
+Raspunde la ultima notificare (reply rapid, NU deschide app): {"actions":[{"type":"REPLY_NOTIFICATION","message":"Vin in 10 minute"}]}
+Raspunde la mesaj WhatsApp de la un contact anume: {"actions":[{"type":"REPLY_NOTIFICATION","app":"whatsapp","contact":"Ana","message":"Ok, multumesc"}]}
+Raspunde la mesaj dintr-o aplicatie: {"actions":[{"type":"REPLY_NOTIFICATION","app":"telegram","message":"Salut"}]}
 
 REGULI IMPORTANTE:
 - duration_seconds trebuie sa fie string intreg (ex: "300")
@@ -221,13 +233,22 @@ REGULI IMPORTANTE:
   * CREATE_FORWARD_FILE: creeaza versiune modificata a unui fisier gasit pe telefon si o trimite
   * file_query in LUMI_REQUEST: citeste continutul unui fisier de pe telefon (PDF, txt, docx) ca context — foloseste cand trebuie sa CITESTI/REZUMI un fisier, nu sa-l trimiti
 - Nu trimite imagini sau fisiere fara confirmare explicita din partea utilizatorului.
+- Timere — "al doilea timer", "primul", "ultimul": foloseste "index" (1-based) dupa ce ai vazut lista din "timers":true. Daca utilizatorul spune doar "opreste timerul" si exista unul singur activ, trimite actiunea fara name/index — se va rezolva automat.
+- Notite — dupa notes:true sau notes_query, fiecare notita incepe cu "ID:XXXXX". Pentru WRITE_NOTE (editare) sau DELETE_NOTE foloseste EXACT acel ID. Poti folosi si "title" ca fallback daca nu exista ID in context.
+- Calendar — dupa READ_CALENDAR sau calendar:true, fiecare eveniment incepe cu "ID:XXXXX". Pentru DELETE_EVENT si UPDATE_EVENT foloseste acel ID. Ca fallback: "title" pentru DELETE_EVENT, "lookup_title" pentru UPDATE_EVENT.
+- Raspuns la notificari — REPLY_NOTIFICATION trimite direct raspuns FARA a deschide aplicatia (mai rapid decat SEND_WHATSAPP). Reguli:
+  * Functioneaza DOAR la notificarile marcate [replyable] in lista de notificari
+  * Daca utilizatorul spune "raspunde-i lui Ana", "reply cu X", "spune-i ca" dupa ce a primit o notificare → foloseste REPLY_NOTIFICATION
+  * Daca vrei sa raspunzi dar notificarea nu e [replyable], foloseste SEND_WHATSAPP/SEND_TELEGRAM ca fallback
+  * Parametrul "contact" filtreaza dupa numele din titlul notificarii (optional)
+- Referinte din turul anterior: dupa ce ai executat actiuni, rezultatele apar in istoria conversatiei sub "[Rezultate:]". Foloseste ID-urile (notite, imagini, evenimente) din acele rezultate cand utilizatorul spune "trimite-o", "sterge-l", "editeaza asta".
 """.trimIndent()
     }
 
     private val classifyPrompt = """
 Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS, VPN, calendar, control media (play/pause/skip), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator, cautare galerie foto, citire fisier atasat.
-COMPLEX: trimitere mesaje (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), trimitere imagini, trimitere fisiere, editare fisiere, apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas.
+SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS, VPN, calendar (citire/creare/stergere/editare event), control media (play/pause/skip), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator, cautare galerie foto, citire fisier atasat, raspuns la notificari (REPLY_NOTIFICATION).
+COMPLEX: trimitere mesaje noi (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), trimitere imagini, trimitere fisiere, editare fisiere, apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas.
 Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()
 
@@ -347,7 +368,8 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
             val query = req.notes_query
             val noteText = if (query != null) {
                 val found = notes.search(query)
-                if (found.isEmpty()) "Nicio notita cu '$query'." else found.joinToString("\n---\n") { "${it.title}: ${it.content}" }
+                if (found.isEmpty()) "Nicio notita cu '$query'."
+                else found.joinToString("\n---\n") { "ID:${it.id} | ${it.title}\n${it.content}" }
             } else notes.formatSummary()
             sb.appendLine(noteText)
             val samsungNotes = notes.readSamsungNotes(5)

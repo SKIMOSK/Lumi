@@ -114,6 +114,20 @@ class NotesHelper(private val context: Context) {
         return true
     }
 
+    fun delete(id: String): Boolean {
+        val all = getAll().toMutableList()
+        val removed = all.removeAll { it.id == id }
+        if (removed) save(all)
+        return removed
+    }
+
+    fun findByTitle(titleQuery: String): LumiNote? {
+        val q = titleQuery.lowercase()
+        val all = getAll()
+        return all.firstOrNull { it.title.equals(titleQuery, ignoreCase = true) }
+            ?: all.firstOrNull { it.title.lowercase().contains(q) }
+    }
+
     fun search(query: String): List<LumiNote> {
         val q = query.lowercase()
         return getAll().filter { it.title.lowercase().contains(q) || it.content.lowercase().contains(q) }

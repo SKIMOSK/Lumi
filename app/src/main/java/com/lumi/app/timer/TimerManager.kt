@@ -116,7 +116,18 @@ class TimerManager(private val context: Context) {
     }
 
     fun getByName(name: String) = timers.values.firstOrNull { it.name.equals(name, ignoreCase = true) }
+    fun getByIndex(index: Int): LumiTimer? = timers.values.toList().getOrNull(index)
     fun getAll(): List<LumiTimer> = timers.values.toList()
+
+    /** Resolve timer by name (preferred), 1-based index ("2" = second), or fallback:
+     *  if exactly one timer exists, use it. Returns null if nothing matches. */
+    fun resolve(nameOrIndex: String?): LumiTimer? {
+        if (nameOrIndex.isNullOrBlank()) return if (timers.size == 1) timers.values.first() else null
+        getByName(nameOrIndex)?.let { return it }
+        nameOrIndex.toIntOrNull()?.let { idx -> getByIndex(idx - 1)?.let { return it } }
+        if (timers.size == 1) return timers.values.first()
+        return null
+    }
 
     fun getElapsedMs(id: String): Long {
         val t = timers[id] ?: return 0L
@@ -129,13 +140,14 @@ class TimerManager(private val context: Context) {
     fun formatStatus(): String {
         val all = getAll()
         if (all.isEmpty()) return "Nu există timere active."
-        return all.joinToString("\n") { t ->
+        return all.mapIndexed { i, t ->
+            val prefix = "[${i + 1}] "
             when (t.type) {
-                TimerType.TIMER -> "${t.name}: ${fmtSecs(t.remainingMs / 1000)} rămase [${t.state}]"
-                TimerType.STOPWATCH -> "${t.name}: ${fmtMs(getElapsedMs(t.id))} [${t.state}]"
-                TimerType.ALARM -> "${t.name}: ${fmtAlarm(t.alarmTimeMs)} [${t.state}]"
+                TimerType.TIMER -> "$prefix${t.name}: ${fmtSecs(t.remainingMs / 1000)} rămase [${t.state}]"
+                TimerType.STOPWATCH -> "$prefix${t.name}: ${fmtMs(getElapsedMs(t.id))} [${t.state}]"
+                TimerType.ALARM -> "$prefix${t.name}: ${fmtAlarm(t.alarmTimeMs)} [${t.state}]"
             }
-        }
+        }.joinToString("\n")
     }
 
     // ─── Private ─────────────────────────────────────────────────────────────

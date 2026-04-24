@@ -23,7 +23,7 @@ class CalendarHelper(private val context: Context) {
             val sdf = if (allDay) SimpleDateFormat("EEE d MMM", Locale.getDefault())
                       else SimpleDateFormat("EEE d MMM HH:mm", Locale.getDefault())
             val start = sdf.format(Date(startMs))
-            return "$title @ $start${if (!location.isNullOrBlank()) " [$location]" else ""}"
+            return "ID:$id | $title @ $start${if (!location.isNullOrBlank()) " [$location]" else ""}"
         }
     }
 
@@ -92,6 +92,42 @@ class CalendarHelper(private val context: Context) {
         val events = getUpcoming(limit)
         return if (events.isEmpty()) "Niciun eveniment viitor in calendar."
                else events.joinToString("\n") { it.formatted() }
+    }
+
+    fun delete(eventId: Long): Boolean {
+        return try {
+            val uri = android.content.ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
+            val rows = context.contentResolver.delete(uri, null, null)
+            rows > 0
+        } catch (e: Exception) { false }
+    }
+
+    fun update(
+        eventId: Long,
+        title: String? = null,
+        description: String? = null,
+        location: String? = null,
+        startMs: Long? = null,
+        endMs: Long? = null
+    ): Boolean {
+        return try {
+            val values = ContentValues().apply {
+                title?.let { put(CalendarContract.Events.TITLE, it) }
+                description?.let { put(CalendarContract.Events.DESCRIPTION, it) }
+                location?.let { put(CalendarContract.Events.EVENT_LOCATION, it) }
+                startMs?.let { put(CalendarContract.Events.DTSTART, it) }
+                endMs?.let { put(CalendarContract.Events.DTEND, it) }
+            }
+            if (values.size() == 0) return false
+            val uri = android.content.ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId)
+            val rows = context.contentResolver.update(uri, values, null, null)
+            rows > 0
+        } catch (e: Exception) { false }
+    }
+
+    fun findByTitle(titleQuery: String, limit: Int = 20): Event? {
+        val q = titleQuery.lowercase()
+        return getUpcoming(limit).firstOrNull { it.title.lowercase().contains(q) }
     }
 
     private fun getPrimaryCalendarId(): Long? {

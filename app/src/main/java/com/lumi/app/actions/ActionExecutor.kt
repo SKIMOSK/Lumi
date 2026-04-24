@@ -81,6 +81,7 @@ class ActionExecutor(
         "CALL"                 -> call(a)
         "WRITE_NOTE"           -> writeNote(a)
         "WRITE_NOTE_APP"       -> writeNoteInApp(a)
+        "DELETE_NOTE"          -> deleteNote(a)
         "REMEMBER_FACT"        -> rememberFact(a)
         "NAVIGATE_MAPS"        -> navigateMaps(a)
         "NAVIGATE_WAZE"        -> navigateWaze(a)
@@ -88,6 +89,8 @@ class ActionExecutor(
         "DISCONNECT_VPN"       -> toggleVpn(a, false)
         "CREATE_EVENT"         -> createEvent(a)
         "READ_CALENDAR"        -> readCalendar(a)
+        "DELETE_EVENT"         -> deleteEvent(a)
+        "UPDATE_EVENT"         -> updateEvent(a)
         "SET_BRIGHTNESS"       -> setBrightness(a)
         "SET_VOLUME"           -> setVolume(a)
         "SET_DND"              -> setDND(a)
@@ -116,6 +119,7 @@ class ActionExecutor(
         "CREATE_FORWARD_FILE"  -> createAndForwardFile(a)
         "SEND_FILE"            -> sendFile(a)
         "EDIT_FILE"            -> editFile(a)
+        "REPLY_NOTIFICATION"   -> replyNotification(a)
         else -> Result(a, false, "Actiune necunoscuta: ${a.type}")
     }
 
@@ -156,26 +160,29 @@ class ActionExecutor(
         }
     }
 
+    private fun resolveTimer(a: LumiAction) =
+        timers.resolve(a.params["name"] ?: a.params["index"] ?: a.params["timer_index"])
+
     private fun pauseTimer(a: LumiAction): Result {
-        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negasit.")
+        val t = resolveTimer(a) ?: return Result(a, false, "Timer negasit.")
         timers.pause(t.id)
         return Result(a, true, "Timer \"${t.name}\" in pauza.")
     }
 
     private fun resumeTimer(a: LumiAction): Result {
-        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negasit.")
+        val t = resolveTimer(a) ?: return Result(a, false, "Timer negasit.")
         timers.resume(t.id)
         return Result(a, true, "Timer \"${t.name}\" reluat.")
     }
 
     private fun cancelTimer(a: LumiAction): Result {
-        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negasit.")
+        val t = resolveTimer(a) ?: return Result(a, false, "Timer negasit.")
         timers.cancel(t.id)
         return Result(a, true, "Timer \"${t.name}\" anulat.")
     }
 
     private fun resetTimer(a: LumiAction): Result {
-        val t = timers.getByName(a.params["name"] ?: "") ?: return Result(a, false, "Timer negasit.")
+        val t = resolveTimer(a) ?: return Result(a, false, "Timer negasit.")
         timers.reset(t.id)
         return Result(a, true, "Timer \"${t.name}\" resetat.")
     }
@@ -303,8 +310,9 @@ class ActionExecutor(
         val content = a.params["content"] ?: return Result(a, false, "Continut notita lipsa.")
         val id      = a.params["id"]
         return if (id != null) {
-            notes.update(id, title.ifBlank { null }, content)
-            Result(a, true, "Notita actualizata.")
+            val ok = notes.update(id, title.ifBlank { null }, content)
+            if (ok) Result(a, true, "Notita actualizata.")
+            else Result(a, false, "Notita cu ID $id nu a fost gasita.")
         } else {
             val note = notes.create(title, content)
             val effectiveTitle = title.ifBlank { note.title }
@@ -315,6 +323,19 @@ class ActionExecutor(
             }
             Result(a, true, "Notita \"${note.title}\" salvata.")
         }
+    }
+
+    private fun deleteNote(a: LumiAction): Result {
+        val id = a.params["id"]
+        val title = a.params["title"]
+        val target = when {
+            id != null -> id
+            title != null -> notes.findByTitle(title)?.id
+                ?: return Result(a, false, "Notita \"$title\" negasita.")
+            else -> return Result(a, false, "ID sau titlu notita lipsa.")
+        }
+        return if (notes.delete(target)) Result(a, true, "Notita stearsa.")
+        else Result(a, false, "Notita cu ID $target nu a fost gasita.")
     }
 
     // ─── Navigation ──────────────────────────────────────────────────────────
@@ -378,6 +399,32 @@ class ActionExecutor(
     private fun readCalendar(a: LumiAction): Result {
         val summary = CalendarHelper(context).formatSummary(10)
         return Result(a, true, summary)
+    }
+
+    private fun deleteEvent(a: LumiAction): Result {
+        val cal = CalendarHelper(context)
+        val id = a.params["id"]?.toLongOrNull()
+        val title = a.params["title"]
+        val targetId = id ?: title?.let { cal.findByTitle(it)?.id }
+            ?: return Result(a, false, "ID sau titlu eveniment lipsa.")
+        return if (cal.delete(targetId)) Result(a, true, "Eveniment sters din calendar.")
+        else Result(a, false, "Nu s-a putut sterge evenimentul $targetId.")
+    }
+
+    private fun updateEvent(a: LumiAction): Result {
+        val cal = CalendarHelper(context)
+        val id = a.params["id"]?.toLongOrNull()
+        val lookupTitle = a.params["lookup_title"] ?: a.params["find_title"]
+        val targetId = id ?: lookupTitle?.let { cal.findByTitle(it)?.id }
+            ?: return Result(a, false, "ID sau lookup_title eveniment lipsa.")
+        val newTitle = a.params["new_title"] ?: a.params["title"]
+        val desc = a.params["description"]
+        val loc = a.params["location"]
+        val startMs = parseDateTime(a.params["start_datetime"])
+        val endMs = parseDateTime(a.params["end_datetime"])
+        return if (cal.update(targetId, newTitle, desc, loc, startMs, endMs))
+            Result(a, true, "Eveniment actualizat.")
+        else Result(a, false, "Nu s-a putut actualiza evenimentul $targetId.")
     }
 
     private fun parseDateTime(dtStr: String?): Long? {
@@ -949,5 +996,36 @@ class ActionExecutor(
         } else {
             Result(a, false, "Nu s-a putut salva fisierul \"$name\".")
         }
+    }
+
+    // ─── Notification reply ──────────────────────────────────────────────────
+
+    private suspend fun replyNotification(a: LumiAction): Result {
+        val msg = a.params["message"] ?: return Result(a, false, "Mesaj lipsa.")
+        val key = a.params["notification_key"]
+        val contact = a.params["contact"]
+        val app = a.params["app"]?.lowercase()
+        val pkg = when {
+            app == null -> null
+            app.contains("whatsapp") -> "com.whatsapp"
+            app.contains("telegram") -> "org.telegram.messenger"
+            app.contains("messenger") || app.contains("facebook") -> "com.facebook.orca"
+            app.contains("signal") -> "org.thoughtcrime.securesms"
+            app.contains("instagram") -> "com.instagram.android"
+            app.contains("sms") || app.contains("messages") -> "com.google.android.apps.messaging"
+            else -> null
+        }
+        val notif = when {
+            key != null -> com.lumi.app.notifications.LumiNotificationService.findByKey(key)
+            pkg != null -> com.lumi.app.notifications.LumiNotificationService.findReplyable(pkg, contact)
+            else -> com.lumi.app.notifications.LumiNotificationService.findLastReplyable(contact)
+        } ?: return Result(a, false, "Nu am gasit notificare la care sa raspund.")
+        if (notif.directReply == null)
+            return Result(a, false, "Notificarea nu accepta raspuns rapid. Deschide aplicatia manual.")
+        if (!consent.request("Raspund in ${notif.appName} catre ${notif.title}: \"$msg\". Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+        val ok = com.lumi.app.notifications.LumiNotificationService.sendReply(context, notif, msg)
+        return if (ok) Result(a, true, "Raspuns trimis in ${notif.appName} catre ${notif.title}.")
+        else Result(a, false, "Nu s-a putut trimite raspunsul.")
     }
 }
