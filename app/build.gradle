@@ -52,6 +52,4 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
-    // ML Kit image labeling — bundled model, no network download required
-    implementation 'com.google.mlkit:image-labeling:17.0.8'
 }
