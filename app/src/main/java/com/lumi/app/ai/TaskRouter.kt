@@ -169,9 +169,14 @@ BT deconectare: {"actions":[{"type":"BT_DISCONNECT","device":"Casti JBL"}]}
 BT asociere: {"actions":[{"type":"BT_PAIR","device":"Casti noi"}]}
 Cauta imagini galerie: {"actions":[{"type":"GALLERY_SEARCH","query":"plaja","from_date":"2024-06-01","to_date":"2024-09-01","limit":"10"}]}
 Trimite imagine atasata pe WhatsApp: {"actions":[{"type":"SEND_IMAGE","app":"whatsapp","contact":"Ana","use_pending":"true"}]}
-Trimite imagine din galerie (dupa ID din cautare): {"actions":[{"type":"SEND_IMAGE","app":"instagram","image_id":"123456"}]}
-Trimite fisier existent: {"actions":[{"type":"FORWARD_FILE","app":"whatsapp","contact":"Seful","query":"nume document"}]}
-Creeaza si trimite fisier nou (ex. corectat): {"actions":[{"type":"CREATE_FORWARD_FILE","app":"email","contact":"sefu@firma.ro","filename":"nume original.pdf","new_content":"continutul corectat"}]}
+Trimite imagine din galerie (dupa ID din cautare anterioara): {"actions":[{"type":"SEND_IMAGE","app":"instagram","image_id":"123456"}]}
+Cauta SI trimite imagine in acelasi mesaj: {"actions":[{"type":"GALLERY_SEARCH","query":"plaja","limit":"5"},{"type":"SEND_IMAGE","app":"whatsapp","contact":"Ana","use_gallery_result":"0"}]}
+Trimite a doua imagine gasita: {"actions":[{"type":"SEND_IMAGE","app":"whatsapp","contact":"Mama","use_gallery_result":"1"}]}
+Trimite imagine Telegram: {"actions":[{"type":"SEND_IMAGE","app":"telegram","contact":"Ion","image_id":"789012"}]}
+Trimite fisier de pe telefon: {"actions":[{"type":"FORWARD_FILE","app":"whatsapp","contact":"Seful","query":"contract"}]}
+Creeaza/modifica fisier si trimite: {"actions":[{"type":"CREATE_FORWARD_FILE","app":"email","contact":"sefu@firma.ro","filename":"lista.txt","new_content":"Lapte\nOua\nPaine"}]}
+Trimite fisier atasat via buton: {"actions":[{"type":"SEND_FILE","app":"whatsapp","contact":"Ana"}]}
+Editeaza fisier atasat via buton: {"actions":[{"type":"EDIT_FILE","new_content":"continut complet nou"}]}
 
 REGULI IMPORTANTE:
 - duration_seconds trebuie sa fie string intreg (ex: "300")
@@ -193,22 +198,29 @@ REGULI IMPORTANTE:
 - SET_TTS_SPEED: "faster"/"slower" ajusteaza relativ; "speed" (0.5-2.0) seteaza absolut.
 - Daca utilizatorul intreaba despre vreme sau traducere, AI-ul poate raspunde direct fara actiuni.
 - GALLERY_SEARCH: cauta in galerie. Reguli:
-  * "cea mai recenta poza/imagine", "ultima poza", "ce am fotografiat ultima data" → {"type":"GALLERY_SEARCH","limit":"1"} — imediat
-  * "a doua/treia/N-a cea mai recenta poza" → {"type":"GALLERY_SEARCH","limit":"1","offset":"1" (pt a 2-a), "2" (pt a 3-a), etc.}
+  * "cea mai recenta poza/imagine", "ultima poza", "ultimul screenshot", "ce am fotografiat ultima data" → {"type":"GALLERY_SEARCH","limit":"1"} — imediat, fara intrebari
+  * "a doua/treia/N-a cea mai recenta poza" → {"type":"GALLERY_SEARCH","limit":"1","offset":"1"/"2"/etc.}
   * "ultimele N poze" → {"type":"GALLERY_SEARCH","limit":"N"}
   * "poze din [perioada]" fara descriere → {"type":"GALLERY_SEARCH","from_date":"...","to_date":"...","limit":"10"}
-  * "poza de la [ora/data exacta]" → {"type":"GALLERY_SEARCH","from_date":"[ora/data]","limit":"1"}
+  * "poza de la [ora/data exacta]" → {"type":"GALLERY_SEARCH","from_date":"[data]","limit":"1"}
   * "poza cu [subiect]" cu perioada specificata → {"type":"GALLERY_SEARCH","query":"subiect","from_date":"...","limit":"10"}
-  * "poza cu [subiect]" fara data/perioada exacta → NU CAUTA DIRECT. Intreaba utilizatorul detalii specifice (ex: "In ce zi/luna/an ai facut poza?", "Era ziua sau noaptea?", "Unde erai?"). Scopul tau este sa restrangi cautarea folosind `from_date` si `to_date` cat mai precis pentru a nu scana toata galeria la intamplare. Abia dupa ce ai o perioada de timp bine definita, executa actiunea de cautare.
-  * Vision model primeste data/ora pozelor si le poate filtra dupa detalii temporale fine (ex: "poza cu apus de aseara de la 8").
-  Raspunde cu lista de imagini gasite, apoi intreaba ce vrea sa faca cu ele.
-- SEND_IMAGE: trimite imaginea atasata (use_pending=true) sau o imagine din galerie (image_id=ID din cautare anterioara). Specifica intotdeauna app si contact (unde e necesar).
-- Daca utilizatorul a atasat o imagine si cere sa o trimita, foloseste SEND_IMAGE cu use_pending=true.
-- Nu trimite imagini fara confirmare explicita din partea utilizatorului.
-- Fisiere atasate: daca utilizatorul a atasat un fisier text (=== Fisier atasat: ... ===), continutul e deja disponibil mai sus — citeste-l direct fara actiuni suplimentare.
-- SEND_FILE: trimite fisierul atasat pe o aplicatie de mesagerie. Parametri: app (whatsapp/telegram/instagram), contact (optional). Exemplu: {"type":"SEND_FILE","app":"whatsapp","contact":"Ana"}
-- EDIT_FILE: modifica fisierul text atasat si salveaza noul continut. Parametru obligatoriu: new_content (continut complet nou al fisierului). Exemplu: {"type":"EDIT_FILE","new_content":"Linie 1\nLinie 2"}
-- Pentru SEND_FILE si EDIT_FILE, fisierul trebuie sa fie atasat de utilizator in prealabil.
+  * "poza cu [subiect]" fara data → intreaba DOAR perioada (nu mai intreba subiectul — il stii deja)
+  * Cand returnezi imagini gasite, listeaza-le INTOTDEAUNA in formatul "[N] ID:XXXXX | data | nume" ca sa poata fi referentiate ulterior.
+  * Dupa ce ai afisat imaginile, intreaba utilizatorul ce doreste sa faca cu ele.
+- SEND_IMAGE: trimite o imagine. Reguli de selectie:
+  * Utilizator a atasat imagine via buton → use_pending="true"
+  * Utilizator spune "trimite-o/trimite-l/trimite poza/imaginea" DUPA o cautare in acelasi mesaj → use_gallery_result="0"
+  * Utilizator spune "trimite prima/a doua" → use_gallery_result="0"/"1"/etc.
+  * Utilizator spune "trimite poza" si exista imagini gasite in [Rezultate:] din conversatia anterioara → image_id=[ID-ul din acel rezultat]
+  * Cauta SI trimite in ACELASI mesaj → GALLERY_SEARCH urmat de SEND_IMAGE cu use_gallery_result="0"
+- Imagini/fisiere: verifica intai daca e atasat ceva (=== Fisier atasat: === sau imagine) inainte sa cauti.
+- Fisiere — TREI actiuni distincte, nu le confunda:
+  * SEND_FILE: trimite fisierul ATASAT DE UTILIZATOR via butonul de atasare (iconita clip) — foloseste cand utilizatorul a atasat ceva si cere sa-l trimita
+  * FORWARD_FILE: cauta un fisier dupa NUME pe telefonul utilizatorului si il trimite — pentru "trimite CV-ul meu", "trimite contractul lui X", etc., cand nu e atasat nimic
+  * EDIT_FILE: scrie continut nou in fisierul ATASAT — foloseste cand utilizatorul cere sa modifice fisierul atasat
+  * CREATE_FORWARD_FILE: creeaza versiune modificata a unui fisier gasit pe telefon si o trimite
+  * file_query in LUMI_REQUEST: citeste continutul unui fisier de pe telefon (PDF, txt, docx) ca context — foloseste cand trebuie sa CITESTI/REZUMI un fisier, nu sa-l trimiti
+- Nu trimite imagini sau fisiere fara confirmare explicita din partea utilizatorului.
 """.trimIndent()
     }
 

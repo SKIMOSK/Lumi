@@ -51,10 +51,12 @@ class ActionExecutor(
     private var currentImageBase64: String? = null
     private var currentFileUri: Uri? = null
     private val fileHelper = FileHelper(context)
+    private var lastBatchGalleryIds: List<Long>? = null
 
     suspend fun executeAll(actions: List<LumiAction>, imageBase64: String? = null, fileUri: Uri? = null): List<Result> {
         currentImageBase64 = imageBase64
         currentFileUri = fileUri
+        lastBatchGalleryIds = null
         return actions.map { runCatching { execute(it) }.getOrElse { e -> Result(it, false, "Eroare: ${e.message}") } }
     }
 
@@ -773,14 +775,16 @@ class ActionExecutor(
 
         if (results.isEmpty()) return Result(a, true, "Nu s-au gasit imagini.")
         val ids = results.map { it.id }
+        lastBatchGalleryIds = ids  // enables same-request SEND_IMAGE chaining
         return Result(a, true, helper.formatSummary(results), ids)
     }
 
     private suspend fun sendImage(a: LumiAction): Result {
-        val app        = a.params["app"]?.lowercase() ?: "whatsapp"
-        val imageIdStr = a.params["image_id"]
-        val usePending = a.params["use_pending"]?.lowercase() == "true"
-        val cName      = a.params["contact"]
+        val app              = a.params["app"]?.lowercase() ?: "whatsapp"
+        val imageIdStr       = a.params["image_id"]
+        val usePending       = a.params["use_pending"]?.lowercase() == "true"
+        val useGalleryResult = a.params["use_gallery_result"]?.toIntOrNull()
+        val cName            = a.params["contact"]
 
         val imageUri: Uri = when {
             usePending && currentImageBase64 != null -> {
@@ -788,13 +792,21 @@ class ActionExecutor(
                     ?: return Result(a, false, "Nu s-a putut salva imaginea temporar.")
                 FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
             }
+            useGalleryResult != null -> {
+                val ids = lastBatchGalleryIds
+                    ?: return Result(a, false, "Nicio cautare anterioara. Cauta mai intai cu GALLERY_SEARCH.")
+                val id = ids.getOrNull(useGalleryResult)
+                    ?: return Result(a, false, "Nu exista imaginea cu indicele $useGalleryResult din cautare.")
+                gallerySearchHelper?.getUri(id)
+                    ?: return Result(a, false, "Gallery helper indisponibil.")
+            }
             imageIdStr != null -> {
                 val id = imageIdStr.toLongOrNull()
                     ?: return Result(a, false, "ID imagine invalid.")
                 gallerySearchHelper?.getUri(id)
                     ?: return Result(a, false, "Gallery helper indisponibil.")
             }
-            else -> return Result(a, false, "Nicio imagine specificata (image_id sau use_pending=true).")
+            else -> return Result(a, false, "Nicio imagine specificata (image_id, use_gallery_result sau use_pending=true).")
         }
 
         val appLabel   = when { app.contains("instagram") -> "Instagram"; app.contains("telegram") -> "Telegram"; else -> "WhatsApp" }

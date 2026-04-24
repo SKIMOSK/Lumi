@@ -287,11 +287,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 saveChatHistory()
 
                 val aiAskedQuestion = displayText.trimEnd().endsWith("?")
+                // Include successful action results (gallery IDs, file names, etc.) in memory
+                // so the AI can reference them in the next turn (e.g. "send it to Ana")
+                val actionSummary = result.actionResults
+                    .filter { it.success }
+                    .joinToString("\n") { it.message }
+                val memorizedText = if (actionSummary.isBlank()) displayText
+                                    else "$displayText\n\n[Rezultate:]\n$actionSummary"
                 if (aiAskedQuestion) {
-                    memory.addPending(Interaction(userText, displayText, imageBase64, result.usedExpert))
+                    memory.addPending(Interaction(userText, memorizedText, imageBase64, result.usedExpert))
                 } else {
                     memory.clearPending()
-                    memory.add(Interaction(userText, displayText, imageBase64, result.usedExpert))
+                    memory.add(Interaction(userText, memorizedText, imageBase64, result.usedExpert))
                 }
                 _statusText.postValue(if (result.usedExpert) "Raspuns Expert" else "Raspuns Fast")
 
