@@ -474,7 +474,7 @@ class MessageSender(private val context: Context) {
         if (!isWhatsAppInstalled()) return SendResult.Error("WhatsApp nu este instalat.")
         val phone = contact.phoneNumbers.firstOrNull()
             ?: return SendResult.Error("Contactul nu are număr de telefon.")
-        val clean = phone.replace(Regex("[^\\d+]"), "")
+        val clean = phone.replace(Regex("[^\\d]"), "")  // strip ALL non-digits incl. '+'
         return try {
             context.startActivity(Intent(Intent.ACTION_SEND).apply {
                 type = "image/*"

@@ -43,7 +43,7 @@ class ActionExecutor(
     private val appSettings: AppSettings? = null,
     private val gallerySearchHelper: GallerySearchHelper? = null
 ) {
-    data class Result(val action: LumiAction, val success: Boolean, val message: String)
+    data class Result(val action: LumiAction, val success: Boolean, val message: String, val galleryImageIds: List<Long>? = null)
 
     private var currentImageBase64: String? = null
 
@@ -733,6 +733,7 @@ class ActionExecutor(
 
     private suspend fun gallerySearch(a: LumiAction): Result {
         val helper = gallerySearchHelper ?: return Result(a, false, "Galerie indisponibila.")
+        val settings = appSettings ?: return Result(a, false, "Setari indisponibile.")
         val query    = a.params["query"]
         val fromDate = a.params["from_date"]
         val toDate   = a.params["to_date"]
@@ -742,11 +743,17 @@ class ActionExecutor(
         val fromMs   = GallerySearchHelper.parseDateString(fromDate)
         val toMs     = GallerySearchHelper.parseDateString(toDate)
         val filtered = helper.filterByDateRange(all, fromMs, toMs)
-        val results  = if (!query.isNullOrBlank()) helper.findByLabel(filtered, query, limit)
-                       else filtered.take(limit)
+
+        val results = if (!query.isNullOrBlank()) {
+            val client = com.lumi.app.ai.GeminiClient(settings.openRouterApiKey, settings.openRouterBaseUrl)
+            helper.findByVision(filtered, query, client, maxResults = limit)
+        } else {
+            filtered.take(limit)
+        }
 
         if (results.isEmpty()) return Result(a, true, "Nu s-au gasit imagini.")
-        return Result(a, true, helper.formatSummary(results))
+        val ids = results.map { it.id }
+        return Result(a, true, helper.formatSummary(results), ids)
     }
 
     private suspend fun sendImage(a: LumiAction): Result {

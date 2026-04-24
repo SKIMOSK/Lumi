@@ -244,7 +244,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 } else ""
 
                 val lumiMsg = ChatMessage(text = displayText + actionSuffix,
-                    time = now(), isUser = false, usedPro = result.usedExpert)
+                    time = now(), isUser = false, usedPro = result.usedExpert,
+                    galleryImageIds = result.galleryImageIds)
 
                 withContext(Dispatchers.Main) {
                     val idx = messageList.indexOfFirst { it.id == loading.id }

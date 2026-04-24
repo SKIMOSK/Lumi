@@ -5,15 +5,12 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.Base64
 import android.util.Log
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.label.ImageLabeling
-import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
-import kotlinx.coroutines.suspendCancellableCoroutine
+import com.lumi.app.ai.GeminiClient
+import com.lumi.app.settings.AppSettings
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.coroutines.resume
 
 data class GalleryImage(
     val id: Long,
@@ -68,8 +65,7 @@ class GallerySearchHelper(private val context: Context) {
                     val id = cursor.getLong(idCol)
                     images.add(GalleryImage(
                         id = id,
-                        uri = Uri.withAppendedPath(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()),
+                        uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString()),
                         dateTaken = if (dateCol >= 0) cursor.getLong(dateCol) else 0L,
                         displayName = if (nameCol >= 0) cursor.getString(nameCol) ?: "" else ""
                     ))
@@ -89,50 +85,41 @@ class GallerySearchHelper(private val context: Context) {
         }
 
     /**
-     * Uses ML Kit Image Labeling to score each candidate image against [query].
-     * Processes up to 200 images to keep latency reasonable.
-     * Returns the top [maxResults] matches sorted by confidence.
+     * Uses AI vision (Haiku) to check candidates against [description] in batches.
+     * Encodes each image at 256px for speed. Returns up to [maxResults] matches.
      */
-    suspend fun findByLabel(
+    suspend fun findByVision(
         candidates: List<GalleryImage>,
-        query: String,
+        description: String,
+        client: GeminiClient,
+        model: String = AppSettings.MODEL_FASTER,
+        maxCandidates: Int = 80,
+        batchSize: Int = 6,
         maxResults: Int = 10
     ): List<GalleryImage> {
-        if (candidates.isEmpty()) return emptyList()
-        val keywords = query.lowercase().split(Regex("\\s+")).filter { it.length > 2 }
-        val labeler = ImageLabeling.getClient(
-            ImageLabelerOptions.Builder().setConfidenceThreshold(0.5f).build()
-        )
-        val scored = mutableListOf<Pair<GalleryImage, Float>>()
+        if (candidates.isEmpty() || description.isBlank()) return emptyList()
+        val pool = candidates.take(maxCandidates)
+        val matched = mutableListOf<GalleryImage>()
 
-        for (img in candidates.take(200)) {
-            try {
-                val inputImage = InputImage.fromFilePath(context, img.uri)
-                val labels = suspendCancellableCoroutine<List<com.google.mlkit.vision.label.ImageLabel>> { cont ->
-                    labeler.process(inputImage)
-                        .addOnSuccessListener { cont.resume(it) }
-                        .addOnFailureListener { cont.resume(emptyList()) }
-                    cont.invokeOnCancellation { labeler.close() }
-                }
-                val score = labels.sumOf { label ->
-                    val text = label.text.lowercase()
-                    keywords.count { kw ->
-                        text.contains(kw) || kw.contains(text)
-                    }.toDouble() * label.confidence
-                }.toFloat()
-                if (score > 0f) scored.add(img to score)
-            } catch (_: Exception) {}
+        for (batch in pool.chunked(batchSize)) {
+            if (matched.size >= maxResults) break
+            val pairs = batch.mapNotNull { img ->
+                val b64 = try { encodeToBase64(img.id, 256) } catch (_: Exception) { null }
+                if (b64 != null) img to b64 else null
+            }
+            if (pairs.isEmpty()) continue
+            val indices = client.checkImagesMatch(pairs.map { it.second }, description, model)
+            indices.forEach { idx ->
+                if (idx < pairs.size && matched.size < maxResults) matched.add(pairs[idx].first)
+            }
         }
-
-        labeler.close()
-        return scored.sortedByDescending { it.second }.take(maxResults).map { it.first }
+        return matched
     }
 
     /** Encodes a gallery image as JPEG base64 for sending to the AI vision model. */
     fun encodeToBase64(imageId: Long, maxSize: Int = 512): String? {
         return try {
-            val uri = Uri.withAppendedPath(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId.toString())
+            val uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, imageId.toString())
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 val bmp = android.graphics.BitmapFactory.decodeStream(stream) ?: return null
                 val scale = maxSize.toFloat() / maxOf(bmp.width, bmp.height)

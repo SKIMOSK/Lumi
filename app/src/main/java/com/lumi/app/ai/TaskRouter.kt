@@ -35,8 +35,11 @@ class TaskRouter(
         val response: GeminiResponse,
         val parsed: com.lumi.app.actions.ParsedAIResponse,
         val usedExpert: Boolean,
-        val actionResults: List<ActionExecutor.Result> = emptyList()
+        val actionResults: List<ActionExecutor.Result> = emptyList(),
+        val galleryImageIds: List<Long>? = null
     )
+
+    private var lastGalleryIds: List<Long>? = null
 
     // ─── Context injection ───────────────────────────────────────────────────
 
@@ -248,7 +251,10 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
             executor?.executeAll(cleanParsed.actions, imageBase64) ?: emptyList()
         } else emptyList()
 
-        return RouteResult(firstResponse, cleanParsed, useExpert, actionResults)
+        val galleryIds = actionResults.flatMap { it.galleryImageIds ?: emptyList() }
+            .takeIf { it.isNotEmpty() } ?: lastGalleryIds?.takeIf { it.isNotEmpty() }
+        lastGalleryIds = null  // reset for next call
+        return RouteResult(firstResponse, cleanParsed, useExpert, actionResults, galleryIds)
     }
 
     // ─── Markdown stripper ───────────────────────────────────────────────────
@@ -333,8 +339,12 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
                 val fromMs   = GallerySearchHelper.parseDateString(gr.from_date)
                 val toMs     = GallerySearchHelper.parseDateString(gr.to_date)
                 val filtered = helper.filterByDateRange(all, fromMs, toMs)
-                val results  = if (!gr.query.isNullOrBlank()) helper.findByLabel(filtered, gr.query, gr.limit)
-                               else filtered.take(gr.limit)
+                val results = if (!gr.query.isNullOrBlank()) {
+                    helper.findByVision(filtered, gr.query, client, maxResults = gr.limit)
+                } else {
+                    filtered.take(gr.limit)
+                }
+                lastGalleryIds = results.map { it.id }
                 if (results.isEmpty()) sb.appendLine("Nu s-au gasit imagini.")
                 else sb.appendLine(helper.formatSummary(results))
             }

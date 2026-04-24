@@ -128,7 +128,11 @@ class MainActivity : AppCompatActivity() {
     // ─── Setup ────────────────────────────────────────────────────────────────
 
     private fun setupRecyclerView() {
-        adapter = MessageAdapter(onSpeak = { text -> viewModel.tts.speak(text) })
+        adapter = MessageAdapter(
+            context = this,
+            scope = lifecycleScope,
+            onSpeak = { text -> viewModel.tts.speak(text) }
+        )
         binding.rvMessages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         binding.rvMessages.adapter = adapter
     }

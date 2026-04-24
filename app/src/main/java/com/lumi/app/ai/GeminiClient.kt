@@ -141,4 +141,50 @@ class GeminiClient(
             ?: obj["error"]?.asString
             ?: json.take(300)
     } catch (e: Exception) { json.take(300) }
+
+    /** Sends up to [batchSize] images with a description prompt to [model] (Haiku).
+     *  Returns 0-based indices of images that match the description. */
+    suspend fun checkImagesMatch(
+        images: List<String>,
+        description: String,
+        model: String
+    ): List<Int> = withContext(Dispatchers.IO) {
+        if (images.isEmpty()) return@withContext emptyList()
+        val validPairs = images.mapIndexed { i, b64 -> i to b64 }.filter { isValidImageBase64(it.second) }
+        if (validPairs.isEmpty()) return@withContext emptyList()
+
+        val currentContent = mutableListOf<Map<String, Any>>()
+        currentContent.add(mapOf("type" to "text", "text" to
+            "Images numbered 1 to ${validPairs.size}. Which match: \"$description\"? " +
+            "Reply ONLY with a JSON array of matching numbers e.g. [1,3] or [] if none. No other text."))
+        validPairs.forEach { (_, b64) ->
+            val mime = if (b64.startsWith("iVBOR")) "image/png" else "image/jpeg"
+            currentContent.add(mapOf("type" to "image_url",
+                "image_url" to mapOf("url" to "data:$mime;base64,$b64")))
+        }
+
+        val requestMap = mapOf(
+            "model" to model,
+            "messages" to listOf(mapOf("role" to "user", "content" to currentContent)),
+            "temperature" to 0.0,
+            "max_tokens" to 60
+        )
+        val url = "$baseUrl/chat/completions"
+        val body = gson.toJson(requestMap).toRequestBody("application/json".toMediaType())
+        val req = Request.Builder().url(url)
+            .addHeader("Authorization", "Bearer $apiKey")
+            .addHeader("HTTP-Referer", "https://github.com/skimosk/lumi")
+            .addHeader("X-Title", "Lumi")
+            .post(body).build()
+        try {
+            http.newCall(req).execute().use { response ->
+                if (!response.isSuccessful) return@withContext emptyList()
+                val text = parseResponse(response.body?.string() ?: return@withContext emptyList(), model).text.trim()
+                val arr = try { com.google.gson.JsonParser.parseString(text).asJsonArray } catch (_: Exception) { return@withContext emptyList() }
+                arr.mapNotNull { try { it.asInt } catch (_: Exception) { null } }
+                    .filter { it in 1..validPairs.size }
+                    .map { validPairs[it - 1].first }  // convert to original 0-based index
+            }
+        } catch (_: Exception) { emptyList() }
+    }
 }
