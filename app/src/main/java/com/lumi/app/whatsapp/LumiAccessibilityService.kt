@@ -44,6 +44,10 @@ class LumiAccessibilityService : AccessibilityService() {
          */
         fun tapWhatsAppShareContact(contactName: String): Boolean =
             instance?.performWhatsAppShareContact(contactName) ?: false
+
+        /** Tap the Send button on the image preview/caption screen in WhatsApp. */
+        fun tapWhatsAppImageSend(): Boolean =
+            instance?.performWhatsAppImageSend() ?: false
     }
 
     override fun onServiceConnected() {
@@ -293,6 +297,18 @@ class LumiAccessibilityService : AccessibilityService() {
         )
         val sendNode = nodeByIds(root3, sendIds)
             ?: nodeByDescs(root3, listOf("Send", "Trimite", "OK", "Forward", "Inainte", "Done"))
+        return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+    }
+
+    private fun performWhatsAppImageSend(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        val sendIds = listOf(
+            "com.whatsapp:id/send",
+            "com.whatsapp:id/send_button",
+            "com.whatsapp:id/compose_box_send_button"
+        )
+        val sendNode = nodeByIds(root, sendIds)
+            ?: nodeByDescs(root, listOf("Send", "Trimite", "Trimiteţi", "Send message"))
         return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
     }
 
