@@ -11,6 +11,7 @@ import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
+import com.lumi.app.files.FileHelper
 import com.lumi.app.gallery.GallerySearchHelper
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.messaging.SendResult
@@ -48,9 +49,12 @@ class ActionExecutor(
     data class Result(val action: LumiAction, val success: Boolean, val message: String, val galleryImageIds: List<Long>? = null)
 
     private var currentImageBase64: String? = null
+    private var currentFileUri: Uri? = null
+    private val fileHelper = FileHelper(context)
 
-    suspend fun executeAll(actions: List<LumiAction>, imageBase64: String? = null): List<Result> {
+    suspend fun executeAll(actions: List<LumiAction>, imageBase64: String? = null, fileUri: Uri? = null): List<Result> {
         currentImageBase64 = imageBase64
+        currentFileUri = fileUri
         return actions.map { runCatching { execute(it) }.getOrElse { e -> Result(it, false, "Eroare: ${e.message}") } }
     }
 
@@ -108,6 +112,8 @@ class ActionExecutor(
         "SEND_IMAGE"           -> sendImage(a)
         "FORWARD_FILE"         -> forwardFile(a)
         "CREATE_FORWARD_FILE"  -> createAndForwardFile(a)
+        "SEND_FILE"            -> sendFile(a)
+        "EDIT_FILE"            -> editFile(a)
         else -> Result(a, false, "Actiune necunoscuta: ${a.type}")
     }
 
@@ -858,7 +864,7 @@ class ActionExecutor(
             return Result(a, false, "Anulat.")
 
         val contact = contacts.findBestMatch(cName)
-        
+
         val pkg = when {
             app.contains("whatsapp") -> "com.whatsapp"
             app.contains("telegram") -> "org.telegram.messenger"
@@ -870,7 +876,7 @@ class ActionExecutor(
         }
 
         val result = messenger.shareDocumentToApp(uri, pkg, appLabel)
-        
+
         return when (result) {
             is SendResult.Error -> Result(a, false, result.reason)
             else -> {
@@ -880,6 +886,56 @@ class ActionExecutor(
                 }
                 Result(a, true, "Fisier pregatit pentru trimitere pe $appLabel. Finalizeaza manual daca e nevoie.")
             }
+        }
+    }
+
+    // ─── File (URI-based — from attach button) ────────────────────────────────
+
+    private suspend fun sendFile(a: LumiAction): Result {
+        val uri = currentFileUri
+            ?: return Result(a, false, "Niciun fisier atasat. Ataseaza un fisier si reincearca.")
+        val app     = a.params["app"]?.lowercase() ?: "whatsapp"
+        val cName   = a.params["contact"]
+        val name    = fileHelper.getDisplayName(uri)
+        val appLabel = when {
+            app.contains("telegram")  -> "Telegram"
+            app.contains("instagram") -> "Instagram"
+            else -> "WhatsApp"
+        }
+        val contactInfo = if (cName != null) " lui $cName" else ""
+        if (!consent.request("Trimit fisierul \"$name\" pe $appLabel$contactInfo. Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+
+        val pkg = when {
+            app.contains("telegram")  -> "org.telegram.messenger"
+            app.contains("instagram") -> "com.instagram.android"
+            else -> MessageSender.WHATSAPP_PACKAGE
+        }
+        val mime = fileHelper.getMimeType(uri)
+        return try {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = mime
+                putExtra(Intent.EXTRA_STREAM, uri)
+                setPackage(pkg)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            Result(a, true, "Fisierul \"$name\" deschis in $appLabel$contactInfo.")
+        } catch (e: Exception) {
+            Result(a, false, "Nu s-a putut deschide $appLabel: ${e.message}")
+        }
+    }
+
+    private fun editFile(a: LumiAction): Result {
+        val uri = currentFileUri
+            ?: return Result(a, false, "Niciun fisier atasat pentru editare.")
+        val newContent = a.params["new_content"]
+            ?: return Result(a, false, "Continut nou lipsa.")
+        val name = fileHelper.getDisplayName(uri)
+        return if (fileHelper.writeText(uri, newContent)) {
+            Result(a, true, "Fisierul \"$name\" a fost actualizat.")
+        } else {
+            Result(a, false, "Nu s-a putut salva fisierul \"$name\".")
         }
     }
 }

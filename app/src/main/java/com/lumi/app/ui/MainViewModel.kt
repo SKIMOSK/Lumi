@@ -1,6 +1,7 @@
 package com.lumi.app.ui
 
 import android.app.Application
+import android.net.Uri
 import android.os.Build
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -25,6 +26,7 @@ import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
+import com.lumi.app.files.FileHelper
 import com.lumi.app.gallery.GallerySearchHelper
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.notes.NotesHelper
@@ -62,6 +64,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val btDeviceManager   = BluetoothDeviceManager(app)
     private val gallerySearchHelper = GallerySearchHelper(app)
     private val documentHelper    = com.lumi.app.system.DocumentHelper(app)
+    private val fileHelper = FileHelper(app)
     val consent = ConsentManager(tts, null)
 
     private val memory = ConversationMemory(settings.memorySizeHistory)
@@ -89,6 +92,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private var latestImageBase64: String? = null
     private var pendingAttachImage: String? = null
+    private var pendingAttachFile: Uri? = null
+    private var pendingAttachFileName: String = ""
     private var currentJob: Job? = null
     private var wordLimitBonus = 0
 
@@ -216,10 +221,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
 
-        val imageBase64 = pendingAttachImage ?: (if (useDeviceImage) latestImageBase64 else null)
+        var imageBase64 = pendingAttachImage ?: (if (useDeviceImage) latestImageBase64 else null)
         pendingAttachImage = null
         // Clear immediately — a bad BLE frame must not poison the next request
         latestImageBase64 = null
+
+        val attachedFileUri = pendingAttachFile
+        val attachedFileName = pendingAttachFileName
+        pendingAttachFile = null
+        pendingAttachFileName = ""
 
         val userMsg = ChatMessage(text = userText, time = now(), isUser = true, imageBase64 = imageBase64)
         val loading = ChatMessage(text = "…", time = now(), isUser = false, isLoading = true)
@@ -233,9 +243,30 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         currentJob?.cancel()
         currentJob = viewModelScope.launch {
             try {
+                // Resolve file attachment into either image base64 or text context
+                var fileContext: String? = null
+                if (attachedFileUri != null) {
+                    val mime = fileHelper.getMimeType(attachedFileUri)
+                    when {
+                        fileHelper.isSupportedImageMime(mime) -> {
+                            imageBase64 = fileHelper.readAsBase64(attachedFileUri)
+                        }
+                        fileHelper.isTextMime(mime) -> {
+                            val content = fileHelper.readText(attachedFileUri)
+                            if (content != null) {
+                                fileContext = "=== Fisier atasat: $attachedFileName ===\n$content\n=== Sfarsit fisier ==="
+                            }
+                        }
+                        else -> {
+                            fileContext = "[Fisier atasat: $attachedFileName (tip: $mime)]"
+                        }
+                    }
+                }
+
                 val result = buildRouter().route(
                     userText, imageBase64, memory,
-                    fastWordLimit = 45, expertWordLimit = expertLimit, forceExpert = wantsDetail
+                    fastWordLimit = 45, expertWordLimit = expertLimit, forceExpert = wantsDetail,
+                    fileContext = fileContext, fileUri = attachedFileUri
                 )
                 val displayText = result.parsed.displayText
                 val actionSuffix = if (result.actionResults.isNotEmpty()) {
@@ -282,7 +313,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun attachImage(base64: String) { pendingAttachImage = base64 }
+    fun attachImage(base64: String) { pendingAttachImage = base64; pendingAttachFile = null }
+
+    fun attachFile(uri: Uri, name: String) {
+        pendingAttachFile = uri
+        pendingAttachFileName = name
+        pendingAttachImage = null
+        latestImageBase64 = null
+    }
+
+    fun clearPendingFile() { pendingAttachFile = null; pendingAttachFileName = "" }
 
     fun clearHistory() {
         memory.clear(); wordLimitBonus = 0

@@ -27,6 +27,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.lumi.app.bluetooth.LumiBluetoothManager
 import com.lumi.app.databinding.ActivityMainBinding
+import com.lumi.app.files.FileHelper
 import com.lumi.app.notifications.LumiNotificationService
 import com.lumi.app.settings.SettingsActivity
 import com.lumi.app.stt.RomanianSTT
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     private var isListening = false
     private var accessibilityDialogShown = false
     private var orbAnimator: ValueAnimator? = null
+    private lateinit var fileHelper: FileHelper
 
     // ─── Permissions ──────────────────────────────────────────────────────────
 
@@ -74,18 +76,28 @@ class MainActivity : AppCompatActivity() {
         if (viewModel.bluetooth.isBluetoothEnabled()) initBluetooth()
     }
 
-    // ─── Image attachment ─────────────────────────────────────────────────────
+    // ─── Attachment (image or file) ───────────────────────────────────────────
 
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { encodeAndAttach(it) }
+        uri?.let { encodeAndAttachImage(it) }
     }
     private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp: Bitmap? ->
         bmp?.let { attachBitmap(it) }
     }
+    private val fileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let { attachFile(it) }
+    }
 
-    private fun encodeAndAttach(uri: Uri) {
-        val bmp = android.provider.MediaStore.Images.Media.getBitmap(contentResolver, uri)
-        attachBitmap(bmp)
+    private fun encodeAndAttachImage(uri: Uri) {
+        val mime = fileHelper.getMimeType(uri)
+        if (fileHelper.isSupportedImageMime(mime)) {
+            @Suppress("DEPRECATION")
+            val bmp = android.provider.MediaStore.Images.Media.getBitmap(contentResolver, uri)
+            attachBitmap(bmp)
+        } else {
+            // Picked from gallery but isn't a supported image — treat as file
+            attachFile(uri)
+        }
     }
 
     private fun attachBitmap(bmp: Bitmap) {
@@ -93,9 +105,30 @@ class MainActivity : AppCompatActivity() {
         bmp.compress(Bitmap.CompressFormat.JPEG, 80, out)
         val b64 = Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
         viewModel.attachImage(b64)
+        clearFileAttachmentUi()
         binding.ivAttachedPreview.setImageBitmap(bmp)
         binding.ivAttachedPreview.visibility = View.VISIBLE
         Toast.makeText(this, "Imagine atașată", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun attachFile(uri: Uri) {
+        val name = fileHelper.getDisplayName(uri)
+        viewModel.attachFile(uri, name)
+        binding.ivAttachedPreview.visibility = View.GONE
+        binding.tvAttachedFile.text = name
+        binding.tvAttachedFile.visibility = View.VISIBLE
+        Toast.makeText(this, "Fișier atașat: $name", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun clearFileAttachmentUi() {
+        binding.tvAttachedFile.visibility = View.GONE
+    }
+
+    private fun clearAttachment() {
+        viewModel.attachImage("")
+        viewModel.clearPendingFile()
+        binding.ivAttachedPreview.visibility = View.GONE
+        binding.tvAttachedFile.visibility = View.GONE
     }
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -106,6 +139,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
+        fileHelper = FileHelper(this)
         stt = RomanianSTT(this).also { it.setLanguage(viewModel.settings.sttLanguage) }
         viewModel.consent.stt = stt
 
@@ -148,10 +182,8 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnAttach.setOnClickListener { showImageSourcePicker() }
 
-        binding.ivAttachedPreview.setOnClickListener {
-            viewModel.attachImage("")
-            binding.ivAttachedPreview.visibility = View.GONE
-        }
+        binding.ivAttachedPreview.setOnClickListener { clearAttachment() }
+        binding.tvAttachedFile.setOnClickListener { clearAttachment() }
 
         binding.btnConnect.setOnClickListener {
             when (viewModel.btState.value) {
@@ -199,10 +231,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showImageSourcePicker() {
         AlertDialog.Builder(this)
-            .setTitle("Atașează imagine")
-            .setItems(arrayOf("Cameră", "Galerie")) { _, which ->
-                if (which == 0) cameraLauncher.launch(null)
-                else galleryLauncher.launch("image/*")
+            .setTitle("Atașează")
+            .setItems(arrayOf("Cameră", "Imagine din galerie", "Fișier")) { _, which ->
+                when (which) {
+                    0 -> cameraLauncher.launch(null)
+                    1 -> galleryLauncher.launch("image/*")
+                    2 -> fileLauncher.launch(arrayOf("*/*"))
+                }
             }.show()
     }
 

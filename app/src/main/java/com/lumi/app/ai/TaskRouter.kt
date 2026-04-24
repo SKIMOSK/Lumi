@@ -1,5 +1,6 @@
 package com.lumi.app.ai
 
+import android.net.Uri
 import android.os.Build
 import com.lumi.app.actions.ActionExecutor
 import com.lumi.app.actions.ActionParser
@@ -204,13 +205,17 @@ REGULI IMPORTANTE:
 - SEND_IMAGE: trimite imaginea atasata (use_pending=true) sau o imagine din galerie (image_id=ID din cautare anterioara). Specifica intotdeauna app si contact (unde e necesar).
 - Daca utilizatorul a atasat o imagine si cere sa o trimita, foloseste SEND_IMAGE cu use_pending=true.
 - Nu trimite imagini fara confirmare explicita din partea utilizatorului.
+- Fisiere atasate: daca utilizatorul a atasat un fisier text (=== Fisier atasat: ... ===), continutul e deja disponibil mai sus — citeste-l direct fara actiuni suplimentare.
+- SEND_FILE: trimite fisierul atasat pe o aplicatie de mesagerie. Parametri: app (whatsapp/telegram/instagram), contact (optional). Exemplu: {"type":"SEND_FILE","app":"whatsapp","contact":"Ana"}
+- EDIT_FILE: modifica fisierul text atasat si salveaza noul continut. Parametru obligatoriu: new_content (continut complet nou al fisierului). Exemplu: {"type":"EDIT_FILE","new_content":"Linie 1\nLinie 2"}
+- Pentru SEND_FILE si EDIT_FILE, fisierul trebuie sa fie atasat de utilizator in prealabil.
 """.trimIndent()
     }
 
     private val classifyPrompt = """
 Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS, VPN, calendar, control media (play/pause/skip), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator, cautare galerie foto.
-COMPLEX: trimitere mesaje (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), trimitere imagini, apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas.
+SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS, VPN, calendar, control media (play/pause/skip), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator, cautare galerie foto, citire fisier atasat.
+COMPLEX: trimitere mesaje (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), trimitere imagini, trimitere fisiere, editare fisiere, apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas.
 Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()
 
@@ -222,7 +227,9 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         memory: ConversationMemory,
         fastWordLimit: Int = 45,
         expertWordLimit: Int = 95,
-        forceExpert: Boolean = false
+        forceExpert: Boolean = false,
+        fileContext: String? = null,
+        fileUri: Uri? = null
     ): RouteResult {
         val history = memory.toGeminiContents()
         val fastModel = settings.fastModel
@@ -240,15 +247,18 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
             "\n\nIMPORTANT: Raspunde in cel mult $wordLimit cuvinte." +
             actionNote
 
+        // Prepend file context to user prompt so the AI can read it
+        val effectivePrompt = if (fileContext != null) "$fileContext\n\n$userPrompt" else userPrompt
+
         var firstResponse = client.generate(
-            prompt = userPrompt, imageBase64 = imageBase64,
+            prompt = effectivePrompt, imageBase64 = imageBase64,
             model = model, history = history, systemInstruction = sysPrompt
         )
         var parsed = ActionParser.parse(firstResponse.text)
 
         if (parsed.dataRequest != null) {
             val dataContext = buildDataContext(parsed.dataRequest!!)
-            val enrichedPrompt = "$userPrompt\n\n[Datele cerute:]\n$dataContext"
+            val enrichedPrompt = "$effectivePrompt\n\n[Datele cerute:]\n$dataContext"
             firstResponse = client.generate(
                 prompt = enrichedPrompt, imageBase64 = imageBase64,
                 model = model, history = history, systemInstruction = sysPrompt
@@ -259,7 +269,7 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         val cleanParsed = parsed.copy(displayText = stripMarkdown(parsed.displayText))
 
         val actionResults = if (settings.actionModeEnabled && cleanParsed.actions.isNotEmpty()) {
-            executor?.executeAll(cleanParsed.actions, imageBase64) ?: emptyList()
+            executor?.executeAll(cleanParsed.actions, imageBase64, fileUri) ?: emptyList()
         } else emptyList()
 
         val galleryIds = actionResults.flatMap { it.galleryImageIds ?: emptyList() }
