@@ -196,7 +196,7 @@ REGULI IMPORTANTE:
   * "poze din [perioada]" fara descriere → {"type":"GALLERY_SEARCH","from_date":"...","to_date":"...","limit":"10"}
   * "poza de la [ora/data exacta]" → {"type":"GALLERY_SEARCH","from_date":"[ora/data]","limit":"1"}
   * "poza cu [subiect]" cu perioada specificata → {"type":"GALLERY_SEARCH","query":"subiect","from_date":"...","limit":"10"}
-  * "poza cu [subiect]" fara data → intreaba DOAR data/perioada.
+  * "poza cu [subiect]" fara data/perioada exacta → NU CAUTA DIRECT. Intreaba utilizatorul detalii specifice (ex: "In ce zi/luna/an ai facut poza?", "Era ziua sau noaptea?", "Unde erai?"). Scopul tau este sa restrangi cautarea folosind `from_date` si `to_date` cat mai precis pentru a nu scana toata galeria la intamplare. Abia dupa ce ai o perioada de timp bine definita, executa actiunea de cautare.
   * Vision model primeste data/ora pozelor si le poate filtra dupa detalii temporale fine (ex: "poza cu apus de aseara de la 8").
   Raspunde cu lista de imagini gasite, apoi intreaba ce vrea sa faca cu ele.
 - SEND_IMAGE: trimite imaginea atasata (use_pending=true) sau o imagine din galerie (image_id=ID din cautare anterioara). Specifica intotdeauna app si contact (unde e necesar).

@@ -799,15 +799,10 @@ class ActionExecutor(
                 if (!app.contains("instagram") && !app.contains("telegram") &&
                     contact != null && LumiAccessibilityService.isAvailable()) {
                     delay(3500)
-                    val contactSelected = LumiAccessibilityService.tapWhatsAppShareContact(contact.name)
-                    if (contactSelected) {
-                        delay(2000)
-                        val sent = LumiAccessibilityService.tapWhatsAppImageSend()
-                        if (sent) Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
-                        else Result(a, true, "$appLabel deschis cu imaginea. Apasa Trimite manual.")
-                    } else {
-                        Result(a, true, "$appLabel deschis cu imaginea. Selecteaza ${contact.name} si apasa Trimite.")
-                    }
+                    
+                    val sent = LumiAccessibilityService.tapWhatsAppImageSend()
+                    if (sent) Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
+                    else Result(a, true, "$appLabel deschis cu imaginea. Apasa Trimite manual.")
                 } else {
                     Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
                 }

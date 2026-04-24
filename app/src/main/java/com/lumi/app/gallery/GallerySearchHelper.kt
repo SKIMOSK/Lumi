@@ -150,7 +150,7 @@ class GallerySearchHelper(private val context: Context) {
         for (batch in pool.chunked(batchSize)) {
             if (matched.size >= maxResults) break
             val items = batch.mapNotNull { img ->
-                val b64 = try { encodeToBase64(img.id, 256) } catch (_: Exception) { null }
+                val b64 = try { encodeToBase64(img.id, 768) } catch (_: Exception) { null }
                 if (b64 != null) {
                     val dateStr = if (img.dateTaken > 0) fmt.format(Date(img.dateTaken)) else "unknown date"
                     val meta = "Date: $dateStr, Name: ${img.displayName}"
