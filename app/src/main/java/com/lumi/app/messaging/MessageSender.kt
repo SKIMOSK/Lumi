@@ -474,13 +474,15 @@ class MessageSender(private val context: Context) {
         if (!isWhatsAppInstalled()) return SendResult.Error("WhatsApp nu este instalat.")
         val phone = contact.phoneNumbers.firstOrNull()
             ?: return SendResult.Error("Contactul nu are număr de telefon.")
-        val clean = phone.replace(Regex("[^\\d]"), "")  // strip ALL non-digits incl. '+'
+        val clean = phone.replace(Regex("[^\\d]"), "")
         return try {
             context.startActivity(Intent(Intent.ACTION_SEND).apply {
                 type = "image/*"
                 setPackage(WHATSAPP_PACKAGE)
                 putExtra(Intent.EXTRA_STREAM, imageUri)
                 putExtra("jid", "$clean@s.whatsapp.net")
+                // clipData required on Android 13+ for URI permission grant to work
+                clipData = android.content.ClipData.newRawUri("image", imageUri)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
             })
             SendResult.DeepLinkOpened

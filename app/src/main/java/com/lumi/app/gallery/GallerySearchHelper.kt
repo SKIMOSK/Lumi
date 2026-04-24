@@ -93,8 +93,8 @@ class GallerySearchHelper(private val context: Context) {
         description: String,
         client: GeminiClient,
         model: String = AppSettings.MODEL_FASTER,
-        maxCandidates: Int = 80,
-        batchSize: Int = 6,
+        maxCandidates: Int = 150,
+        batchSize: Int = 8,
         maxResults: Int = 10
     ): List<GalleryImage> {
         if (candidates.isEmpty() || description.isBlank()) return emptyList()

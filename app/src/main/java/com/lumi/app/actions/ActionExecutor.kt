@@ -792,7 +792,17 @@ class ActionExecutor(
 
         return when (result) {
             is SendResult.Error -> Result(a, false, result.reason)
-            else -> Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
+            else -> {
+                if (!app.contains("instagram") && !app.contains("telegram") &&
+                    contact != null && LumiAccessibilityService.isAvailable()) {
+                    delay(3500)
+                    val sent = LumiAccessibilityService.tapWhatsAppShareContact(contact.name)
+                    if (sent) Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
+                    else Result(a, true, "$appLabel deschis cu imaginea. Selecteaza ${contact.name} si apasa Trimite.")
+                } else {
+                    Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
+                }
+            }
         }
     }
 }

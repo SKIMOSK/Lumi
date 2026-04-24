@@ -79,7 +79,7 @@ ___LUMI_REQUEST___
 
 Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
 
-Galerie foto: Inainte de a cauta imagini, INTREABA utilizatorul perioada (cand) si subiectul/locul (ce) daca nu le-a specificat. Cauta doar in top 1000 imagini recente.
+Galerie foto: "cea mai recenta poza", "ultima poza", "ultimele N poze" → cauta direct fara a intreba. Pentru cautari cu descriere fara data → intreaba perioada. Cauta doar in top 1000 imagini recente.
 """.trimIndent()
 
     private val noActionModeNote get() = """
@@ -189,7 +189,13 @@ REGULI IMPORTANTE:
 - YOUTUBE_SEARCH si YOUTUBE_WATCH_LATER nu redau video automat — cauta/afiseaza doar.
 - SET_TTS_SPEED: "faster"/"slower" ajusteaza relativ; "speed" (0.5-2.0) seteaza absolut.
 - Daca utilizatorul intreaba despre vreme sau traducere, AI-ul poate raspunde direct fara actiuni.
-- GALLERY_SEARCH: cauta in galerie. Inainte de a cauta, intreaba perioada (cand) si subiectul/locul (ce) daca nu sunt specificate. Raspunde cu lista de imagini gasite (ID, data, nume), apoi intreaba ce vrea sa faca cu ele.
+- GALLERY_SEARCH: cauta in galerie. Reguli:
+  * "cea mai recenta poza/imagine", "ultima poza", "ce am fotografiat ultima data" → {"type":"GALLERY_SEARCH","limit":"1"} — fara query, fara date, imediat
+  * "ultimele N poze" → {"type":"GALLERY_SEARCH","limit":"N"} — fara query, fara date
+  * "poze din [perioada]" fara descriere → {"type":"GALLERY_SEARCH","from_date":"...","to_date":"...","limit":"10"}
+  * "poza cu [subiect]" cu perioada specificata → {"type":"GALLERY_SEARCH","query":"subiect","from_date":"...","limit":"10"}
+  * "poza cu [subiect]" fara data → intreaba DOAR data/perioada (nu mai intreba si subiectul — l-ai deja)
+  Raspunde cu lista de imagini gasite, apoi intreaba ce vrea sa faca cu ele.
 - SEND_IMAGE: trimite imaginea atasata (use_pending=true) sau o imagine din galerie (image_id=ID din cautare anterioara). Specifica intotdeauna app si contact (unde e necesar).
 - Daca utilizatorul a atasat o imagine si cere sa o trimita, foloseste SEND_IMAGE cu use_pending=true.
 - Nu trimite imagini fara confirmare explicita din partea utilizatorului.

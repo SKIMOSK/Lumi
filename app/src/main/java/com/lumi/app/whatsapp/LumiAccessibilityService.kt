@@ -37,6 +37,13 @@ class LumiAccessibilityService : AccessibilityService() {
         /** Tap the Send action in Gmail compose (called after compose screen is open). */
         fun sendGmailAfterCompose(): Boolean =
             instance?.performGmailSend() ?: false
+
+        /**
+         * After opening WhatsApp share picker with an image, search for [contactName] and tap it,
+         * then tap the Send/OK button. Call from a coroutine after a delay for WhatsApp to load.
+         */
+        fun tapWhatsAppShareContact(contactName: String): Boolean =
+            instance?.performWhatsAppShareContact(contactName) ?: false
     }
 
     override fun onServiceConnected() {
@@ -247,6 +254,46 @@ class LumiAccessibilityService : AccessibilityService() {
         // Last resort: find any large central button (toggle) that's clickable
         val centralBtn = firstClickableLeaf(root) ?: return false
         return centralBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    // ─── WhatsApp share picker ────────────────────────────────────────────────
+
+    private fun performWhatsAppShareContact(contactName: String): Boolean {
+        val root = rootInActiveWindow ?: return false
+
+        // Search field in the "Send to" picker
+        val searchIds = listOf(
+            "com.whatsapp:id/search_bar",
+            "com.whatsapp:id/search_input",
+            "com.whatsapp:id/search_src_text",
+            "com.whatsapp:id/query"
+        )
+        val searchNode = nodeByIds(root, searchIds) ?: findEditText(root)
+        if (searchNode != null) {
+            setNodeText(searchNode, contactName)
+            Thread.sleep(1600)
+        }
+
+        // Tap the contact row
+        val root2 = rootInActiveWindow ?: return false
+        val contactNode = root2.findAccessibilityNodeInfosByText(contactName)
+            ?.firstOrNull { it.isClickable }
+            ?: firstClickableLeaf(root2)
+        contactNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        Thread.sleep(800)
+
+        // Tap Send / OK / Forward button that appears after selecting a contact
+        val root3 = rootInActiveWindow ?: return false
+        val sendIds = listOf(
+            "com.whatsapp:id/share_forward_btn",
+            "com.whatsapp:id/send",
+            "com.whatsapp:id/ok_btn",
+            "com.whatsapp:id/done",
+            "com.whatsapp:id/forward"
+        )
+        val sendNode = nodeByIds(root3, sendIds)
+            ?: nodeByDescs(root3, listOf("Send", "Trimite", "OK", "Forward", "Inainte", "Done"))
+        return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
     }
 
     // ─── Gmail ────────────────────────────────────────────────────────────────
