@@ -62,8 +62,10 @@ id fabMic
 id ivAttachedPreview
 id ivMessageImage
 id layoutAutonomous
+id llGalleryThumbs
 id progressBar
 id rvMessages
+id scrollGallery
 id seekBarMemory
 id spinnerBtDevices
 id spinnerExpertModel
@@ -108,4 +110,5 @@ string processing
 style SectionHeader
 style Theme.Lumi
 xml accessibility_service_config
+xml file_provider_paths
 xml notification_listener_config

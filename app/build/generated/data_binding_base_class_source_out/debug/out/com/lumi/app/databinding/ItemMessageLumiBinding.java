@@ -4,6 +4,7 @@ package com.lumi.app.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -24,6 +25,12 @@ public final class ItemMessageLumiBinding implements ViewBinding {
   public final ImageButton btnSpeak;
 
   @NonNull
+  public final LinearLayout llGalleryThumbs;
+
+  @NonNull
+  public final HorizontalScrollView scrollGallery;
+
+  @NonNull
   public final TextView tvMessageText;
 
   @NonNull
@@ -33,10 +40,13 @@ public final class ItemMessageLumiBinding implements ViewBinding {
   public final TextView tvModelBadge;
 
   private ItemMessageLumiBinding(@NonNull LinearLayout rootView, @NonNull ImageButton btnSpeak,
+      @NonNull LinearLayout llGalleryThumbs, @NonNull HorizontalScrollView scrollGallery,
       @NonNull TextView tvMessageText, @NonNull TextView tvMessageTime,
       @NonNull TextView tvModelBadge) {
     this.rootView = rootView;
     this.btnSpeak = btnSpeak;
+    this.llGalleryThumbs = llGalleryThumbs;
+    this.scrollGallery = scrollGallery;
     this.tvMessageText = tvMessageText;
     this.tvMessageTime = tvMessageTime;
     this.tvModelBadge = tvModelBadge;
@@ -75,6 +85,18 @@ public final class ItemMessageLumiBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.llGalleryThumbs;
+      LinearLayout llGalleryThumbs = ViewBindings.findChildViewById(rootView, id);
+      if (llGalleryThumbs == null) {
+        break missingId;
+      }
+
+      id = R.id.scrollGallery;
+      HorizontalScrollView scrollGallery = ViewBindings.findChildViewById(rootView, id);
+      if (scrollGallery == null) {
+        break missingId;
+      }
+
       id = R.id.tvMessageText;
       TextView tvMessageText = ViewBindings.findChildViewById(rootView, id);
       if (tvMessageText == null) {
@@ -93,8 +115,8 @@ public final class ItemMessageLumiBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ItemMessageLumiBinding((LinearLayout) rootView, btnSpeak, tvMessageText,
-          tvMessageTime, tvModelBadge);
+      return new ItemMessageLumiBinding((LinearLayout) rootView, btnSpeak, llGalleryThumbs,
+          scrollGallery, tvMessageText, tvMessageTime, tvModelBadge);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

@@ -147,16 +147,27 @@ class GeminiClient(
     suspend fun checkImagesMatch(
         images: List<String>,
         description: String,
-        model: String
+        model: String,
+        metadata: List<String>? = null
     ): List<Int> = withContext(Dispatchers.IO) {
         if (images.isEmpty()) return@withContext emptyList()
         val validPairs = images.mapIndexed { i, b64 -> i to b64 }.filter { isValidImageBase64(it.second) }
         if (validPairs.isEmpty()) return@withContext emptyList()
 
         val currentContent = mutableListOf<Map<String, Any>>()
-        currentContent.add(mapOf("type" to "text", "text" to
-            "Images numbered 1 to ${validPairs.size}. Which match: \"$description\"? " +
-            "Reply ONLY with a JSON array of matching numbers e.g. [1,3] or [] if none. No other text."))
+        
+        val promptText = StringBuilder("Images numbered 1 to ${validPairs.size}. Which match: \"$description\"?\n")
+        if (metadata != null) {
+            promptText.append("Metadata for each image:\n")
+            validPairs.forEach { (originalIdx, _) ->
+                if (originalIdx < metadata.size) {
+                    promptText.append("Image ${validPairs.indexOfFirst { it.first == originalIdx } + 1}: ${metadata[originalIdx]}\n")
+                }
+            }
+        }
+        promptText.append("Reply ONLY with a JSON array of matching numbers e.g. [1,3] or [] if none. No other text.")
+
+        currentContent.add(mapOf("type" to "text", "text" to promptText.toString()))
         validPairs.forEach { (_, b64) ->
             val mime = if (b64.startsWith("iVBOR")) "image/png" else "image/jpeg"
             currentContent.add(mapOf("type" to "image_url",

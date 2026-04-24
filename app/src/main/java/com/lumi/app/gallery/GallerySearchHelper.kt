@@ -28,18 +28,63 @@ class GallerySearchHelper(private val context: Context) {
         fun parseDateString(dateStr: String?): Long? {
             if (dateStr.isNullOrBlank()) return null
             val now = System.currentTimeMillis()
-            val d = dateStr.lowercase()
-            return when {
-                d.contains("yesterday") || d.contains("ieri") -> now - 86_400_000L
-                d.contains("last week") || d.contains("saptamana") -> now - 7 * 86_400_000L
-                d.contains("last month") || d.contains("luna trecuta") -> now - 30 * 86_400_000L
-                else -> {
-                    for (fmt in listOf("yyyy-MM-dd", "dd.MM.yyyy", "MM/dd/yyyy")) {
-                        try { SimpleDateFormat(fmt, Locale.US).parse(dateStr)?.time?.let { return it } } catch (_: Exception) {}
+            val d = dateStr.lowercase().trim()
+
+            // 1. Relative time (e.g., "2 hours ago", "acum 3 ore")
+            val relRegex = Regex("(\\d+)\\s+(ore?|zile?|saptamani?|luni?|ani?|hours?|days?|weeks?|months?|years?)\\s+(in urma|ago)")
+            relRegex.find(d)?.let { m ->
+                val amount = m.groupValues[1].toLong()
+                val unit = m.groupValues[2]
+                val mult = when {
+                    unit.contains("ora") || unit.contains("hour") -> 3600_000L
+                    unit.contains("zi") || unit.contains("day") -> 86400_000L
+                    unit.contains("sapt") || unit.contains("week") -> 7 * 86400_000L
+                    unit.contains("luna") || unit.contains("month") -> 30 * 86400_000L
+                    unit.contains("an") || unit.contains("year") -> 365 * 86400_000L
+                    else -> 0L
+                }
+                if (mult > 0) return now - (amount * mult)
+            }
+
+            // 2. Specific time today or yesterday (e.g. "today at 10:30", "ieri la 20:00")
+            val timeOnlyRegex = Regex("(azi|today|ieri|yesterday|\\d{4}-\\d{2}-\\d{2}|\\d{2}\\.\\d{2}\\.\\d{4})?\\s*(la|at)?\\s*(\\d{1,2}:\\d{2})")
+            timeOnlyRegex.find(d)?.let { m ->
+                val dayPart = m.groupValues[1].ifBlank { "today" }
+                val timePart = m.groupValues[3]
+                val baseMs = when (dayPart) {
+                    "azi", "today" -> now - (now % 86400_000L)
+                    "ieri", "yesterday" -> now - (now % 86400_000L) - 86400_000L
+                    else -> {
+                        val fmt = if (dayPart.contains("-")) "yyyy-MM-dd" else "dd.MM.yyyy"
+                        try { SimpleDateFormat(fmt, Locale.US).parse(dayPart)?.time ?: 0L } catch(_: Exception) { 0L }
                     }
-                    null
+                }
+                if (baseMs > 0 || dayPart == "today" || dayPart == "azi") {
+                    try {
+                        val parts = timePart.split(":")
+                        val h = parts[0].toInt()
+                        val m = parts[1].toInt()
+                        // Use Calendar to handle timezone correctly
+                        val cal = java.util.Calendar.getInstance()
+                        if (baseMs > 0) cal.timeInMillis = baseMs
+                        else { cal.set(java.util.Calendar.HOUR_OF_DAY, 0); cal.set(java.util.Calendar.MINUTE, 0); cal.set(java.util.Calendar.SECOND, 0); cal.set(java.util.Calendar.MILLISECOND, 0) }
+                        cal.set(java.util.Calendar.HOUR_OF_DAY, h)
+                        cal.set(java.util.Calendar.MINUTE, m)
+                        return cal.timeInMillis
+                    } catch(_: Exception) {}
                 }
             }
+
+            // 3. Named dates
+            if (d == "ieri" || d == "yesterday") return now - 86400_000L
+            if (d == "ultima saptamana" || d == "last week") return now - 7 * 86400_000L
+            if (d == "ultima luna" || d == "last month") return now - 30 * 86400_000L
+
+            // 4. Standard formats
+            for (fmt in listOf("yyyy-MM-dd", "dd.MM.yyyy", "MM/dd/yyyy", "yyyy-MM-dd HH:mm", "dd.MM.yyyy HH:mm")) {
+                try { SimpleDateFormat(fmt, Locale.US).parse(d)?.time?.let { return it } } catch (_: Exception) {}
+            }
+            return null
         }
     }
 
@@ -100,17 +145,27 @@ class GallerySearchHelper(private val context: Context) {
         if (candidates.isEmpty() || description.isBlank()) return emptyList()
         val pool = candidates.take(maxCandidates)
         val matched = mutableListOf<GalleryImage>()
+        val fmt = SimpleDateFormat("EEEE, dd MMMM yyyy HH:mm", Locale.getDefault())
 
         for (batch in pool.chunked(batchSize)) {
             if (matched.size >= maxResults) break
-            val pairs = batch.mapNotNull { img ->
+            val items = batch.mapNotNull { img ->
                 val b64 = try { encodeToBase64(img.id, 256) } catch (_: Exception) { null }
-                if (b64 != null) img to b64 else null
+                if (b64 != null) {
+                    val dateStr = if (img.dateTaken > 0) fmt.format(Date(img.dateTaken)) else "unknown date"
+                    val meta = "Date: $dateStr, Name: ${img.displayName}"
+                    Triple(img, b64, meta)
+                } else null
             }
-            if (pairs.isEmpty()) continue
-            val indices = client.checkImagesMatch(pairs.map { it.second }, description, model)
+            if (items.isEmpty()) continue
+            val indices = client.checkImagesMatch(
+                images = items.map { it.second },
+                description = description,
+                model = model,
+                metadata = items.map { it.third }
+            )
             indices.forEach { idx ->
-                if (idx < pairs.size && matched.size < maxResults) matched.add(pairs[idx].first)
+                if (idx < items.size && matched.size < maxResults) matched.add(items[idx].first)
             }
         }
         return matched

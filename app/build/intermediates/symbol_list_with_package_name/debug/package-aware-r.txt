@@ -3460,6 +3460,7 @@ id line3
 id linear
 id listMode
 id list_item
+id llGalleryThumbs
 id locale
 id ltr
 id m3_side_sheet
@@ -3602,6 +3603,7 @@ id sawtooth
 id scale
 id screen
 id scroll
+id scrollGallery
 id scrollIndicatorDown
 id scrollIndicatorUp
 id scrollView
@@ -5482,4 +5484,5 @@ styleable ViewStubCompat android_id android_layout android_inflatedId
 styleable ViewTransition android_id SharedValue SharedValueId clearsTag duration ifTagNotSet ifTagSet motionInterpolator motionTarget onStateTransition pathMotionArc setsTag transitionDisable upDuration viewTransitionMode
 styleable include constraintSet
 xml accessibility_service_config
+xml file_provider_paths
 xml notification_listener_config

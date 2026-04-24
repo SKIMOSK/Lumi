@@ -79,7 +79,7 @@ ___LUMI_REQUEST___
 
 Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
 
-Galerie foto: "cea mai recenta poza", "ultima poza", "ultimele N poze" → cauta direct fara a intreba. Pentru cautari cu descriere fara data → intreaba perioada. Cauta doar in top 1000 imagini recente.
+Galerie foto: "cea mai recenta poza", "ultima poza", "ce am fotografiat ultima data" → cauta direct fara a intreba. Pentru cautari cu descriere fara data → intreaba perioada. Cauta doar in top 1000 imagini recente. Poti cauta si dupa offset (ex: "a doua cea mai recenta" → limit:1, offset:1).
 """.trimIndent()
 
     private val noActionModeNote get() = """
@@ -190,11 +190,14 @@ REGULI IMPORTANTE:
 - SET_TTS_SPEED: "faster"/"slower" ajusteaza relativ; "speed" (0.5-2.0) seteaza absolut.
 - Daca utilizatorul intreaba despre vreme sau traducere, AI-ul poate raspunde direct fara actiuni.
 - GALLERY_SEARCH: cauta in galerie. Reguli:
-  * "cea mai recenta poza/imagine", "ultima poza", "ce am fotografiat ultima data" → {"type":"GALLERY_SEARCH","limit":"1"} — fara query, fara date, imediat
-  * "ultimele N poze" → {"type":"GALLERY_SEARCH","limit":"N"} — fara query, fara date
+  * "cea mai recenta poza/imagine", "ultima poza", "ce am fotografiat ultima data" → {"type":"GALLERY_SEARCH","limit":"1"} — imediat
+  * "a doua/treia/N-a cea mai recenta poza" → {"type":"GALLERY_SEARCH","limit":"1","offset":"1" (pt a 2-a), "2" (pt a 3-a), etc.}
+  * "ultimele N poze" → {"type":"GALLERY_SEARCH","limit":"N"}
   * "poze din [perioada]" fara descriere → {"type":"GALLERY_SEARCH","from_date":"...","to_date":"...","limit":"10"}
+  * "poza de la [ora/data exacta]" → {"type":"GALLERY_SEARCH","from_date":"[ora/data]","limit":"1"}
   * "poza cu [subiect]" cu perioada specificata → {"type":"GALLERY_SEARCH","query":"subiect","from_date":"...","limit":"10"}
-  * "poza cu [subiect]" fara data → intreaba DOAR data/perioada (nu mai intreba si subiectul — l-ai deja)
+  * "poza cu [subiect]" fara data → intreaba DOAR data/perioada.
+  * Vision model primeste data/ora pozelor si le poate filtra dupa detalii temporale fine (ex: "poza cu apus de aseara de la 8").
   Raspunde cu lista de imagini gasite, apoi intreaba ce vrea sa faca cu ele.
 - SEND_IMAGE: trimite imaginea atasata (use_pending=true) sau o imagine din galerie (image_id=ID din cautare anterioara). Specifica intotdeauna app si contact (unde e necesar).
 - Daca utilizatorul a atasat o imagine si cere sa o trimita, foloseste SEND_IMAGE cu use_pending=true.
@@ -345,10 +348,11 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
                 val fromMs   = GallerySearchHelper.parseDateString(gr.from_date)
                 val toMs     = GallerySearchHelper.parseDateString(gr.to_date)
                 val filtered = helper.filterByDateRange(all, fromMs, toMs)
+                val pool     = if (gr.offset > 0) filtered.drop(gr.offset) else filtered
                 val results = if (!gr.query.isNullOrBlank()) {
-                    helper.findByVision(filtered, gr.query, client, maxResults = gr.limit)
+                    helper.findByVision(pool, gr.query, client, maxResults = gr.limit)
                 } else {
-                    filtered.take(gr.limit)
+                    pool.take(gr.limit)
                 }
                 lastGalleryIds = results.map { it.id }
                 if (results.isEmpty()) sb.appendLine("Nu s-au gasit imagini.")

@@ -25,7 +25,8 @@ data class GalleryRequest(
     val query: String? = null,
     val from_date: String? = null,
     val to_date: String? = null,
-    val limit: Int = 20
+    val limit: Int = 20,
+    val offset: Int = 0
 )
 
 data class ParsedAIResponse(

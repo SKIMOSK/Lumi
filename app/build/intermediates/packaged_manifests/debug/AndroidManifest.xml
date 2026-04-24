@@ -83,6 +83,9 @@
     <!-- Vibrate for feedback -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Gallery / media -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
     <!-- Package visibility (Android 11+) -->
     <queries>
 
@@ -93,9 +96,15 @@
         <package android:name="com.snapchat.android" />
         <package android:name="com.facebook.orca" />
         <package android:name="com.discord" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="com.Slack" />
         <!-- Notes apps -->
         <package android:name="com.samsung.android.app.notes" />
         <package android:name="com.google.android.keep" />
+        <package android:name="com.microsoft.office.onenote" />
+        <package android:name="notion.id" />
+        <package android:name="md.obsidian" />
+        <package android:name="com.standardnotes.standardnotes" />
         <!-- Email -->
         <package android:name="com.google.android.gm" />
         <!-- Navigation -->
@@ -129,6 +138,15 @@
         <package android:name="com.wallet.crypto.trustapp" />
         <!-- News -->
         <package android:name="com.google.android.apps.magazines" />
+        <!-- YouTube -->
+        <package android:name="com.google.android.youtube" />
+        <!-- Ride sharing -->
+        <package android:name="com.ubercab" />
+        <package android:name="me.lyft.android" />
+        <!-- Food delivery -->
+        <package android:name="com.ubercab.eats" />
+        <package android:name="com.dd.consumer" />
+        <package android:name="com.deliveroo.orderapp" />
 
         <intent>
             <action android:name="android.intent.action.CALL" />
@@ -221,6 +239,17 @@
                 <action android:name="com.lumi.app.ACTION_TIMER_DONE" />
             </intent-filter>
         </receiver>
+
+        <!-- FileProvider for sharing cached images (base64 → file → intent) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.lumi.app.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true" >
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
 
         <!-- Accessibility service for WhatsApp reading -->
         <service

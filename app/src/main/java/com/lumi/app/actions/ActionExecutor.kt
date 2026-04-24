@@ -738,17 +738,20 @@ class ActionExecutor(
         val fromDate = a.params["from_date"]
         val toDate   = a.params["to_date"]
         val limit    = a.params["limit"]?.toIntOrNull() ?: 10
+        val offset   = a.params["offset"]?.toIntOrNull() ?: 0
 
         val all      = helper.queryRecent(GallerySearchHelper.MAX_SCAN)
         val fromMs   = GallerySearchHelper.parseDateString(fromDate)
         val toMs     = GallerySearchHelper.parseDateString(toDate)
         val filtered = helper.filterByDateRange(all, fromMs, toMs)
 
+        val pool = if (offset > 0) filtered.drop(offset) else filtered
+
         val results = if (!query.isNullOrBlank()) {
             val client = com.lumi.app.ai.GeminiClient(settings.openRouterApiKey, settings.openRouterBaseUrl)
-            helper.findByVision(filtered, query, client, maxResults = limit)
+            helper.findByVision(pool, query, client, maxResults = limit)
         } else {
-            filtered.take(limit)
+            pool.take(limit)
         }
 
         if (results.isEmpty()) return Result(a, true, "Nu s-au gasit imagini.")
