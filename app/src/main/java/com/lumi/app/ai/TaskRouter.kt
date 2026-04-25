@@ -82,6 +82,8 @@ ___LUMI_REQUEST___
 Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
 
 Galerie foto: "cea mai recenta poza", "ultima poza", "ce am fotografiat ultima data" → cauta direct fara a intreba. Pentru cautari cu descriere fara data → intreaba perioada. Cauta doar in top 1000 imagini recente. Poti cauta si dupa offset (ex: "a doua cea mai recenta" → limit:1, offset:1).
+
+LOCATII SALVATE: Utilizatorul poate salva locatii cu porecle (acasa, birou, sala, parinti, etc.). Aceste porecle apar in "Preferinte utilizator memorate" de mai sus. Cand utilizatorul spune "acasa", "birou", "serviciu" etc., cauta INTAI in memorie adresa corespunzatoare si foloseste-o direct fara sa mai intrebi. Daca nu e salvata, intreaba adresa si RETINE-O automat (REMEMBER_FACT + actiunea ceruta in acelasi mesaj).
 """.trimIndent()
 
     private val noActionModeNote get() = """
@@ -124,6 +126,8 @@ Sterge notita (dupa ID): {"actions":[{"type":"DELETE_NOTE","id":"ID_NOTITA"}]}
 Sterge notita (dupa titlu): {"actions":[{"type":"DELETE_NOTE","title":"Cumparaturi"}]}
 Google Maps: {"actions":[{"type":"NAVIGATE_MAPS","destination":"Piata Universitatii, Bucuresti"}]}
 Waze: {"actions":[{"type":"NAVIGATE_WAZE","destination":"Aeroportul Henri Coanda"}]}
+Navigheaza + salveaza locatia noua: {"actions":[{"type":"NAVIGATE_MAPS","destination":"Str. Florilor 12, Cluj"},{"type":"REMEMBER_FACT","fact":"acasa = Str. Florilor 12, Cluj"}]}
+Navigheaza spre birou (adresa deja in memorie): {"actions":[{"type":"NAVIGATE_MAPS","destination":"[adresa din memorie]"}]}
 Surfshark conectare: {"actions":[{"type":"CONNECT_VPN","app":"surfshark","country":"Romania"}]}
 NordVPN deconectare: {"actions":[{"type":"DISCONNECT_VPN","app":"nordvpn"}]}
 Event calendar: {"actions":[{"type":"CREATE_EVENT","title":"Intalnire","description":"Discutie proiect","location":"Birou","start_datetime":"2024-01-15T14:00","end_datetime":"2024-01-15T15:00"}]}
@@ -133,7 +137,11 @@ Sterge eveniment (dupa titlu, daca nu ai ID): {"actions":[{"type":"DELETE_EVENT"
 Actualizeaza eveniment: {"actions":[{"type":"UPDATE_EVENT","id":"12345","new_title":"Intalnire amanata","start_datetime":"2024-01-15T16:00","end_datetime":"2024-01-15T17:00"}]}
 Muta eveniment dupa titlu: {"actions":[{"type":"UPDATE_EVENT","lookup_title":"Intalnire","start_datetime":"2024-01-16T14:00","end_datetime":"2024-01-16T15:00"}]}
 Luminozitate: {"actions":[{"type":"SET_BRIGHTNESS","level":"60"}]}
-Volum: {"actions":[{"type":"SET_VOLUME","stream":"media","level":"50"}]}
+Volum absolut: {"actions":[{"type":"SET_VOLUME","stream":"media","level":"50"}]}
+Volum mai tare: {"actions":[{"type":"SET_VOLUME","stream":"media","direction":"up"}]}
+Volum mai incet: {"actions":[{"type":"SET_VOLUME","stream":"media","direction":"down"}]}
+Mute sonerie + DND: {"actions":[{"type":"SET_VOLUME","stream":"ring","direction":"mute"},{"type":"SET_DND","enabled":"true"}]}
+Volume maxim: {"actions":[{"type":"SET_VOLUME","stream":"media","direction":"max"}]}
 Nu deranjati: {"actions":[{"type":"SET_DND","enabled":"true"}]}
 Spotify play/pauza: {"actions":[{"type":"MEDIA_CONTROL","app":"spotify","command":"play_pause"}]}
 Spotify urmatoarea: {"actions":[{"type":"MEDIA_CONTROL","app":"spotify","command":"next"}]}
@@ -242,13 +250,58 @@ REGULI IMPORTANTE:
   * Daca vrei sa raspunzi dar notificarea nu e [replyable], foloseste SEND_WHATSAPP/SEND_TELEGRAM ca fallback
   * Parametrul "contact" filtreaza dupa numele din titlul notificarii (optional)
 - Referinte din turul anterior: dupa ce ai executat actiuni, rezultatele apar in istoria conversatiei sub "[Rezultate:]". Foloseste ID-urile (notite, imagini, evenimente) din acele rezultate cand utilizatorul spune "trimite-o", "sterge-l", "editeaza asta".
+
+INTELEGE FORMULARILE NATURALE — mapeaza imediat fara sa ceri clarificari:
+Navigare:
+  * "du-ma acasa/home", "vreau sa merg acasa", "navigheza acasa" → cauta "acasa" in memorie → daca gasesti: NAVIGATE_MAPS/WAZE cu acea adresa. Daca NU: intreaba adresa, apoi executa NAVIGATE_MAPS + REMEMBER_FACT("acasa = [adresa data]") impreuna.
+  * "du-ma la birou/serviciu/munca/work/office" → cauta "birou/serviciu/munca" in memorie → similar
+  * "du-ma la [locatie numita]" (sala, parinti, mall, etc.) → cauta in memorie → daca nu e salvata, intreaba si salveaza
+  * "cum ajung la X", "calea spre X", "deschide navigatia spre X" → NAVIGATE_MAPS cu X
+  * "du-ma acolo" dupa ce o locatie a fost mentionata → navigheaza la ultima locatie mentionata in conversatie
+  * Cand utilizatorul da o adresa ca raspuns la "unde e X?", executa imediat NAVIGATE + REMEMBER_FACT in acelasi mesaj
+Volum/Audio:
+  * "mai tare", "creste sunetul/volumul", "volume up" → SET_VOLUME direction=up
+  * "mai incet", "coboara volumul", "volume down" → SET_VOLUME direction=down
+  * "mute", "pe mut", "liniste", "silentios" → SET_VOLUME stream=ring direction=mute + SET_DND enabled=true
+  * "scoate din mute", "reactivate soneria" → SET_VOLUME stream=ring level=80 + SET_DND enabled=false
+  * "volum maxim/full" → SET_VOLUME direction=max
+Media:
+  * "pune muzica", "da drumul la muzica", "play" → MEDIA_CONTROL command=play
+  * "opreste muzica", "stop" → MEDIA_CONTROL command=stop
+  * "pauza" → MEDIA_CONTROL command=pause
+  * "urmatoarea/skip/sari" → MEDIA_CONTROL command=next
+  * "anterioara/inapoi" → MEDIA_CONTROL command=previous
+  * "pune [artist/melodie]" → MEDIA_CONTROL command=search query=[artist/melodie]
+  * "deschide Spotify/YouTube Music/Netflix cu X" → MEDIA_CONTROL command=open/search app=... query=X
+Setari rapide:
+  * "nu ma deranja", "nu deranja pe nimeni", "focus mode" → SET_DND enabled=true
+  * "trezeste-ma la X" / "pune alarma la X" → SET_ALARM
+  * "pune un timer de X minute/ore" → SET_TIMER
+  * "porneste cronometrul" → SET_STOPWATCH
+  * "dimineaza luminozitate mica", "ecran mai luminos" → SET_BRIGHTNESS
+Memorie proactiva:
+  * Cand utilizatorul mentioneaza o preferinta ("nu-mi place X", "mereu fac Y", "numele meu e X") → adauga automat REMEMBER_FACT fara sa fi fost cerut explicit
+  * Cand raspunde la o intrebare cu o adresa/locatie → salveaza automat cu REMEMBER_FACT
+  * Dupa ce utilizatorul corecteaza AI-ul ("nu, vreau X nu Y") → daca corectia e o preferinta, salveaz-o
+
+ECRAN MASINA (Android Auto / Apple CarPlay):
+Aplicatiile de navigare si media ruleaza pe telefon si sunt afisate AUTOMAT pe ecranul masinii cand e conectat prin Android Auto sau Apple CarPlay. Nu trebuie actiune separata. Acest lucru se aplica pentru:
+  * NAVIGATE_MAPS / NAVIGATE_WAZE → apare pe ecranul masinii
+  * MEDIA_CONTROL (Spotify, YouTube Music) → controlabil de pe ecranul masinii
+  * Apeluri telefonice → audio prin sistemul masinii
+  * YouTube, YouTube Music, Spotify → vizibil pe ecranul masinii
+Cand utilizatorul spune "pune pe masina", "redirectioneaza la masina", "vreau pe ecranul masinii" → executa actiunea normal (navigare/media) si mentioneaza ca va aparea automat pe masina daca Android Auto e conectat. Nu exista o actiune separata de "trimite la masina" — conexiunea e gestionata automat de Android.
+Daca Bluetooth-ul arata un dispozitiv conectat care pare a fi o masina (ex: "BMW", "Toyota", "Dacia" etc.), mentioneaza explicit ca navigarea/media va aparea pe ecranul masinii.
+
+RETINERE PROACTIVA — integrare totala:
+Daca utilizatorul da o informatie utila ca raspuns la o intrebare a ta (adresa, preferinta, nume, numar), SALVEAZ-O automat in memorie adaugand REMEMBER_FACT in blocul de actiuni, chiar daca utilizatorul nu a cerut explicit. Exemplu: utilizatorul raspunde "acasa e la Str. X 5, Cluj" → executa NAVIGATE_MAPS("Str. X 5, Cluj") + REMEMBER_FACT("acasa = Str. X 5, Cluj") in acelasi mesaj.
 """.trimIndent()
     }
 
     private val classifyPrompt = """
 Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS, VPN, calendar (citire/creare/stergere/editare event), control media (play/pause/skip), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator, cautare galerie foto, citire fisier atasat, raspuns la notificari (REPLY_NOTIFICATION).
-COMPLEX: trimitere mesaje noi (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), trimitere imagini, trimitere fisiere, editare fisiere, apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas.
+SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS (inclusiv "du-ma acasa/la birou"), VPN, calendar (citire/creare/stergere/editare event), control media (play/pause/skip/volum), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator, cautare galerie foto, citire fisier atasat, raspuns la notificari (REPLY_NOTIFICATION), retinere fapte (REMEMBER_FACT).
+COMPLEX: trimitere mesaje noi (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), trimitere imagini, trimitere fisiere, editare fisiere, apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas cu mai multi destinatari.
 Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()
 

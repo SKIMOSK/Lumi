@@ -449,7 +449,22 @@ class ActionExecutor(
 
     private fun setVolume(a: LumiAction): Result {
         val stream = a.params["stream"] ?: "media"
-        val level  = a.params["level"]?.toIntOrNull() ?: return Result(a, false, "Nivel lipsa.")
+        val direction = a.params["direction"]?.lowercase()
+        val step = a.params["step"]?.toIntOrNull() ?: 20
+
+        val level: Int = when {
+            direction == "up" || direction == "increase" || direction == "tare" || direction == "creste" -> {
+                val current = sysSettings.getVolume(stream)
+                (current + step).coerceAtMost(100)
+            }
+            direction == "down" || direction == "decrease" || direction == "incet" || direction == "scade" -> {
+                val current = sysSettings.getVolume(stream)
+                (current - step).coerceAtLeast(0)
+            }
+            direction == "mute" || direction == "mut" || direction == "silent" || direction == "silentios" -> 0
+            direction == "max" || direction == "maximum" -> 100
+            else -> a.params["level"]?.toIntOrNull() ?: return Result(a, false, "Nivel sau directie lipsa.")
+        }
         sysSettings.setVolume(stream, level)
         return Result(a, true, "Volum $stream setat la $level%.")
     }
