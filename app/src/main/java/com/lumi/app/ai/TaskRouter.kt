@@ -8,6 +8,8 @@ import com.lumi.app.bluetooth.BluetoothDeviceManager
 import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.gallery.GallerySearchHelper
+import com.lumi.app.location.LocationHelper
+import com.lumi.app.location.PlaceSearchHelper
 import com.lumi.app.notes.NotesHelper
 import com.lumi.app.notes.UserMemory
 import com.lumi.app.notifications.LumiNotificationService
@@ -31,7 +33,9 @@ class TaskRouter(
     private val userMemory: UserMemory,
     private val btDeviceManager: BluetoothDeviceManager,
     private val gallerySearchHelper: GallerySearchHelper? = null,
-    private val documentHelper: com.lumi.app.system.DocumentHelper
+    private val documentHelper: com.lumi.app.system.DocumentHelper,
+    private val locationHelper: LocationHelper? = null,
+    private val placeSearchHelper: PlaceSearchHelper? = null
 ) {
     data class RouteResult(
         val response: GeminiResponse,
@@ -56,11 +60,15 @@ class TaskRouter(
         val btDevices = btDeviceManager.formatDeviceList()
         val mem = userMemory.load()
         val memSection = if (mem.isNotBlank()) "\n\nPreferinte utilizator memorate:\n$mem" else ""
+        val gps = locationHelper?.getLastKnown()
+        val gpsSection = if (gps != null)
+            "\nLocatie GPS: ${locationHelper.format(gps)} (lat=${gps.lat}, lon=${gps.lon})"
+            else ""
         return """
 Data si ora: $now
 Dispozitiv: $model
 Luminozitate: $brightness% | Volum media: $volumeMedia% | Volum sonerie: $volumeRing% | Nu deranjati: $dnd | Economisire baterie: $batterySaver
-Bluetooth: $btDevices$memSection
+Bluetooth: $btDevices$gpsSection$memSection
 """.trimIndent()
     }
 
@@ -77,9 +85,11 @@ Nu folosi simboluri markdown. Raspunde natural, ca si cand vorbesti.
 
 Cerere date (adauga LA FINAL daca ai nevoie):
 ___LUMI_REQUEST___
-{"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true,"notes":true,"notes_query":"cuvant cheie","calendar":true,"gallery":{"query":"plaja","from_date":"2024-06-01","to_date":"2024-09-01","limit":10},"file_query":"nume document/fisier sau recent"}
+{"notifications":true,"contacts":["numeContact"],"whatsapp":{"contact":"numeContact","limit":25},"timers":true,"notes":true,"notes_query":"cuvant cheie","calendar":true,"gallery":{"query":"plaja","from_date":"2024-06-01","to_date":"2024-09-01","limit":10},"file_query":"nume document/fisier sau recent","place_search":{"query":"Primarie","limit":3}}
 
 Include NUMAI campurile necesare. Nu adauga nimic dupa ___LUMI_REQUEST___.
+
+place_search: cauta puncte de reper sau locuri de interes LANGA LOCATIA GPS CURENTA. Foloseste cand utilizatorul spune "langa Primarie", "in centru", "langa banca", "langa piata", "undeva pe strada principala" — indicii in loc de adresa exacta. Dupa ce primesti rezultatele, extrage adresa si executa NAVIGATE_MAPS/WAZE cu ea. Poti combina: "magazin langa Primarie" → place_search="Primarie" → primesti adresa → NAVIGATE cu "magazin langa [adresa primita]".
 
 Galerie foto: "cea mai recenta poza", "ultima poza", "ce am fotografiat ultima data" → cauta direct fara a intreba. Pentru cautari cu descriere fara data → intreaba perioada. Cauta doar in top 1000 imagini recente. Poti cauta si dupa offset (ex: "a doua cea mai recenta" → limit:1, offset:1).
 
@@ -259,6 +269,9 @@ Navigare:
   * "cum ajung la X", "calea spre X", "deschide navigatia spre X" → NAVIGATE_MAPS cu X
   * "du-ma acolo" dupa ce o locatie a fost mentionata → navigheaza la ultima locatie mentionata in conversatie
   * Cand utilizatorul da o adresa ca raspuns la "unde e X?", executa imediat NAVIGATE + REMEMBER_FACT in acelasi mesaj
+  * "e langa Primarie/piata/parc/centru/banca/gara" → place_search={"query":"[punct de reper]","limit":3} → primesti adresa exacta → NAVIGATE_MAPS cu destinatia combinata
+  * "magazinul de langa Primarie" → place_search="Primarie" ca reper, apoi navigheaza spre "magazin near [adresa obtinuta]"
+  * Indiciile pot fi in romana: "Piata Victoriei", "Gara", "Primărie", "Parcul Central", "Spitalul Judetean"
 Volum/Audio:
   * "mai tare", "creste sunetul/volumul", "volume up" → SET_VOLUME direction=up
   * "mai incet", "coboara volumul", "volume down" → SET_VOLUME direction=down
@@ -468,7 +481,35 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
                 sb.appendLine("Fisier gasit: ${file.name} (Modificat: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(file.lastModified()))})")
                 val txt = documentHelper.extractText(file)
                 sb.appendLine("--- Continut ---")
-                sb.appendLine(txt.take(15000)) // limit to 15000 chars to avoid prompt overflow
+                sb.appendLine(txt.take(15000))
+            }
+        }
+
+        req.place_search?.let { ps ->
+            sb.appendLine("=== Cautare Locuri: \"${ps.query}\" ===")
+            val gps = locationHelper?.getLastKnown()
+            if (gps == null) {
+                sb.appendLine("GPS indisponibil. Foloseste adresa completa a locatiei sau activeaza permisiunea de locatie.")
+            } else {
+                val searcher = placeSearchHelper
+                if (searcher == null) {
+                    sb.appendLine("Serviciu cautare locuri indisponibil.")
+                } else {
+                    val city = searcher.reverseGeocode(gps.lat, gps.lon)
+                    val cityNote = if (city != null) " (oras detectat: $city)" else ""
+                    sb.appendLine("Locatie curenta: ${gps.lat}, ${gps.lon}$cityNote")
+                    val places = searcher.search(ps.query, gps.lat, gps.lon, ps.limit)
+                    if (places.isEmpty()) {
+                        sb.appendLine("Nu s-au gasit locuri pentru '${ps.query}' in zona.")
+                    } else {
+                        places.forEachIndexed { i, p ->
+                            sb.appendLine("[${i + 1}] ${p.name}")
+                            sb.appendLine("    Adresa completa: ${p.address}")
+                            sb.appendLine("    Coordonate: ${p.lat}, ${p.lon}")
+                        }
+                        sb.appendLine("Foloseste adresa [1] ca referinta in NAVIGATE_MAPS/WAZE.")
+                    }
+                }
             }
         }
 

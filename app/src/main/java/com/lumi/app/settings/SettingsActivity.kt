@@ -2,6 +2,7 @@ package com.lumi.app.settings
 
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -11,6 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.lumi.app.databinding.ActivitySettingsBinding
+import com.lumi.app.ui.PatchNotesActivity
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -81,6 +83,9 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnScanBt.setOnClickListener { loadPairedDevices() }
         binding.btnResetPrompt.setOnClickListener {
             binding.etSystemPrompt.setText(AppSettings.DEFAULT_SYSTEM_PROMPT)
+        }
+        binding.btnPatchNotes.setOnClickListener {
+            startActivity(Intent(this, PatchNotesActivity::class.java))
         }
         setupActionModeSwitch()
     }

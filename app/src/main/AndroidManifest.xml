@@ -47,9 +47,9 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
-    <!-- Location (BLE scan on older APIs) -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30"/>
+    <!-- Location — GPS for navigation cues + BLE on older APIs -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <!-- Wake lock for background processing -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -171,6 +171,11 @@
             android:name=".settings.SettingsActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity"/>
+
+        <activity
+            android:name=".ui.PatchNotesActivity"
+            android:exported="false"
+            android:parentActivityName=".settings.SettingsActivity"/>
 
         <!-- Notification Listener Service -->
         <service

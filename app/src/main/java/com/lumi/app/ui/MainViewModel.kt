@@ -28,6 +28,8 @@ import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.files.FileHelper
 import com.lumi.app.gallery.GallerySearchHelper
+import com.lumi.app.location.LocationHelper
+import com.lumi.app.location.PlaceSearchHelper
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.notes.NotesHelper
 import com.lumi.app.notes.UserMemory
@@ -64,6 +66,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val btDeviceManager   = BluetoothDeviceManager(app)
     private val gallerySearchHelper = GallerySearchHelper(app)
     private val documentHelper    = com.lumi.app.system.DocumentHelper(app)
+    private val locationHelper    = LocationHelper(app)
+    private val placeSearchHelper = PlaceSearchHelper()
     private val fileHelper = FileHelper(app)
     val consent = ConsentManager(tts, null)
 
@@ -150,7 +154,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return TaskRouter(
             client, settings, timerManager, contactsHelper, notesHelper,
             sysSettings, calendarHelper, exec, userMemory, btDeviceManager,
-            gallerySearchHelper, documentHelper
+            gallerySearchHelper, documentHelper, locationHelper, placeSearchHelper
         )
     }
 

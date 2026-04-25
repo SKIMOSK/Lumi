@@ -17,7 +17,8 @@ data class DataRequest(
     val notes_query: String? = null,
     val calendar: Boolean = false,
     val gallery: GalleryRequest? = null,
-    val file_query: String? = null
+    val file_query: String? = null,
+    val place_search: PlaceSearchRequest? = null
 )
 
 data class WhatsAppRequest(val contact: String, val limit: Int = 25)
@@ -28,6 +29,11 @@ data class GalleryRequest(
     val to_date: String? = null,
     val limit: Int = 20,
     val offset: Int = 0
+)
+
+data class PlaceSearchRequest(
+    val query: String,
+    val limit: Int = 3
 )
 
 data class ParsedAIResponse(
