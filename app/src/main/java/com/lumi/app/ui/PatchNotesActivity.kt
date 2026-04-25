@@ -22,7 +22,7 @@ class PatchNotesActivity : AppCompatActivity() {
 
     // Raw markdown is fetched from main branch; falls back to empty if unavailable.
     private val patchNotesUrl =
-        "https://raw.githubusercontent.com/skimosk/Lumi/main/PATCH_NOTES.md"
+        "https://raw.githubusercontent.com/skimosk/lumi/main/PATCH_NOTES.md"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +56,7 @@ class PatchNotesActivity : AppCompatActivity() {
     private fun fetchPatchNotes(): String? = try {
         val req = Request.Builder()
             .url(patchNotesUrl)
+            .header("User-Agent", "Lumi Android App")
             .header("Cache-Control", "no-cache")
             .build()
         http.newCall(req).execute().use { resp ->
