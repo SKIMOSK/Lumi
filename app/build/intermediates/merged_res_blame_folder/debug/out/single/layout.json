@@ -1,18 +1,26 @@
 [
     {
-        "merged": "com.lumi.app-mergeDebugResources-41:/layout/item_message_user.xml",
-        "source": "com.lumi.app-main-44:/layout/item_message_user.xml"
+        "merged": "C:\\Users\\rares\\.gradle\\daemon\\8.6\\com.lumi.app-mergeDebugResources-41:\\layout\\activity_main.xml",
+        "source": "C:\\Users\\rares\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\layout\\activity_main.xml"
     },
     {
-        "merged": "com.lumi.app-mergeDebugResources-41:/layout/activity_main.xml",
-        "source": "com.lumi.app-main-44:/layout/activity_main.xml"
-    },
-    {
-        "merged": "com.lumi.app-mergeDebugResources-41:/layout/item_message_lumi.xml",
-        "source": "com.lumi.app-main-44:/layout/item_message_lumi.xml"
+        "merged": "C:\\Users\\rares\\.gradle\\daemon\\8.6\\com.lumi.app-mergeDebugResources-41:\\layout\\item_message_lumi.xml",
+        "source": "C:\\Users\\rares\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\layout\\item_message_lumi.xml"
     },
     {
         "merged": "com.lumi.app-mergeDebugResources-41:/layout/activity_settings.xml",
         "source": "com.lumi.app-main-44:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\rares\\.gradle\\daemon\\8.6\\com.lumi.app-mergeDebugResources-41:\\layout\\item_message_user.xml",
+        "source": "C:\\Users\\rares\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\layout\\item_message_user.xml"
+    },
+    {
+        "merged": "com.lumi.app-mergeDebugResources-41:/layout/activity_patch_notes.xml",
+        "source": "com.lumi.app-main-44:/layout/activity_patch_notes.xml"
+    },
+    {
+        "merged": "C:\\Users\\rares\\.gradle\\daemon\\8.6\\com.lumi.app-mergeDebugResources-41:\\layout\\activity_settings.xml",
+        "source": "C:\\Users\\rares\\.gradle\\daemon\\8.6\\com.lumi.app-main-44:\\layout\\activity_settings.xml"
     }
 ]

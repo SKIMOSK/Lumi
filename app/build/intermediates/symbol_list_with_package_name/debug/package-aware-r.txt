@@ -3298,6 +3298,7 @@ id bounceStart
 id btnAttach
 id btnConnect
 id btnHeaderSettings
+id btnPatchNotes
 id btnResetPrompt
 id btnSave
 id btnScanBt
@@ -3452,6 +3453,7 @@ id jumpToStart
 id labeled
 id layout
 id layoutAutonomous
+id layoutLoading
 id left
 id leftToRight
 id legacy
@@ -3721,11 +3723,13 @@ id triangle
 id tvAttachedFile
 id tvBtDevice
 id tvBtStatus
+id tvCapabilities
 id tvMemorySize
 id tvMessageText
 id tvMessageTime
 id tvModelBadge
 id tvNotifStatus
+id tvPatchNotes
 id tvStatus
 id tvVoiceStatus
 id tvVoiceTranscript
@@ -3873,6 +3877,7 @@ layout abc_search_view
 layout abc_select_dialog_material
 layout abc_tooltip
 layout activity_main
+layout activity_patch_notes
 layout activity_settings
 layout custom_dialog
 layout design_bottom_navigation_item

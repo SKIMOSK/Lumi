@@ -281,6 +281,21 @@
                 android:layout_marginBottom="24dp"
                 android:text="Resetează prompt implicit"/>
 
+            <!-- Patch Notes / Capabilities -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="16dp"
+                android:background="#EEEEEE"/>
+
+            <Button
+                android:id="@+id/btnPatchNotes"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="📋  Noutăți &amp; Ce poate face Lumi"/>
+
         </LinearLayout>
     </ScrollView>
 

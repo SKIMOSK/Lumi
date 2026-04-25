@@ -26,6 +26,9 @@ public final class ActivitySettingsBinding implements ViewBinding {
   private final LinearLayout rootView;
 
   @NonNull
+  public final Button btnPatchNotes;
+
+  @NonNull
   public final Button btnResetPrompt;
 
   @NonNull
@@ -79,8 +82,8 @@ public final class ActivitySettingsBinding implements ViewBinding {
   @NonNull
   public final TextView tvMemorySize;
 
-  private ActivitySettingsBinding(@NonNull LinearLayout rootView, @NonNull Button btnResetPrompt,
-      @NonNull Button btnSave, @NonNull Button btnScanBt,
+  private ActivitySettingsBinding(@NonNull LinearLayout rootView, @NonNull Button btnPatchNotes,
+      @NonNull Button btnResetPrompt, @NonNull Button btnSave, @NonNull Button btnScanBt,
       @NonNull TextInputEditText etOpenRouterKey, @NonNull TextInputEditText etOpenRouterUrl,
       @NonNull TextInputEditText etSystemPrompt, @NonNull LinearLayout layoutAutonomous,
       @NonNull SeekBar seekBarMemory, @NonNull Spinner spinnerBtDevices,
@@ -89,6 +92,7 @@ public final class ActivitySettingsBinding implements ViewBinding {
       @NonNull SwitchCompat switchAutoConnect, @NonNull SwitchCompat switchAutonomous,
       @NonNull Toolbar toolbar, @NonNull TextView tvBtDevice, @NonNull TextView tvMemorySize) {
     this.rootView = rootView;
+    this.btnPatchNotes = btnPatchNotes;
     this.btnResetPrompt = btnResetPrompt;
     this.btnSave = btnSave;
     this.btnScanBt = btnScanBt;
@@ -136,6 +140,12 @@ public final class ActivitySettingsBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.btnPatchNotes;
+      Button btnPatchNotes = ViewBindings.findChildViewById(rootView, id);
+      if (btnPatchNotes == null) {
+        break missingId;
+      }
+
       id = R.id.btnResetPrompt;
       Button btnResetPrompt = ViewBindings.findChildViewById(rootView, id);
       if (btnResetPrompt == null) {
@@ -244,8 +254,8 @@ public final class ActivitySettingsBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ActivitySettingsBinding((LinearLayout) rootView, btnResetPrompt, btnSave,
-          btnScanBt, etOpenRouterKey, etOpenRouterUrl, etSystemPrompt, layoutAutonomous,
+      return new ActivitySettingsBinding((LinearLayout) rootView, btnPatchNotes, btnResetPrompt,
+          btnSave, btnScanBt, etOpenRouterKey, etOpenRouterUrl, etSystemPrompt, layoutAutonomous,
           seekBarMemory, spinnerBtDevices, spinnerExpertModel, spinnerFastModel, spinnerSttLanguage,
           switchActionMode, switchAutoConnect, switchAutonomous, toolbar, tvBtDevice, tvMemorySize);
     }

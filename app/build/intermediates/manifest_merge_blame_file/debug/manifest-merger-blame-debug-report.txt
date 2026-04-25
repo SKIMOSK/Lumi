@@ -130,400 +130,402 @@
 69-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:48:5-78
 69-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:48:22-76
 70
-71    <!-- Location (BLE scan on older APIs) -->
-72    <uses-permission
-72-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:51:5-105
-73        android:name="android.permission.ACCESS_FINE_LOCATION"
-73-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:51:22-76
-74        android:maxSdkVersion="30" />
-74-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:51:77-103
-75    <uses-permission
-75-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:52:5-107
-76        android:name="android.permission.ACCESS_COARSE_LOCATION"
-76-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:52:22-78
-77        android:maxSdkVersion="30" />
-77-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:52:79-105
-78
-79    <!-- Wake lock for background processing -->
-80    <uses-permission android:name="android.permission.WAKE_LOCK" />
-80-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:55:5-67
-80-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:55:22-65
-81    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-81-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:56:5-76
-81-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:56:22-74
-82    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-82-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:57:5-93
-82-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:57:22-91
-83
-84    <!-- Vibrate for feedback -->
-85    <uses-permission android:name="android.permission.VIBRATE" />
-85-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:60:5-65
-85-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:60:22-63
-86
-87    <!-- Gallery / media -->
-88    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-88-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:63:5-75
-88-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:63:22-73
-89
-90    <!-- Package visibility (Android 11+) -->
-91    <queries>
-91-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:66:5-147:15
-92
-93        <!-- Messaging -->
-94        <package android:name="com.whatsapp" />
-94-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:68:9-47
-94-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:68:18-45
-95        <package android:name="com.whatsapp.w4b" />
-95-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:69:9-51
-95-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:69:18-49
-96        <package android:name="com.instagram.android" />
-96-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:70:9-56
-96-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:70:18-54
-97        <package android:name="com.snapchat.android" />
-97-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:71:9-55
-97-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:71:18-53
-98        <package android:name="com.facebook.orca" />
-98-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:72:9-52
-98-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:72:18-50
-99        <package android:name="com.discord" />
-99-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:73:9-46
-99-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:73:18-44
-100        <package android:name="org.telegram.messenger" />
-100-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:74:9-57
-100-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:74:18-55
-101        <package android:name="com.Slack" />
-101-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:75:9-44
-101-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:75:18-42
-102        <!-- Notes apps -->
-103        <package android:name="com.samsung.android.app.notes" />
-103-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:77:9-64
-103-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:77:18-62
-104        <package android:name="com.google.android.keep" />
-104-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:78:9-58
-104-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:78:18-56
-105        <package android:name="com.microsoft.office.onenote" />
-105-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:79:9-63
-105-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:79:18-61
-106        <package android:name="notion.id" />
-106-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:80:9-44
-106-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:80:18-42
-107        <package android:name="md.obsidian" />
-107-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:81:9-46
-107-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:81:18-44
-108        <package android:name="com.standardnotes.standardnotes" />
-108-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:82:9-66
-108-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:82:18-64
-109        <!-- Email -->
-110        <package android:name="com.google.android.gm" />
-110-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:84:9-56
-110-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:84:18-54
-111        <!-- Navigation -->
-112        <package android:name="com.google.android.apps.maps" />
-112-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:86:9-63
-112-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:86:18-61
-113        <package android:name="com.waze" />
-113-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:87:9-43
-113-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:87:18-41
-114        <!-- VPN -->
-115        <package android:name="com.surfshark.vpnclient.android" />
-115-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:89:9-66
-115-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:89:18-64
-116        <package android:name="com.nordvpn.android" />
-116-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:90:9-54
-116-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:90:18-52
-117        <!-- Streaming -->
-118        <package android:name="com.spotify.music" />
-118-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:92:9-52
-118-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:92:18-50
-119        <package android:name="com.google.android.apps.youtube.music" />
-119-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:93:9-72
-119-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:93:18-70
-120        <package android:name="com.netflix.mediaclient" />
-120-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:94:9-58
-120-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:94:18-56
-121        <!-- Smart Home -->
-122        <package android:name="com.google.android.apps.chromecast.app" />
-122-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:96:9-73
-122-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:96:18-71
-123        <!-- Health -->
-124        <package android:name="com.google.android.apps.healthdata" />
-124-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:98:9-69
-124-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:98:18-67
-125        <package android:name="com.google.android.apps.fitness" />
-125-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:99:9-66
-125-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:99:18-64
-126        <package android:name="com.strava" />
-126-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:100:9-45
-126-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:100:18-43
-127        <package android:name="com.myfitnesspal.android" />
-127-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:101:9-59
-127-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:101:18-57
-128        <!-- Banking -->
-129        <package android:name="com.revolut.revolut" />
-129-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:103:9-54
-129-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:103:18-52
-130        <package android:name="ro.btrl.mobile" />
-130-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:104:9-49
-130-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:104:18-47
-131        <package android:name="com.transferwise.android" />
-131-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:105:9-59
-131-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:105:18-57
-132        <package android:name="com.paypal.android.p2pmobile" />
-132-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:106:9-63
-132-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:106:18-61
-133        <!-- Shopping -->
-134        <package android:name="com.amazon.mShoppingApp" />
-134-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:108:9-58
-134-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:108:18-56
-135        <!-- Crypto -->
-136        <package android:name="com.binance.dev" />
-136-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:110:9-50
-136-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:110:18-48
-137        <package android:name="com.coinbase.android" />
-137-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:111:9-55
-137-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:111:18-53
-138        <package android:name="io.metamask" />
-138-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:112:9-46
-138-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:112:18-44
-139        <package android:name="com.wallet.crypto.trustapp" />
-139-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:113:9-61
-139-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:113:18-59
-140        <!-- News -->
-141        <package android:name="com.google.android.apps.magazines" />
-141-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:115:9-68
-141-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:115:18-66
-142        <!-- YouTube -->
-143        <package android:name="com.google.android.youtube" />
-143-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:117:9-61
-143-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:117:18-59
-144        <!-- Ride sharing -->
-145        <package android:name="com.ubercab" />
-145-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:119:9-46
-145-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:119:18-44
-146        <package android:name="me.lyft.android" />
-146-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:120:9-50
-146-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:120:18-48
-147        <!-- Food delivery -->
-148        <package android:name="com.ubercab.eats" />
-148-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:122:9-51
-148-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:122:18-49
-149        <package android:name="com.dd.consumer" />
-149-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:123:9-50
-149-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:123:18-48
-150        <package android:name="com.deliveroo.orderapp" />
-150-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:124:9-57
-150-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:124:18-55
-151
-152        <intent>
-152-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:125:9-127:18
-153            <action android:name="android.intent.action.CALL" />
-153-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:126:13-64
-153-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:126:21-62
-154        </intent>
-155        <intent>
-155-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:128:9-131:18
-156            <action android:name="android.intent.action.VIEW" />
-156-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:129:13-64
-156-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:129:21-62
-157
-158            <data android:scheme="https" />
-158-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:13-43
-158-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:19-41
-159        </intent>
-160        <intent>
-160-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:132:9-135:18
-161            <action android:name="android.intent.action.SEND" />
-161-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:133:13-64
-161-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:133:21-62
-162
-163            <data android:mimeType="text/plain" />
-163-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:13-43
-163-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:134:19-48
-164        </intent>
-165        <intent>
-165-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:136:9-139:18
-166            <action android:name="android.intent.action.SENDTO" />
-166-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:137:13-66
-166-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:137:21-64
-167
-168            <data android:scheme="mailto" />
-168-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:13-43
-168-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:19-41
-169        </intent>
-170        <intent>
-170-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:140:9-143:18
-171            <action android:name="android.intent.action.INSERT" />
-171-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:141:13-66
-171-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:141:21-64
-172
-173            <data android:mimeType="vnd.android.cursor.dir/event" />
-173-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:13-43
-173-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:134:19-48
-174        </intent>
-175        <intent>
-175-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:144:9-146:18
-176            <action android:name="android.provider.AlarmClock.SET_TIMER" />
-176-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:145:13-75
-176-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:145:21-73
-177        </intent>
-178    </queries>
+71    <!-- Location — GPS for navigation cues + BLE on older APIs -->
+72    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+72-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:51:5-78
+72-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:51:22-76
+73    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+73-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:52:5-80
+73-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:52:22-78
+74
+75    <!-- Wake lock for background processing -->
+76    <uses-permission android:name="android.permission.WAKE_LOCK" />
+76-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:55:5-67
+76-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:55:22-65
+77    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+77-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:56:5-76
+77-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:56:22-74
+78    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+78-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:57:5-93
+78-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:57:22-91
+79
+80    <!-- Vibrate for feedback -->
+81    <uses-permission android:name="android.permission.VIBRATE" />
+81-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:60:5-65
+81-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:60:22-63
+82
+83    <!-- Gallery / media -->
+84    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+84-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:63:5-75
+84-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:63:22-73
+85
+86    <!-- Package visibility (Android 11+) -->
+87    <queries>
+87-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:66:5-147:15
+88
+89        <!-- Messaging -->
+90        <package android:name="com.whatsapp" />
+90-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:68:9-47
+90-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:68:18-45
+91        <package android:name="com.whatsapp.w4b" />
+91-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:69:9-51
+91-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:69:18-49
+92        <package android:name="com.instagram.android" />
+92-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:70:9-56
+92-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:70:18-54
+93        <package android:name="com.snapchat.android" />
+93-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:71:9-55
+93-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:71:18-53
+94        <package android:name="com.facebook.orca" />
+94-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:72:9-52
+94-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:72:18-50
+95        <package android:name="com.discord" />
+95-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:73:9-46
+95-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:73:18-44
+96        <package android:name="org.telegram.messenger" />
+96-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:74:9-57
+96-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:74:18-55
+97        <package android:name="com.Slack" />
+97-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:75:9-44
+97-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:75:18-42
+98        <!-- Notes apps -->
+99        <package android:name="com.samsung.android.app.notes" />
+99-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:77:9-64
+99-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:77:18-62
+100        <package android:name="com.google.android.keep" />
+100-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:78:9-58
+100-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:78:18-56
+101        <package android:name="com.microsoft.office.onenote" />
+101-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:79:9-63
+101-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:79:18-61
+102        <package android:name="notion.id" />
+102-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:80:9-44
+102-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:80:18-42
+103        <package android:name="md.obsidian" />
+103-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:81:9-46
+103-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:81:18-44
+104        <package android:name="com.standardnotes.standardnotes" />
+104-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:82:9-66
+104-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:82:18-64
+105        <!-- Email -->
+106        <package android:name="com.google.android.gm" />
+106-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:84:9-56
+106-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:84:18-54
+107        <!-- Navigation -->
+108        <package android:name="com.google.android.apps.maps" />
+108-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:86:9-63
+108-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:86:18-61
+109        <package android:name="com.waze" />
+109-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:87:9-43
+109-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:87:18-41
+110        <!-- VPN -->
+111        <package android:name="com.surfshark.vpnclient.android" />
+111-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:89:9-66
+111-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:89:18-64
+112        <package android:name="com.nordvpn.android" />
+112-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:90:9-54
+112-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:90:18-52
+113        <!-- Streaming -->
+114        <package android:name="com.spotify.music" />
+114-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:92:9-52
+114-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:92:18-50
+115        <package android:name="com.google.android.apps.youtube.music" />
+115-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:93:9-72
+115-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:93:18-70
+116        <package android:name="com.netflix.mediaclient" />
+116-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:94:9-58
+116-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:94:18-56
+117        <!-- Smart Home -->
+118        <package android:name="com.google.android.apps.chromecast.app" />
+118-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:96:9-73
+118-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:96:18-71
+119        <!-- Health -->
+120        <package android:name="com.google.android.apps.healthdata" />
+120-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:98:9-69
+120-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:98:18-67
+121        <package android:name="com.google.android.apps.fitness" />
+121-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:99:9-66
+121-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:99:18-64
+122        <package android:name="com.strava" />
+122-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:100:9-45
+122-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:100:18-43
+123        <package android:name="com.myfitnesspal.android" />
+123-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:101:9-59
+123-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:101:18-57
+124        <!-- Banking -->
+125        <package android:name="com.revolut.revolut" />
+125-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:103:9-54
+125-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:103:18-52
+126        <package android:name="ro.btrl.mobile" />
+126-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:104:9-49
+126-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:104:18-47
+127        <package android:name="com.transferwise.android" />
+127-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:105:9-59
+127-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:105:18-57
+128        <package android:name="com.paypal.android.p2pmobile" />
+128-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:106:9-63
+128-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:106:18-61
+129        <!-- Shopping -->
+130        <package android:name="com.amazon.mShoppingApp" />
+130-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:108:9-58
+130-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:108:18-56
+131        <!-- Crypto -->
+132        <package android:name="com.binance.dev" />
+132-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:110:9-50
+132-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:110:18-48
+133        <package android:name="com.coinbase.android" />
+133-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:111:9-55
+133-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:111:18-53
+134        <package android:name="io.metamask" />
+134-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:112:9-46
+134-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:112:18-44
+135        <package android:name="com.wallet.crypto.trustapp" />
+135-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:113:9-61
+135-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:113:18-59
+136        <!-- News -->
+137        <package android:name="com.google.android.apps.magazines" />
+137-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:115:9-68
+137-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:115:18-66
+138        <!-- YouTube -->
+139        <package android:name="com.google.android.youtube" />
+139-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:117:9-61
+139-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:117:18-59
+140        <!-- Ride sharing -->
+141        <package android:name="com.ubercab" />
+141-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:119:9-46
+141-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:119:18-44
+142        <package android:name="me.lyft.android" />
+142-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:120:9-50
+142-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:120:18-48
+143        <!-- Food delivery -->
+144        <package android:name="com.ubercab.eats" />
+144-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:122:9-51
+144-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:122:18-49
+145        <package android:name="com.dd.consumer" />
+145-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:123:9-50
+145-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:123:18-48
+146        <package android:name="com.deliveroo.orderapp" />
+146-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:124:9-57
+146-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:124:18-55
+147
+148        <intent>
+148-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:125:9-127:18
+149            <action android:name="android.intent.action.CALL" />
+149-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:126:13-64
+149-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:126:21-62
+150        </intent>
+151        <intent>
+151-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:128:9-131:18
+152            <action android:name="android.intent.action.VIEW" />
+152-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:129:13-64
+152-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:129:21-62
+153
+154            <data android:scheme="https" />
+154-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:13-43
+154-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:19-41
+155        </intent>
+156        <intent>
+156-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:132:9-135:18
+157            <action android:name="android.intent.action.SEND" />
+157-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:133:13-64
+157-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:133:21-62
+158
+159            <data android:mimeType="text/plain" />
+159-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:13-43
+159-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:134:19-48
+160        </intent>
+161        <intent>
+161-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:136:9-139:18
+162            <action android:name="android.intent.action.SENDTO" />
+162-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:137:13-66
+162-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:137:21-64
+163
+164            <data android:scheme="mailto" />
+164-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:13-43
+164-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:19-41
+165        </intent>
+166        <intent>
+166-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:140:9-143:18
+167            <action android:name="android.intent.action.INSERT" />
+167-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:141:13-66
+167-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:141:21-64
+168
+169            <data android:mimeType="vnd.android.cursor.dir/event" />
+169-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:130:13-43
+169-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:134:19-48
+170        </intent>
+171        <intent>
+171-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:144:9-146:18
+172            <action android:name="android.provider.AlarmClock.SET_TIMER" />
+172-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:145:13-75
+172-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:145:21-73
+173        </intent>
+174    </queries>
+175
+176    <permission
+176-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+177        android:name="com.lumi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+177-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+178        android:protectionLevel="signature" />
+178-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
 179
-180    <permission
-180-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
-181        android:name="com.lumi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-181-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
-182        android:protectionLevel="signature" />
-182-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
-183
-184    <uses-permission android:name="com.lumi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-184-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
-184-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
-185
-186    <application
-186-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:149:5-229:19
-187        android:name="com.lumi.app.LumiApplication"
-187-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:150:9-40
-188        android:allowBackup="true"
-188-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:151:9-35
-189        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-189-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
-190        android:debuggable="true"
-191        android:extractNativeLibs="false"
-192        android:icon="@mipmap/ic_launcher"
-192-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:152:9-43
-193        android:label="@string/app_name"
-193-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:153:9-41
-194        android:roundIcon="@mipmap/ic_launcher_round"
-194-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:154:9-54
-195        android:supportsRtl="true"
-195-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:155:9-35
-196        android:theme="@style/Theme.Lumi"
-196-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:156:9-42
-197        android:usesCleartextTraffic="false" >
-197-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:157:9-45
-198        <activity
-198-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:159:9-168:20
-199            android:name="com.lumi.app.MainActivity"
-199-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:160:13-41
-200            android:exported="true"
-200-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:161:13-36
-201            android:screenOrientation="portrait"
-201-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:162:13-49
-202            android:windowSoftInputMode="adjustResize" >
-202-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:163:13-55
-203            <intent-filter>
-203-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:164:13-167:29
-204                <action android:name="android.intent.action.MAIN" />
-204-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:165:17-68
-204-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:165:25-66
-205
-206                <category android:name="android.intent.category.LAUNCHER" />
-206-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:166:17-76
-206-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:166:27-74
-207            </intent-filter>
-208        </activity>
+180    <uses-permission android:name="com.lumi.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+180-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+180-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+181
+182    <application
+182-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:149:5-234:19
+183        android:name="com.lumi.app.LumiApplication"
+183-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:150:9-40
+184        android:allowBackup="true"
+184-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:151:9-35
+185        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+185-->[androidx.core:core:1.12.0] C:\Users\rares\.gradle\caches\transforms-4\f41efb211daceaa856bafe06654da2ba\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+186        android:debuggable="true"
+187        android:extractNativeLibs="false"
+188        android:icon="@mipmap/ic_launcher"
+188-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:152:9-43
+189        android:label="@string/app_name"
+189-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:153:9-41
+190        android:roundIcon="@mipmap/ic_launcher_round"
+190-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:154:9-54
+191        android:supportsRtl="true"
+191-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:155:9-35
+192        android:theme="@style/Theme.Lumi"
+192-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:156:9-42
+193        android:usesCleartextTraffic="false" >
+193-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:157:9-45
+194        <activity
+194-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:159:9-168:20
+195            android:name="com.lumi.app.MainActivity"
+195-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:160:13-41
+196            android:exported="true"
+196-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:161:13-36
+197            android:screenOrientation="portrait"
+197-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:162:13-49
+198            android:windowSoftInputMode="adjustResize" >
+198-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:163:13-55
+199            <intent-filter>
+199-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:164:13-167:29
+200                <action android:name="android.intent.action.MAIN" />
+200-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:165:17-68
+200-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:165:25-66
+201
+202                <category android:name="android.intent.category.LAUNCHER" />
+202-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:166:17-76
+202-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:166:27-74
+203            </intent-filter>
+204        </activity>
+205        <activity
+205-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:170:9-173:57
+206            android:name="com.lumi.app.settings.SettingsActivity"
+206-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:171:13-54
+207            android:exported="false"
+207-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:172:13-37
+208            android:parentActivityName="com.lumi.app.MainActivity" />
+208-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:173:13-55
 209        <activity
-209-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:170:9-173:57
-210            android:name="com.lumi.app.settings.SettingsActivity"
-210-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:171:13-54
+209-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:175:9-178:70
+210            android:name="com.lumi.app.ui.PatchNotesActivity"
+210-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:176:13-50
 211            android:exported="false"
-211-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:172:13-37
-212            android:parentActivityName="com.lumi.app.MainActivity" />
-212-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:173:13-55
+211-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:177:13-37
+212            android:parentActivityName="com.lumi.app.settings.SettingsActivity" />
+212-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:178:13-68
 213
 214        <!-- Notification Listener Service -->
 215        <service
-215-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:176:9-187:19
+215-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:181:9-192:19
 216            android:name="com.lumi.app.notifications.LumiNotificationService"
-216-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:177:13-66
+216-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:182:13-66
 217            android:exported="true"
-217-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:178:13-36
+217-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:183:13-36
 218            android:label="@string/notification_listener_label"
-218-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:179:13-64
+218-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:184:13-64
 219            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" >
-219-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:180:13-87
+219-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:185:13-87
 220            <intent-filter>
-220-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:181:13-183:29
+220-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:186:13-188:29
 221                <action android:name="android.service.notification.NotificationListenerService" />
-221-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:182:17-98
-221-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:182:25-96
+221-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:187:17-98
+221-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:187:25-96
 222            </intent-filter>
 223
 224            <meta-data
-224-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:184:13-186:57
+224-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:189:13-191:57
 225                android:name="android.service.notification.default_filter_types"
-225-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:185:17-81
+225-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:190:17-81
 226                android:value="conversations|alerting" />
-226-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:186:17-55
+226-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:191:17-55
 227        </service>
 228
 229        <!-- Bluetooth foreground service -->
 230        <service
-230-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:190:9-193:62
+230-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:195:9-198:62
 231            android:name="com.lumi.app.bluetooth.LumiBluetoothService"
-231-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:191:13-59
+231-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:196:13-59
 232            android:exported="false"
-232-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:192:13-37
+232-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:197:13-37
 233            android:foregroundServiceType="connectedDevice" />
-233-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:193:13-60
+233-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:198:13-60
 234
 235        <!-- Timer alarm receiver -->
 236        <receiver
-236-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:196:9-202:20
+236-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:201:9-207:20
 237            android:name="com.lumi.app.timer.TimerReceiver"
-237-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:197:13-48
+237-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:202:13-48
 238            android:exported="false" >
-238-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:198:13-37
+238-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:203:13-37
 239            <intent-filter>
-239-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:199:13-201:29
+239-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:204:13-206:29
 240                <action android:name="com.lumi.app.ACTION_TIMER_DONE" />
-240-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:200:17-72
-240-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:200:25-70
+240-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:205:17-72
+240-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:205:25-70
 241            </intent-filter>
 242        </receiver>
 243
 244        <!-- FileProvider for sharing cached images (base64 → file → intent) -->
 245        <provider
 246            android:name="androidx.core.content.FileProvider"
-246-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:206:13-62
+246-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:211:13-62
 247            android:authorities="com.lumi.app.fileprovider"
-247-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:207:13-64
+247-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:212:13-64
 248            android:exported="false"
-248-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:208:13-37
+248-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:213:13-37
 249            android:grantUriPermissions="true" >
-249-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:209:13-47
+249-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:214:13-47
 250            <meta-data
-250-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:210:13-212:62
+250-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:215:13-217:62
 251                android:name="android.support.FILE_PROVIDER_PATHS"
-251-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:211:17-67
+251-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:216:17-67
 252                android:resource="@xml/file_provider_paths" />
-252-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:212:17-60
+252-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:217:17-60
 253        </provider>
 254
 255        <!-- Accessibility service for WhatsApp reading -->
 256        <service
-256-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:216:9-227:19
+256-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:221:9-232:19
 257            android:name="com.lumi.app.whatsapp.LumiAccessibilityService"
-257-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:217:13-62
+257-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:222:13-62
 258            android:exported="true"
-258-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:218:13-36
+258-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:223:13-36
 259            android:label="Lumi Accesibilitate"
-259-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:219:13-48
+259-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:224:13-48
 260            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
-260-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:220:13-79
+260-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:225:13-79
 261            <intent-filter>
-261-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:221:13-223:29
+261-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:226:13-228:29
 262                <action android:name="android.accessibilityservice.AccessibilityService" />
-262-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:222:17-91
-262-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:222:25-89
+262-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:227:17-91
+262-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:227:25-89
 263            </intent-filter>
 264
 265            <meta-data
-265-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:224:13-226:71
+265-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:229:13-231:71
 266                android:name="android.accessibilityservice"
-266-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:225:17-60
+266-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:230:17-60
 267                android:resource="@xml/accessibility_service_config" />
-267-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:226:17-69
+267-->C:\Users\rares\StudioProjects\Lumi\app\src\main\AndroidManifest.xml:231:17-69
 268        </service>
 269
 270        <provider

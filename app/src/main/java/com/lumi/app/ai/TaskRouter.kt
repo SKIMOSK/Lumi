@@ -60,9 +60,10 @@ class TaskRouter(
         val btDevices = btDeviceManager.formatDeviceList()
         val mem = userMemory.load()
         val memSection = if (mem.isNotBlank()) "\n\nPreferinte utilizator memorate:\n$mem" else ""
-        val gps = locationHelper?.getLastKnown()
-        val gpsSection = if (gps != null)
-            "\nLocatie GPS: ${locationHelper.format(gps)} (lat=${gps.lat}, lon=${gps.lon})"
+        val helper = locationHelper
+        val gps = helper?.getLastKnown()
+        val gpsSection = if (helper != null && gps != null)
+            "\nLocatie GPS: ${helper.format(gps)} (lat=${gps.lat}, lon=${gps.lon})"
             else ""
         return """
 Data si ora: $now

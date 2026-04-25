@@ -44,6 +44,7 @@ id action_settings
 id btnAttach
 id btnConnect
 id btnHeaderSettings
+id btnPatchNotes
 id btnResetPrompt
 id btnSave
 id btnScanBt
@@ -62,10 +63,12 @@ id fabMic
 id ivAttachedPreview
 id ivMessageImage
 id layoutAutonomous
+id layoutLoading
 id llGalleryThumbs
 id progressBar
 id rvMessages
 id scrollGallery
+id scrollView
 id seekBarMemory
 id spinnerBtDevices
 id spinnerExpertModel
@@ -78,11 +81,13 @@ id toolbar
 id tvAttachedFile
 id tvBtDevice
 id tvBtStatus
+id tvCapabilities
 id tvMemorySize
 id tvMessageText
 id tvMessageTime
 id tvModelBadge
 id tvNotifStatus
+id tvPatchNotes
 id tvStatus
 id tvVoiceStatus
 id tvVoiceTranscript
@@ -91,6 +96,7 @@ id voiceOverlay
 id voiceRing1
 id voiceRing2
 layout activity_main
+layout activity_patch_notes
 layout activity_settings
 layout item_message_lumi
 layout item_message_user
