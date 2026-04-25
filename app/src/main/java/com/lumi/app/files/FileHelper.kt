@@ -51,12 +51,14 @@ class FileHelper(private val context: Context) {
         null
     }
 
-    fun readAsBase64(uri: Uri): String? = try {
-        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
-        Base64.encodeToString(bytes, Base64.NO_WRAP)
-    } catch (e: Exception) {
-        Log.e(TAG, "readAsBase64 failed: ${e.message}")
-        null
+    fun readAsBase64(uri: Uri): String? {
+        return try {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+            Base64.encodeToString(bytes, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            Log.e(TAG, "readAsBase64 failed: ${e.message}")
+            null
+        }
     }
 
     fun writeText(uri: Uri, content: String): Boolean = try {

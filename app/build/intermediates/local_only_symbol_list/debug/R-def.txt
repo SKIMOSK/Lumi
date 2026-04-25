@@ -75,6 +75,7 @@ id switchActionMode
 id switchAutoConnect
 id switchAutonomous
 id toolbar
+id tvAttachedFile
 id tvBtDevice
 id tvBtStatus
 id tvMemorySize

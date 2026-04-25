@@ -73,6 +73,9 @@ public final class ActivityMainBinding implements ViewBinding {
   public final Toolbar toolbar;
 
   @NonNull
+  public final TextView tvAttachedFile;
+
+  @NonNull
   public final TextView tvBtStatus;
 
   @NonNull
@@ -105,9 +108,9 @@ public final class ActivityMainBinding implements ViewBinding {
       @NonNull ImageButton btnVoiceClose, @NonNull Button btnVoiceSend, @NonNull TextView chipBt,
       @NonNull TextView chipMode, @NonNull EditText etInput, @NonNull FloatingActionButton fabMic,
       @NonNull ImageView ivAttachedPreview, @NonNull ProgressBar progressBar,
-      @NonNull RecyclerView rvMessages, @NonNull Toolbar toolbar, @NonNull TextView tvBtStatus,
-      @NonNull TextView tvNotifStatus, @NonNull TextView tvStatus, @NonNull TextView tvVoiceStatus,
-      @NonNull TextView tvVoiceTranscript, @NonNull View voiceOrb,
+      @NonNull RecyclerView rvMessages, @NonNull Toolbar toolbar, @NonNull TextView tvAttachedFile,
+      @NonNull TextView tvBtStatus, @NonNull TextView tvNotifStatus, @NonNull TextView tvStatus,
+      @NonNull TextView tvVoiceStatus, @NonNull TextView tvVoiceTranscript, @NonNull View voiceOrb,
       @NonNull FrameLayout voiceOverlay, @NonNull View voiceRing1, @NonNull View voiceRing2) {
     this.rootView = rootView;
     this.btnAttach = btnAttach;
@@ -125,6 +128,7 @@ public final class ActivityMainBinding implements ViewBinding {
     this.progressBar = progressBar;
     this.rvMessages = rvMessages;
     this.toolbar = toolbar;
+    this.tvAttachedFile = tvAttachedFile;
     this.tvBtStatus = tvBtStatus;
     this.tvNotifStatus = tvNotifStatus;
     this.tvStatus = tvStatus;
@@ -253,6 +257,12 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvAttachedFile;
+      TextView tvAttachedFile = ViewBindings.findChildViewById(rootView, id);
+      if (tvAttachedFile == null) {
+        break missingId;
+      }
+
       id = R.id.tvBtStatus;
       TextView tvBtStatus = ViewBindings.findChildViewById(rootView, id);
       if (tvBtStatus == null) {
@@ -309,9 +319,9 @@ public final class ActivityMainBinding implements ViewBinding {
 
       return new ActivityMainBinding((FrameLayout) rootView, btnAttach, btnConnect,
           btnHeaderSettings, btnSend, btnVoiceCancel, btnVoiceClose, btnVoiceSend, chipBt, chipMode,
-          etInput, fabMic, ivAttachedPreview, progressBar, rvMessages, toolbar, tvBtStatus,
-          tvNotifStatus, tvStatus, tvVoiceStatus, tvVoiceTranscript, voiceOrb, voiceOverlay,
-          voiceRing1, voiceRing2);
+          etInput, fabMic, ivAttachedPreview, progressBar, rvMessages, toolbar, tvAttachedFile,
+          tvBtStatus, tvNotifStatus, tvStatus, tvVoiceStatus, tvVoiceTranscript, voiceOrb,
+          voiceOverlay, voiceRing1, voiceRing2);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

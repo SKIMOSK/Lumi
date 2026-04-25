@@ -4,7 +4,7 @@
             "outputFile": "com.lumi.app-mergeDebugResources-40:/values-sw360dp-v13/values-sw360dp-v13.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\skimo\\.gradle\\caches\\transforms-4\\c8ea5d7fa792f44a15cb98c9f7e54269\\transformed\\preference-1.2.1\\res\\values-sw360dp-v13\\values-sw360dp-v13.xml",
+                    "source": "C:\\Users\\rares\\.gradle\\caches\\transforms-4\\c8ea5d7fa792f44a15cb98c9f7e54269\\transformed\\preference-1.2.1\\res\\values-sw360dp-v13\\values-sw360dp-v13.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
