@@ -534,19 +534,52 @@ class MessageSender(private val context: Context) {
         }
     }
 
-    fun shareDocumentToApp(fileUri: android.net.Uri, pkg: String?, appName: String): SendResult {
+    fun shareDocumentToApp(
+        fileUri: android.net.Uri,
+        pkg: String?,
+        appName: String,
+        subject: String? = null,
+        body: String? = null,
+        emailTo: String? = null
+    ): SendResult {
+        // Best-effort MIME type from extension, falls back to */* so the app can negotiate.
+        val mimeType = guessMime(fileUri) ?: "*/*"
+        fun build(action: String, applyPkg: Boolean) = Intent(action).apply {
+            type = mimeType
+            if (applyPkg && pkg != null) setPackage(pkg)
+            putExtra(Intent.EXTRA_STREAM, fileUri)
+            if (!subject.isNullOrBlank()) putExtra(Intent.EXTRA_SUBJECT, subject)
+            if (!body.isNullOrBlank()) putExtra(Intent.EXTRA_TEXT, body)
+            if (!emailTo.isNullOrBlank()) putExtra(Intent.EXTRA_EMAIL, arrayOf(emailTo))
+            clipData = android.content.ClipData.newRawUri("document", fileUri)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // 1. Try targeted package
+        if (pkg != null) {
+            try {
+                context.startActivity(build(Intent.ACTION_SEND, applyPkg = true))
+                return SendResult.DeepLinkOpened
+            } catch (_: Exception) { /* fall through */ }
+        }
+        // 2. Fall back to a chooser so the user always sees something
         return try {
-            context.startActivity(Intent(Intent.ACTION_SEND).apply {
-                type = "*/*"
-                if (pkg != null) setPackage(pkg)
-                putExtra(Intent.EXTRA_STREAM, fileUri)
-                clipData = android.content.ClipData.newRawUri("document", fileUri)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            })
+            val chooser = Intent.createChooser(build(Intent.ACTION_SEND, applyPkg = false), "Trimite via")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
             SendResult.DeepLinkOpened
         } catch (e: Exception) {
             SendResult.Error("Nu s-a putut trimite fisierul pe $appName: ${e.message}")
         }
+    }
+
+    private fun guessMime(uri: android.net.Uri): String? {
+        return try {
+            context.contentResolver.getType(uri)
+                ?: android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                    uri.toString().substringAfterLast('.', "").lowercase()
+                )
+        } catch (_: Exception) { null }
     }
 
     // ─── Generic helper ───────────────────────────────────────────────────────

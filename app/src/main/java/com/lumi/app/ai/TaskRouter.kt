@@ -4,6 +4,7 @@ import android.net.Uri
 import android.os.Build
 import com.lumi.app.actions.ActionExecutor
 import com.lumi.app.actions.ActionParser
+import com.lumi.app.actions.ActionValidator
 import com.lumi.app.bluetooth.BluetoothDeviceManager
 import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.contacts.ContactsHelper
@@ -42,7 +43,8 @@ class TaskRouter(
         val parsed: com.lumi.app.actions.ParsedAIResponse,
         val usedExpert: Boolean,
         val actionResults: List<ActionExecutor.Result> = emptyList(),
-        val galleryImageIds: List<Long>? = null
+        val galleryImageIds: List<Long>? = null,
+        val validationIssues: List<ActionValidator.Issue> = emptyList()
     )
 
     private var lastGalleryIds: List<Long>? = null
@@ -129,6 +131,8 @@ Snapchat: {"actions":[{"type":"SEND_SNAPCHAT","contact":"Ion","username":"ion_sn
 Facebook Messenger: {"actions":[{"type":"SEND_FACEBOOK","contact":"Maria","message":"Ce faci?"}]}
 Discord: {"actions":[{"type":"SEND_DISCORD","contact":"Alex","username":"alex#1234","message":"Hey"}]}
 Email: {"actions":[{"type":"SEND_EMAIL","to":"ana@gmail.com","subject":"Re: intalnire","body":"Ne vedem maine la 10."}]}
+Email cu fisier de pe telefon: {"actions":[{"type":"SEND_EMAIL","to":"sefu@firma.ro","subject":"Raport","body":"Atasat raportul.","attachment_query":"raport"}]}
+Email cu fisierul atasat (clip): {"actions":[{"type":"SEND_EMAIL","to":"ana@firma.ro","subject":"Doc","body":"Vezi atasament.","attach_pending":"true"}]}
 Citeste email: {"actions":[{"type":"READ_EMAIL"}]}
 Apel: {"actions":[{"type":"CALL","contact":"Tata"}]}
 Notita noua: {"actions":[{"type":"WRITE_NOTE","title":"Cumparaturi","content":"Lapte, oua, paine"}]}
@@ -202,8 +206,10 @@ Cauta SI trimite imagine in acelasi mesaj: {"actions":[{"type":"GALLERY_SEARCH",
 Trimite a doua imagine gasita: {"actions":[{"type":"SEND_IMAGE","app":"whatsapp","contact":"Mama","use_gallery_result":"1"}]}
 Trimite imagine Telegram: {"actions":[{"type":"SEND_IMAGE","app":"telegram","contact":"Ion","image_id":"789012"}]}
 Trimite fisier de pe telefon: {"actions":[{"type":"FORWARD_FILE","app":"whatsapp","contact":"Seful","query":"contract"}]}
-Creeaza/modifica fisier si trimite: {"actions":[{"type":"CREATE_FORWARD_FILE","app":"email","contact":"sefu@firma.ro","filename":"lista.txt","new_content":"Lapte\nOua\nPaine"}]}
+Trimite fisier prin email (de pe telefon): {"actions":[{"type":"FORWARD_FILE","app":"email","contact":"sefu@firma.ro","query":"contract","subject":"Contract","body":"Atasat contractul semnat."}]}
+Creeaza/modifica fisier si trimite: {"actions":[{"type":"CREATE_FORWARD_FILE","app":"email","contact":"sefu@firma.ro","filename":"lista.txt","new_content":"Lapte\nOua\nPaine","subject":"Lista","body":"Vezi atasamentul."}]}
 Trimite fisier atasat via buton: {"actions":[{"type":"SEND_FILE","app":"whatsapp","contact":"Ana"}]}
+Trimite fisier atasat via email: {"actions":[{"type":"SEND_FILE","app":"email","contact":"ana@gmail.com","subject":"Doc","body":"Vezi atasament."}]}
 Editeaza fisier atasat via buton: {"actions":[{"type":"EDIT_FILE","new_content":"continut complet nou"}]}
 Raspunde la ultima notificare (reply rapid, NU deschide app): {"actions":[{"type":"REPLY_NOTIFICATION","message":"Vin in 10 minute"}]}
 Raspunde la mesaj WhatsApp de la un contact anume: {"actions":[{"type":"REPLY_NOTIFICATION","app":"whatsapp","contact":"Ana","message":"Ok, multumesc"}]}
@@ -245,12 +251,20 @@ REGULI IMPORTANTE:
   * Utilizator spune "trimite poza" si exista imagini gasite in [Rezultate:] din conversatia anterioara → image_id=[ID-ul din acel rezultat]
   * Cauta SI trimite in ACELASI mesaj → GALLERY_SEARCH urmat de SEND_IMAGE cu use_gallery_result="0"
 - Imagini/fisiere: verifica intai daca e atasat ceva (=== Fisier atasat: === sau imagine) inainte sa cauti.
-- Fisiere — TREI actiuni distincte, nu le confunda:
-  * SEND_FILE: trimite fisierul ATASAT DE UTILIZATOR via butonul de atasare (iconita clip) — foloseste cand utilizatorul a atasat ceva si cere sa-l trimita
-  * FORWARD_FILE: cauta un fisier dupa NUME pe telefonul utilizatorului si il trimite — pentru "trimite CV-ul meu", "trimite contractul lui X", etc., cand nu e atasat nimic
-  * EDIT_FILE: scrie continut nou in fisierul ATASAT — foloseste cand utilizatorul cere sa modifice fisierul atasat
+- Fisiere — patru actiuni + email cu atasament, nu le confunda:
+  * SEND_FILE: trimite fisierul ATASAT DE UTILIZATOR via butonul de atasare (iconita clip)
+  * FORWARD_FILE: cauta un fisier dupa NUME pe telefonul utilizatorului si il trimite (caut in Downloads, Documents, WhatsApp Documents/Images/Video, Telegram, Signal, etc.)
+  * EDIT_FILE: scrie continut nou in fisierul ATASAT
   * CREATE_FORWARD_FILE: creeaza versiune modificata a unui fisier gasit pe telefon si o trimite
+  * SEND_EMAIL cu attachment_query: trimite email cu un fisier de pe telefon (echivalent FORWARD_FILE app=email, dar mai natural pentru email pur)
+  * SEND_EMAIL cu attach_pending=true: trimite email cu fisierul atasat (clip)
   * file_query in LUMI_REQUEST: citeste continutul unui fisier de pe telefon (PDF, txt, docx) ca context — foloseste cand trebuie sa CITESTI/REZUMI un fisier, nu sa-l trimiti
+- Pentru email cu atasament: prefera `SEND_EMAIL` cu `attachment_query` sau `attach_pending` in loc de `FORWARD_FILE app=email` cand utilizatorul cere clar un email (cu subiect/corp).
+- FLUX TIPIC ("ia fisierul X de pe WhatsApp, modifica-l si trimite-l pe email"): un singur mesaj, doua actiuni —
+  1. {"type":"CREATE_FORWARD_FILE","app":"email","contact":"...","filename":"...","new_content":"...","subject":"...","body":"..."}
+  Sau, daca nu trebuie modificat: {"type":"SEND_EMAIL","to":"...","subject":"...","body":"...","attachment_query":"nume fisier"}
+  Aplicatia cauta automat fisierul in Downloads + WhatsApp + Telegram + alte directoare de mesagerie.
+- Daca o aplicatie tinta lipseste, sistemul deschide automat un selector "Trimite via" — utilizatorul alege ce app vrea (Gmail/Outlook/etc.) si fisierul se ataseaza la fel.
 - Nu trimite imagini sau fisiere fara confirmare explicita din partea utilizatorului.
 - Timere — "al doilea timer", "primul", "ultimul": foloseste "index" (1-based) dupa ce ai vazut lista din "timers":true. Daca utilizatorul spune doar "opreste timerul" si exista unul singur activ, trimite actiunea fara name/index — se va rezolva automat.
 - Notite — dupa notes:true sau notes_query, fiecare notita incepe cu "ID:XXXXX". Pentru WRITE_NOTE (editare) sau DELETE_NOTE foloseste EXACT acel ID. Poti folosi si "title" ca fallback daca nu exista ID in context.
@@ -329,7 +343,11 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         expertWordLimit: Int = 95,
         forceExpert: Boolean = false,
         fileContext: String? = null,
-        fileUri: Uri? = null
+        fileUri: Uri? = null,
+        /** When non-null, visible-text deltas of the FINAL response are emitted here. */
+        onVisibleChunk: ((String) -> Unit)? = null,
+        /** Called between the data-request call and the final call, so the UI can clear stream-1 text. */
+        onStreamReset: (() -> Unit)? = null
     ): RouteResult {
         val history = memory.toGeminiContents()
         val fastModel = settings.fastModel
@@ -350,32 +368,41 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         // Prepend file context to user prompt so the AI can read it
         val effectivePrompt = if (fileContext != null) "$fileContext\n\n$userPrompt" else userPrompt
 
+        // First call always streams (when enabled). If a data request comes back, we'll
+        // reset the UI buffer and stream a second call with the real reply.
         var firstResponse = client.generate(
             prompt = effectivePrompt, imageBase64 = imageBase64,
-            model = model, history = history, systemInstruction = sysPrompt
+            model = model, history = history, systemInstruction = sysPrompt,
+            onVisibleChunk = onVisibleChunk
         )
         var parsed = ActionParser.parse(firstResponse.text)
 
         if (parsed.dataRequest != null) {
+            onStreamReset?.invoke()
             val dataContext = buildDataContext(parsed.dataRequest!!)
             val enrichedPrompt = "$effectivePrompt\n\n[Datele cerute:]\n$dataContext"
             firstResponse = client.generate(
                 prompt = enrichedPrompt, imageBase64 = imageBase64,
-                model = model, history = history, systemInstruction = sysPrompt
+                model = model, history = history, systemInstruction = sysPrompt,
+                onVisibleChunk = onVisibleChunk
             )
             parsed = ActionParser.parse(firstResponse.text)
         }
 
         val cleanParsed = parsed.copy(displayText = stripMarkdown(parsed.displayText))
 
-        val actionResults = if (settings.actionModeEnabled && cleanParsed.actions.isNotEmpty()) {
-            executor?.executeAll(cleanParsed.actions, imageBase64, fileUri) ?: emptyList()
+        // Validate before executing — drop malformed actions, surface the issues to the user.
+        val report = ActionValidator.validate(cleanParsed.actions)
+        val safeActions = report.valid
+
+        val actionResults = if (settings.actionModeEnabled && safeActions.isNotEmpty()) {
+            executor?.executeAll(safeActions, imageBase64, fileUri) ?: emptyList()
         } else emptyList()
 
         val galleryIds = actionResults.flatMap { it.galleryImageIds ?: emptyList() }
             .takeIf { it.isNotEmpty() } ?: lastGalleryIds?.takeIf { it.isNotEmpty() }
         lastGalleryIds = null  // reset for next call
-        return RouteResult(firstResponse, cleanParsed, useExpert, actionResults, galleryIds)
+        return RouteResult(firstResponse, cleanParsed, useExpert, actionResults, galleryIds, report.issues)
     }
 
     // ─── Markdown stripper ───────────────────────────────────────────────────

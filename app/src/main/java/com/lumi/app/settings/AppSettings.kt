@@ -22,6 +22,7 @@ class AppSettings(context: Context) {
         const val KEY_ACTION_MODE         = "action_mode"
         const val KEY_AUTONOMOUS_MODE     = "autonomous_mode"
         const val KEY_TTS_SPEED           = "tts_speed"
+        const val KEY_STREAMING           = "streaming_enabled"
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
@@ -98,6 +99,11 @@ Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
     var autonomousMode: Boolean
         get() = prefs.getBoolean(KEY_AUTONOMOUS_MODE, false) && actionModeEnabled
         set(v) = prefs.edit().putBoolean(KEY_AUTONOMOUS_MODE, v).apply()
+
+    /** Stream AI tokens to the chat UI as they arrive (only the visible reply, not the action JSON). */
+    var streamingEnabled: Boolean
+        get() = prefs.getBoolean(KEY_STREAMING, false)
+        set(v) = prefs.edit().putBoolean(KEY_STREAMING, v).apply()
 
     fun hasApiKey() = openRouterApiKey.isNotBlank()
     fun hasBtDevice() = btDeviceAddress.isNotBlank()

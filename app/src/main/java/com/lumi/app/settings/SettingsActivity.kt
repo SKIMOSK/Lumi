@@ -70,6 +70,7 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.etSystemPrompt.setText(settings.systemPrompt)
         binding.switchAutoConnect.isChecked = settings.autoConnect
+        binding.switchStreaming.isChecked = settings.streamingEnabled
 
         binding.tvBtDevice.text = if (settings.hasBtDevice())
             "${settings.btDeviceName} (${settings.btDeviceAddress})"
@@ -156,6 +157,7 @@ class SettingsActivity : AppCompatActivity() {
         settings.memorySizeHistory = binding.seekBarMemory.progress
         settings.systemPrompt = binding.etSystemPrompt.text?.toString() ?: AppSettings.DEFAULT_SYSTEM_PROMPT
         settings.autoConnect = binding.switchAutoConnect.isChecked
+        settings.streamingEnabled = binding.switchStreaming.isChecked
 
         val selectedDevice = binding.spinnerBtDevices.selectedItem as? BluetoothDeviceItem
         if (selectedDevice != null) {

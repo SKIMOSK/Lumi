@@ -25,11 +25,16 @@ class GeminiClient(
 
     private val http = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS) // longer for streaming
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
     private val gson = Gson()
+
+    companion object {
+        // Longest marker is 18 chars; hold back 20 so a partial marker cannot leak through
+        private const val MARKER_HOLDBACK = 20
+    }
 
     fun updateConfig(key: String, url: String = "https://openrouter.ai/api/v1") {
         apiKey = key
@@ -42,7 +47,9 @@ class GeminiClient(
         model: String,
         history: List<Map<String, Any>> = emptyList(),
         systemInstruction: String? = null,
-        temperature: Double = 0.7
+        temperature: Double = 0.7,
+        /** When non-null, request a streaming response and emit visible-text deltas (excluding action JSON). */
+        onVisibleChunk: ((String) -> Unit)? = null
     ): GeminiResponse = withContext(Dispatchers.IO) {
 
         val messages = mutableListOf<Map<String, Any>>()
@@ -72,12 +79,14 @@ class GeminiClient(
         }
         messages.add(mapOf("role" to "user", "content" to currentContent))
 
-        val requestMap = mapOf(
+        val streaming = onVisibleChunk != null
+        val requestMap = mutableMapOf<String, Any>(
             "model" to model,
             "messages" to messages,
             "temperature" to temperature,
             "max_tokens" to 2048
         )
+        if (streaming) requestMap["stream"] = true
 
         val url = "$baseUrl/chat/completions"
         val body = gson.toJson(requestMap).toRequestBody("application/json".toMediaType())
@@ -86,14 +95,102 @@ class GeminiClient(
             .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("HTTP-Referer", "https://github.com/skimosk/lumi")
             .addHeader("X-Title", "Lumi")
+            .apply { if (streaming) addHeader("Accept", "text/event-stream") }
             .post(body)
             .build()
+
+        if (streaming) {
+            return@withContext readStream(request, model, onVisibleChunk!!)
+        }
 
         http.newCall(request).execute().use { response ->
             val bodyStr = response.body?.string() ?: throw Exception("Empty response body")
             if (!response.isSuccessful) throw Exception("OpenRouter ${response.code}: ${parseError(bodyStr)}")
             parseResponse(bodyStr, model)
         }
+    }
+
+    /**
+     * Reads a Server-Sent-Events stream from OpenRouter and emits user-visible
+     * deltas (text *before* the first action / data-request marker) via [onVisibleChunk].
+     * Returns the full accumulated response — including any action JSON tail —
+     * so the caller can still parse it the same way as a non-streaming response.
+     */
+    private fun readStream(
+        request: Request,
+        model: String,
+        onVisibleChunk: (String) -> Unit
+    ): GeminiResponse {
+        val full = StringBuilder()
+        var emittedUpTo = 0           // index in `full` already pushed to UI
+        var stoppedEmitting = false   // true once we hit a marker; tail is action JSON
+        var promptTokens = 0
+        var outputTokens = 0
+
+        http.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val errBody = response.body?.string() ?: ""
+                throw Exception("OpenRouter ${response.code}: ${parseError(errBody)}")
+            }
+            val source = response.body?.source() ?: throw Exception("Empty stream body")
+            while (!source.exhausted()) {
+                val line = source.readUtf8Line() ?: break
+                if (!line.startsWith("data:")) continue
+                val payload = line.removePrefix("data:").trim()
+                if (payload.isEmpty() || payload == "[DONE]") continue
+
+                val delta = try {
+                    val obj = JsonParser.parseString(payload).asJsonObject
+                    obj["usage"]?.asJsonObject?.let {
+                        promptTokens = it["prompt_tokens"]?.asInt ?: promptTokens
+                        outputTokens = it["completion_tokens"]?.asInt ?: outputTokens
+                    }
+                    obj["choices"]?.asJsonArray?.get(0)?.asJsonObject
+                        ?.get("delta")?.asJsonObject
+                        ?.get("content")?.takeIf { !it.isJsonNull }?.asString
+                } catch (_: Exception) { null } ?: continue
+
+                full.append(delta)
+
+                if (!stoppedEmitting) {
+                    val markerIdx = findMarkerStart(full)
+                    val visibleEnd = if (markerIdx >= 0) {
+                        stoppedEmitting = true
+                        markerIdx
+                    } else {
+                        // Hold back enough characters that a partial marker can't slip out.
+                        (full.length - MARKER_HOLDBACK).coerceAtLeast(emittedUpTo)
+                    }
+                    if (visibleEnd > emittedUpTo) {
+                        onVisibleChunk(full.substring(emittedUpTo, visibleEnd))
+                        emittedUpTo = visibleEnd
+                    }
+                }
+            }
+        }
+        // If the stream ended cleanly without ever hitting a marker, flush whatever's left.
+        if (!stoppedEmitting && emittedUpTo < full.length) {
+            onVisibleChunk(full.substring(emittedUpTo, full.length))
+        }
+        return GeminiResponse(full.toString(), model, promptTokens, outputTokens)
+    }
+
+    /** Returns the start index of the earliest action / data-request marker, or -1. */
+    private fun findMarkerStart(buf: CharSequence): Int {
+        val a = indexOfMarker(buf, "___LUMI_ACTIONS___")
+        val r = indexOfMarker(buf, "___LUMI_REQUEST___")
+        return when {
+            a < 0 -> r
+            r < 0 -> a
+            else -> minOf(a, r)
+        }
+    }
+
+    private fun indexOfMarker(buf: CharSequence, marker: String): Int {
+        // Plain substring search; CharSequence.indexOf isn't on String only here.
+        val s = buf.toString()
+        val idx = s.indexOf(marker)
+        return idx
     }
 
     private fun geminiPartsToContent(parts: List<Map<String, Any>>): Any {

@@ -259,25 +259,58 @@ class ActionExecutor(
     private suspend fun sendEmail(a: LumiAction): Result {
         val toParam  = a.params["to"] ?: a.params["contact"] ?: return Result(a, false, "Destinatar lipsa.")
         val subject  = a.params["subject"] ?: ""
-        val body     = a.params["body"] ?: a.params["message"] ?: return Result(a, false, "Continut lipsa.")
+        val body     = a.params["body"] ?: a.params["message"] ?: ""
+        val attachQuery   = a.params["attachment_query"]
+        val attachPending = a.params["attach_pending"]?.lowercase() == "true"
         // Resolve email address: use raw if it contains @, otherwise look up contact
         val to = if (toParam.contains("@")) toParam else {
             contacts.findBestMatch(toParam)?.emails?.firstOrNull() ?: toParam
         }
-        if (!consent.request("Trimit email la $to: \"$subject\". Confirmi?", getMode()))
-            return Result(a, false, "Anulat.")
-        return when (messenger.composeEmail(to, subject, body)) {
-            is SendResult.DeepLinkOpened -> {
-                if (LumiAccessibilityService.isAvailable()) {
-                    delay(2500)
-                    LumiAccessibilityService.sendGmailAfterCompose()
-                    Result(a, true, "Email trimis la $to.")
-                } else {
-                    Result(a, true, "Email deschis. Apasa Trimite.")
+
+        // Attachment branch — find or use pending file, then ACTION_SEND
+        val attachUri: Uri? = when {
+            attachPending && currentFileUri != null -> currentFileUri
+            !attachQuery.isNullOrBlank() -> {
+                val f = documentHelper.findRecentFile(attachQuery)
+                    ?: return Result(a, false, "Fisierul \"$attachQuery\" nu a fost gasit pe telefon.")
+                try {
+                    FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", f)
+                } catch (e: Exception) {
+                    return Result(a, false, "Nu am putut atasa fisierul: ${e.message}")
                 }
             }
-            is SendResult.Error -> Result(a, false, "Nu s-a putut deschide emailul.")
-            else -> Result(a, true, "Email deschis.")
+            else -> null
+        }
+
+        val descSubject = subject.ifBlank { "(fara subiect)" }
+        val attachInfo = if (attachUri != null) " cu atasament" else ""
+        if (!consent.request("Trimit email la $to: \"$descSubject\"$attachInfo. Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+
+        // Plain email — use existing mailto path
+        if (attachUri == null) {
+            if (body.isBlank()) return Result(a, false, "Continut email lipsa.")
+            return when (messenger.composeEmail(to, subject, body)) {
+                is SendResult.DeepLinkOpened -> {
+                    if (LumiAccessibilityService.isAvailable()) {
+                        delay(2500)
+                        LumiAccessibilityService.sendGmailAfterCompose()
+                        Result(a, true, "Email trimis la $to.")
+                    } else Result(a, true, "Email deschis. Apasa Trimite.")
+                }
+                is SendResult.Error -> Result(a, false, "Nu s-a putut deschide emailul.")
+                else -> Result(a, true, "Email deschis.")
+            }
+        }
+
+        // Email with attachment — share document, prefer Gmail then chooser
+        val r = messenger.shareDocumentToApp(
+            fileUri = attachUri, pkg = "com.google.android.gm",
+            appName = "Gmail", subject = subject, body = body, emailTo = to
+        )
+        return when (r) {
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> Result(a, true, "Email pregatit catre $to cu atasament. Apasa Trimite.")
         }
     }
 
@@ -938,6 +971,16 @@ class ActionExecutor(
             return Result(a, false, "Anulat.")
 
         val contact = contacts.findBestMatch(cName)
+        val subject = a.params["subject"]
+        val body    = a.params["body"] ?: a.params["message"]
+        val isEmail = app.contains("email") || app.contains("gmail") || app.contains("outlook")
+        // For email destinations, resolve the email address from contact name if needed
+        val emailTo = if (isEmail) {
+            if (cName.contains("@")) cName
+            else contact?.emails?.firstOrNull()
+        } else null
+        if (isEmail && emailTo == null)
+            return Result(a, false, "Nu am gasit adresa de email pentru $cName.")
 
         val pkg = when {
             app.contains("whatsapp") -> "com.whatsapp"
@@ -949,7 +992,10 @@ class ActionExecutor(
             else -> null
         }
 
-        val result = messenger.shareDocumentToApp(uri, pkg, appLabel)
+        val result = messenger.shareDocumentToApp(
+            fileUri = uri, pkg = pkg, appName = appLabel,
+            subject = subject, body = body, emailTo = emailTo
+        )
 
         return when (result) {
             is SendResult.Error -> Result(a, false, result.reason)
@@ -958,7 +1004,8 @@ class ActionExecutor(
                     delay(3500)
                     LumiAccessibilityService.tapWhatsAppShareContact(contact.name)
                 }
-                Result(a, true, "Fisier pregatit pentru trimitere pe $appLabel. Finalizeaza manual daca e nevoie.")
+                if (isEmail) Result(a, true, "Email cu atasament pregatit catre ${emailTo ?: cName}. Apasa Trimite.")
+                else Result(a, true, "Fisier pregatit pentru trimitere pe $appLabel. Finalizeaza manual daca e nevoie.")
             }
         }
     }
@@ -971,32 +1018,44 @@ class ActionExecutor(
         val app     = a.params["app"]?.lowercase() ?: "whatsapp"
         val cName   = a.params["contact"]
         val name    = fileHelper.getDisplayName(uri)
+        val subject = a.params["subject"]
+        val body    = a.params["body"] ?: a.params["message"]
         val appLabel = when {
             app.contains("telegram")  -> "Telegram"
             app.contains("instagram") -> "Instagram"
+            app.contains("email") || app.contains("gmail") -> "Gmail"
+            app.contains("outlook") -> "Outlook"
+            app.contains("discord") -> "Discord"
+            app.contains("slack")   -> "Slack"
             else -> "WhatsApp"
         }
         val contactInfo = if (cName != null) " lui $cName" else ""
         if (!consent.request("Trimit fisierul \"$name\" pe $appLabel$contactInfo. Confirmi?", getMode()))
             return Result(a, false, "Anulat.")
 
-        val pkg = when {
-            app.contains("telegram")  -> "org.telegram.messenger"
-            app.contains("instagram") -> "com.instagram.android"
-            else -> MessageSender.WHATSAPP_PACKAGE
+        val isEmail = appLabel == "Gmail" || appLabel == "Outlook"
+        val emailTo = if (isEmail && cName != null) {
+            if (cName.contains("@")) cName
+            else contacts.findBestMatch(cName)?.emails?.firstOrNull()
+        } else null
+
+        val pkg = when (appLabel) {
+            "Telegram"  -> "org.telegram.messenger"
+            "Instagram" -> "com.instagram.android"
+            "Gmail"     -> "com.google.android.gm"
+            "Outlook"   -> "com.microsoft.office.outlook"
+            "Discord"   -> "com.discord"
+            "Slack"     -> "com.Slack"
+            else        -> MessageSender.WHATSAPP_PACKAGE
         }
-        val mime = fileHelper.getMimeType(uri)
-        return try {
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = mime
-                putExtra(Intent.EXTRA_STREAM, uri)
-                setPackage(pkg)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
-            Result(a, true, "Fisierul \"$name\" deschis in $appLabel$contactInfo.")
-        } catch (e: Exception) {
-            Result(a, false, "Nu s-a putut deschide $appLabel: ${e.message}")
+
+        val r = messenger.shareDocumentToApp(
+            fileUri = uri, pkg = pkg, appName = appLabel,
+            subject = subject, body = body, emailTo = emailTo
+        )
+        return when (r) {
+            is SendResult.Error -> Result(a, false, r.reason)
+            else -> Result(a, true, "Fisierul \"$name\" deschis in $appLabel$contactInfo.")
         }
     }
 

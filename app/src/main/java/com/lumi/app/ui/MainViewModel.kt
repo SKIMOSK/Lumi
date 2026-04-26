@@ -267,17 +267,54 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     }
                 }
 
+                // Streaming: replace the loading placeholder with a non-loading bubble
+                // and append visible deltas as they arrive.
+                val streamingBuf = StringBuilder()
+                fun pushStreamUpdate() {
+                    val snapshot = streamingBuf.toString().ifBlank { "…" }
+                    viewModelScope.launch(Dispatchers.Main) {
+                        val idx = messageList.indexOfFirst { it.id == loading.id }
+                        if (idx >= 0) {
+                            messageList[idx] = ChatMessage(
+                                text = snapshot, time = loading.time,
+                                isUser = false, isLoading = snapshot == "…", id = loading.id
+                            )
+                            _messages.value = messageList.toList()
+                        }
+                    }
+                }
+                val streamCallback: ((String) -> Unit)? = if (settings.streamingEnabled) {
+                    { delta -> streamingBuf.append(delta); pushStreamUpdate() }
+                } else null
+                val streamReset: (() -> Unit)? = if (settings.streamingEnabled) {
+                    { streamingBuf.clear(); pushStreamUpdate() }
+                } else null
+
                 val result = buildRouter().route(
                     userText, imageBase64, memory,
                     fastWordLimit = 45, expertWordLimit = expertLimit, forceExpert = wantsDetail,
-                    fileContext = fileContext, fileUri = attachedFileUri
+                    fileContext = fileContext, fileUri = attachedFileUri,
+                    onVisibleChunk = streamCallback,
+                    onStreamReset = streamReset
                 )
                 val displayText = result.parsed.displayText
-                val actionSuffix = if (result.actionResults.isNotEmpty()) {
-                    "\n\n" + result.actionResults.joinToString("\n") { r ->
-                        if (r.success) "OK: ${r.message}" else "Eroare: ${r.message}"
+                val actionSuffix = buildString {
+                    if (result.actionResults.isNotEmpty()) {
+                        append("\n\n")
+                        append(result.actionResults.joinToString("\n") { r ->
+                            if (r.success) "OK: ${r.message}" else "Eroare: ${r.message}"
+                        })
                     }
-                } else ""
+                    val errors = result.validationIssues.filter {
+                        it.severity == com.lumi.app.actions.ActionValidator.Severity.ERROR
+                    }
+                    if (errors.isNotEmpty()) {
+                        append("\n\n")
+                        append(errors.joinToString("\n") { i ->
+                            "Validare: actiunea ${i.action.type} respinsa — ${i.reason}"
+                        })
+                    }
+                }
 
                 val lumiMsg = ChatMessage(text = displayText + actionSuffix,
                     time = now(), isUser = false, usedPro = result.usedExpert,
