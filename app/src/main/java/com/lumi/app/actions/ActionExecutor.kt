@@ -60,6 +60,21 @@ class ActionExecutor(
         return actions.map { runCatching { execute(it) }.getOrElse { e -> Result(it, false, "Eroare: ${e.message}") } }
     }
 
+    /**
+     * Retry an accessibility-driven flow with exponential backoff. The whole flow
+     * (e.g. tap-send) is retried up to [attempts] times — by then either the UI has
+     * loaded enough for the click to land, or it never will (manual fallback wins).
+     */
+    private suspend fun retryAccessibility(attempts: Int = 3, initialDelayMs: Long = 250L, block: () -> Boolean): Boolean {
+        var delayMs = initialDelayMs
+        repeat(attempts) {
+            if (block()) return true
+            delay(delayMs)
+            delayMs *= 2
+        }
+        return false
+    }
+
     private suspend fun execute(a: LumiAction): Result = when (a.type.uppercase()) {
         "SET_TIMER"       -> setTimer(a)
         "SET_STOPWATCH"   -> setStopwatch(a)
@@ -202,8 +217,10 @@ class ActionExecutor(
             is SendResult.SentSilently -> Result(a, true, "Mesaj trimis lui ${contact.name}.")
             is SendResult.DeepLinkOpened -> {
                 if (LumiAccessibilityService.isAvailable()) {
-                    delay(3500)
-                    val sent = LumiAccessibilityService.sendCurrentMessage(msg)
+                    delay(2500)
+                    val sent = retryAccessibility(attempts = 2, initialDelayMs = 1500) {
+                        LumiAccessibilityService.sendCurrentMessage(msg)
+                    }
                     if (sent) Result(a, true, "Mesaj trimis lui ${contact.name}.")
                     else Result(a, true, "WhatsApp deschis. Apasa Trimite manual daca nu s-a trimis.")
                 } else {
@@ -247,8 +264,10 @@ class ActionExecutor(
         }
         if (openResult is SendResult.Error) return Result(a, false, openResult.reason)
         return if (LumiAccessibilityService.isAvailable()) {
-            delay(4000)
-            val sent = LumiAccessibilityService.sendSocialMessage(pkg, username, msg)
+            delay(3000)
+            val sent = retryAccessibility(attempts = 2, initialDelayMs = 1500) {
+                LumiAccessibilityService.sendSocialMessage(pkg, username, msg)
+            }
             if (sent) Result(a, true, "Mesaj trimis pe $displayName lui $username.")
             else Result(a, true, "$displayName deschis. Daca nu s-a trimis, apasa Send manual.")
         } else {
@@ -292,10 +311,13 @@ class ActionExecutor(
             if (body.isBlank()) return Result(a, false, "Continut email lipsa.")
             return when (messenger.composeEmail(to, subject, body)) {
                 is SendResult.DeepLinkOpened -> {
-                    if (LumiAccessibilityService.isAvailable()) {
-                        delay(2500)
-                        LumiAccessibilityService.sendGmailAfterCompose()
-                        Result(a, true, "Email trimis la $to.")
+                    if (LumiAccessibilityService.isAvailable() && appSettings?.autonomousMode == true) {
+                        delay(2000)
+                        val sent = retryAccessibility(attempts = 2, initialDelayMs = 1500) {
+                            LumiAccessibilityService.sendGmailAfterCompose()
+                        }
+                        if (sent) Result(a, true, "Email trimis la $to.")
+                        else Result(a, true, "Email deschis. Apasa Trimite.")
                     } else Result(a, true, "Email deschis. Apasa Trimite.")
                 }
                 is SendResult.Error -> Result(a, false, "Nu s-a putut deschide emailul.")
@@ -405,8 +427,10 @@ class ActionExecutor(
             is SendResult.Error -> Result(a, false, r.reason)
             else -> {
                 if (LumiAccessibilityService.isAvailable()) {
-                    delay(3000)
-                    val toggled = LumiAccessibilityService.tapVpnConnect(pkg, connect)
+                    delay(2500)
+                    val toggled = retryAccessibility(attempts = 2, initialDelayMs = 1500) {
+                        LumiAccessibilityService.tapVpnConnect(pkg, connect)
+                    }
                     if (toggled) Result(a, true, "VPN ${if (connect) "conectat" else "deconectat"}.")
                     else Result(a, true, "Aplicatia VPN deschisa. Apasa ${if (connect) "Connect" else "Disconnect"} manual.")
                 } else {
@@ -657,8 +681,10 @@ class ActionExecutor(
         return when (val r = messenger.sendTelegram(contact, msg)) {
             is SendResult.DeepLinkOpened -> {
                 if (LumiAccessibilityService.isAvailable()) {
-                    delay(3000)
-                    val sent = LumiAccessibilityService.sendSocialMessage("org.telegram.messenger", contact.name, msg)
+                    delay(2500)
+                    val sent = retryAccessibility(attempts = 2, initialDelayMs = 1500) {
+                        LumiAccessibilityService.sendSocialMessage("org.telegram.messenger", contact.name, msg)
+                    }
                     if (sent) Result(a, true, "Mesaj Telegram trimis lui ${contact.name}.")
                     else Result(a, true, "Telegram deschis cu mesajul pre-completat. Apasa Trimite.")
                 } else {
@@ -682,8 +708,10 @@ class ActionExecutor(
             is SendResult.Error -> Result(a, false, r.reason)
             else -> {
                 if (LumiAccessibilityService.isAvailable()) {
-                    delay(3000)
-                    val sent = LumiAccessibilityService.sendSocialMessage("com.Slack", target, msg)
+                    delay(2500)
+                    val sent = retryAccessibility(attempts = 2, initialDelayMs = 1500) {
+                        LumiAccessibilityService.sendSocialMessage("com.Slack", target, msg)
+                    }
                     if (sent) Result(a, true, "Mesaj Slack trimis in $target.")
                     else Result(a, true, "Slack deschis. Apasa Trimite.")
                 } else {
@@ -922,9 +950,10 @@ class ActionExecutor(
             else -> {
                 if (!app.contains("instagram") && !app.contains("telegram") &&
                     contact != null && LumiAccessibilityService.isAvailable()) {
-                    delay(3500)
-                    
-                    val sent = LumiAccessibilityService.tapWhatsAppImageSend()
+                    delay(2500)
+                    val sent = retryAccessibility(attempts = 2, initialDelayMs = 1500) {
+                        LumiAccessibilityService.tapWhatsAppImageSend()
+                    }
                     if (sent) Result(a, true, "Imagine trimisa pe $appLabel$contactInfo.")
                     else Result(a, true, "$appLabel deschis cu imaginea. Apasa Trimite manual.")
                 } else {
@@ -1001,8 +1030,10 @@ class ActionExecutor(
             is SendResult.Error -> Result(a, false, result.reason)
             else -> {
                 if (pkg == "com.whatsapp" && contact != null && LumiAccessibilityService.isAvailable()) {
-                    delay(3500)
-                    LumiAccessibilityService.tapWhatsAppShareContact(contact.name)
+                    delay(2500)
+                    retryAccessibility(attempts = 2, initialDelayMs = 1500) {
+                        LumiAccessibilityService.tapWhatsAppShareContact(contact.name)
+                    }
                 }
                 if (isEmail) Result(a, true, "Email cu atasament pregatit catre ${emailTo ?: cName}. Apasa Trimite.")
                 else Result(a, true, "Fisier pregatit pentru trimitere pe $appLabel. Finalizeaza manual daca e nevoie.")

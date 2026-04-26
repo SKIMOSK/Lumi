@@ -275,6 +275,14 @@ REGULI IMPORTANTE:
   * Daca vrei sa raspunzi dar notificarea nu e [replyable], foloseste SEND_WHATSAPP/SEND_TELEGRAM ca fallback
   * Parametrul "contact" filtreaza dupa numele din titlul notificarii (optional)
 - Referinte din turul anterior: dupa ce ai executat actiuni, rezultatele apar in istoria conversatiei sub "[Rezultate:]". Foloseste ID-urile (notite, imagini, evenimente) din acele rezultate cand utilizatorul spune "trimite-o", "sterge-l", "editeaza asta".
+- Auto-corectare din feedback: in [Rezultate:] poti vedea linii care incep cu "FAILED ACTION_TIP:" (actiunea s-a executat dar nu a reusit) sau "INVALID ACTION_TIP:" (actiunea a fost respinsa de validator). Cand vezi acestea:
+  * INVALID + lipsa parametru → cere utilizatorului informatia lipsa SAU re-emite actiunea cu parametrii corecti
+  * INVALID + tip gresit → corecteaza formatul (ex: "duration_seconds" trebuie sa fie integer string ca "300", nu "5 minute")
+  * FAILED "Contactul X negasit" → cere DataRequest contacts:["X"] in turul urmator si reincearca cu numele exact gasit
+  * FAILED "Fisierul X nu a fost gasit" → intreaba utilizatorul unde e fisierul SAU cere file_query mai larg (ex: doar prenumele documentului)
+  * FAILED "Anulat" → utilizatorul a refuzat — NU reincerca; intreaba ce sa facem in schimb
+  * FAILED app nu instalata → sugereaza alternativa (ex: WhatsApp lipsa → ofera SMS sau email)
+  * NU repeta orbeste o actiune care a esuat de acelasi mod; schimba abordarea sau cere clarificare.
 
 INTELEGE FORMULARILE NATURALE — mapeaza imediat fara sa ceri clarificari:
 Navigare:

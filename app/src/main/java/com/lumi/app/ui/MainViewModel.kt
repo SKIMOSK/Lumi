@@ -328,13 +328,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 saveChatHistory()
 
                 val aiAskedQuestion = displayText.trimEnd().endsWith("?")
-                // Include successful action results (gallery IDs, file names, etc.) in memory
-                // so the AI can reference them in the next turn (e.g. "send it to Ana")
-                val actionSummary = result.actionResults
+                // Feed the AI back what actually happened so it can self-correct on the next turn:
+                //   - Successful results (gallery IDs, file names): so it can say "send it"
+                //   - Failed action reasons: so it knows not to retry the same broken combo
+                //   - Validation errors: so it learns the schema (e.g. missing required field)
+                val successLines = result.actionResults
                     .filter { it.success }
                     .joinToString("\n") { it.message }
-                val memorizedText = if (actionSummary.isBlank()) displayText
-                                    else "$displayText\n\n[Rezultate:]\n$actionSummary"
+                val failureLines = result.actionResults
+                    .filter { !it.success }
+                    .joinToString("\n") { "FAILED ${it.action.type}: ${it.message}" }
+                val validationErrors = result.validationIssues
+                    .filter { it.severity == com.lumi.app.actions.ActionValidator.Severity.ERROR }
+                    .joinToString("\n") { "INVALID ${it.action.type}: ${it.reason}" }
+                val feedback = listOf(successLines, failureLines, validationErrors)
+                    .filter { it.isNotBlank() }.joinToString("\n")
+                val memorizedText = if (feedback.isBlank()) displayText
+                                    else "$displayText\n\n[Rezultate:]\n$feedback"
                 if (aiAskedQuestion) {
                     memory.addPending(Interaction(userText, memorizedText, imageBase64, result.usedExpert))
                 } else {

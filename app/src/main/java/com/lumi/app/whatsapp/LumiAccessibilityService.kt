@@ -104,8 +104,7 @@ class LumiAccessibilityService : AccessibilityService() {
     }
 
     private fun performSend(text: String): Boolean {
-        val root = rootInActiveWindow ?: return false
-        // Try every known input field ID across WhatsApp versions
+        // Wait for the chat input to actually appear (WhatsApp sometimes lags behind the deep-link)
         val inputIds = listOf(
             "com.whatsapp:id/entry",
             "com.whatsapp:id/input",
@@ -113,18 +112,21 @@ class LumiAccessibilityService : AccessibilityService() {
             "com.whatsapp:id/message_edit_text",
             "com.whatsapp:id/chat_input_field"
         )
-        val inputNode = nodeByIds(root, inputIds) ?: findEditText(root) ?: return false
-        setNodeText(inputNode, text)
-        Thread.sleep(400)
-        val root2 = rootInActiveWindow ?: return false
+        val inputNode = waitFor(2500) { root ->
+            nodeByIds(root, inputIds) ?: findEditText(root)
+        } ?: return false
+        if (!setNodeTextSafely(inputNode, text)) return false
+        // Wait for the Send button to enable after typing
         val sendIds = listOf(
             "com.whatsapp:id/send",
             "com.whatsapp:id/send_button",
             "com.whatsapp:id/compose_box_send_button"
         )
-        val sendNode = nodeByIds(root2, sendIds)
-            ?: nodeByDescs(root2, listOf("Send", "Trimite", "Trimiteţi", "Send message"))
-        return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+        val sendNode = waitFor(2000) { root ->
+            nodeByIds(root, sendIds)
+                ?: nodeByDescs(root, listOf("Send", "Trimite", "Trimiteţi", "Send message"))
+        } ?: return false
+        return clickWithRetry(sendNode)
     }
 
     // ─── Samsung Notes ────────────────────────────────────────────────────────
@@ -150,54 +152,52 @@ class LumiAccessibilityService : AccessibilityService() {
     // ─── Social media ─────────────────────────────────────────────────────────
 
     private fun performSocialSend(pkg: String, username: String, text: String): Boolean {
-        // Step 0: if the input field is already visible, skip the compose flow
-        val rootCheck = rootInActiveWindow
-        val directInput = rootCheck?.let { nodeByIds(it, socialInputIds(pkg)) ?: findEditText(it) }
+        // Step 0: if the input field is already visible (deep-link landed in chat), skip compose
+        val directInput = rootInActiveWindow?.let { nodeByIds(it, socialInputIds(pkg)) ?: findEditText(it) }
         if (directInput != null) {
-            setNodeText(directInput, text)
-            Thread.sleep(400)
-            val rootSend = rootInActiveWindow ?: return false
-            val sendNode = nodeByIds(rootSend, socialSendIds(pkg))
-                ?: nodeByDescs(rootSend, listOf("Send", "Trimite", "Send Message", "Envoyer"))
-            return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+            if (!setNodeTextSafely(directInput, text)) return false
+            val sendNode = waitFor(2000) { root ->
+                nodeByIds(root, socialSendIds(pkg))
+                    ?: nodeByDescs(root, listOf("Send", "Trimite", "Send Message", "Envoyer"))
+            } ?: return false
+            return clickWithRetry(sendNode)
         }
 
         // Step 1: tap compose / new-message button
-        val root = rootInActiveWindow ?: return false
-        val composeNode = nodeByIds(root, socialComposeIds(pkg))
-            ?: nodeByDescs(root, listOf("New message", "New Chat", "Write message",
-                "Direct", "Compose", "Mesaj nou", "Chat nou", "New DM"))
+        val composeNode = waitFor(2000) { root ->
+            nodeByIds(root, socialComposeIds(pkg))
+                ?: nodeByDescs(root, listOf("New message", "New Chat", "Write message",
+                    "Direct", "Compose", "Mesaj nou", "Chat nou", "New DM"))
+        }
         if (composeNode != null) {
-            composeNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            Thread.sleep(1200)
+            clickWithRetry(composeNode)
         }
 
         // Step 2: find search field and type username
-        val root2 = rootInActiveWindow ?: return false
-        val searchNode = nodeByIds(root2, socialSearchIds(pkg)) ?: findEditText(root2)
+        val searchNode = waitFor(2500) { root ->
+            nodeByIds(root, socialSearchIds(pkg)) ?: findEditText(root)
+        }
         if (searchNode != null) {
-            setNodeText(searchNode, username)
-            Thread.sleep(1800)
-            // Tap best matching result
-            val root3 = rootInActiveWindow ?: return false
-            val result = root3.findAccessibilityNodeInfosByText(username)
-                ?.firstOrNull { it.isClickable }
-                ?: firstClickableLeaf(root3)
-            result?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            Thread.sleep(1200)
+            setNodeTextSafely(searchNode, username)
+            // Wait for the result list to render
+            val resultNode = waitFor(3000) { root ->
+                root.findAccessibilityNodeInfosByText(username)?.firstOrNull { it.isClickable }
+                    ?: firstClickableLeaf(root)
+            }
+            resultNode?.let { clickWithRetry(it) }
         }
 
         // Step 3: find message input and send
-        val root4 = rootInActiveWindow ?: return false
-        val inputNode = nodeByIds(root4, socialInputIds(pkg)) ?: findEditText(root4) ?: return false
-        setNodeText(inputNode, text)
-        Thread.sleep(500)
+        val inputNode = waitFor(3000) { root ->
+            nodeByIds(root, socialInputIds(pkg)) ?: findEditText(root)
+        } ?: return false
+        if (!setNodeTextSafely(inputNode, text)) return false
 
-        val root5 = rootInActiveWindow ?: return false
-        val sendNode = nodeByIds(root5, socialSendIds(pkg))
-            ?: nodeByDescs(root5, listOf("Send", "Trimite", "Send Message", "Envoyer"))
-            ?: return false
-        return sendNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        val sendNode = waitFor(2000) { root ->
+            nodeByIds(root, socialSendIds(pkg))
+                ?: nodeByDescs(root, listOf("Send", "Trimite", "Send Message", "Envoyer"))
+        } ?: return false
+        return clickWithRetry(sendNode)
     }
 
     private fun socialComposeIds(pkg: String) = when (pkg) {
@@ -241,53 +241,49 @@ class LumiAccessibilityService : AccessibilityService() {
     // ─── VPN ──────────────────────────────────────────────────────────────────
 
     private fun performVpnToggle(connect: Boolean): Boolean {
-        val root = rootInActiveWindow ?: return false
         val connectLabels   = listOf("Connect", "Quick Connect", "Conecteaza", "Conectare",
             "Connect Now", "Turn On", "Enable", "Start VPN", "Activate")
         val disconnectLabels = listOf("Disconnect", "Deconecteaza", "Deconectare",
             "Turn Off", "Disable", "Stop VPN", "Deactivate")
         val labels = if (connect) connectLabels else disconnectLabels
-        // Text search (case-insensitive via API)
+        val target = waitFor(3500) { root ->
+            findVpnButton(root, labels)
+        } ?: rootInActiveWindow?.let { firstClickableLeaf(it) } ?: return false
+        return clickWithRetry(target)
+    }
+
+    private fun findVpnButton(root: AccessibilityNodeInfo, labels: List<String>): AccessibilityNodeInfo? {
         for (label in labels) {
-            root.findAccessibilityNodeInfosByText(label)
-                ?.firstOrNull { it.isClickable }
-                ?.let { if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true }
+            root.findAccessibilityNodeInfosByText(label)?.firstOrNull { it.isClickable }?.let { return it }
         }
-        // Content-description search
-        nodeByDescs(root, labels)?.let { if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true }
-        // Last resort: find any large central button (toggle) that's clickable
-        val centralBtn = firstClickableLeaf(root) ?: return false
-        return centralBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        return nodeByDescs(root, labels)
     }
 
     // ─── WhatsApp share picker ────────────────────────────────────────────────
 
     private fun performWhatsAppShareContact(contactName: String): Boolean {
-        val root = rootInActiveWindow ?: return false
-
-        // Search field in the "Send to" picker
+        // Wait for the "Send to" picker to load
         val searchIds = listOf(
             "com.whatsapp:id/search_bar",
             "com.whatsapp:id/search_input",
             "com.whatsapp:id/search_src_text",
             "com.whatsapp:id/query"
         )
-        val searchNode = nodeByIds(root, searchIds) ?: findEditText(root)
+        val searchNode = waitFor(2500) { root ->
+            nodeByIds(root, searchIds) ?: findEditText(root)
+        }
         if (searchNode != null) {
-            setNodeText(searchNode, contactName)
-            Thread.sleep(1600)
+            setNodeTextSafely(searchNode, contactName)
         }
 
-        // Tap the contact row
-        val root2 = rootInActiveWindow ?: return false
-        val contactNode = root2.findAccessibilityNodeInfosByText(contactName)
-            ?.firstOrNull { it.isClickable }
-            ?: firstClickableLeaf(root2)
-        contactNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        Thread.sleep(800)
+        // Wait for the contact row to render
+        val contactNode = waitFor(2500) { root ->
+            root.findAccessibilityNodeInfosByText(contactName)?.firstOrNull { it.isClickable }
+                ?: firstClickableLeaf(root)
+        } ?: return false
+        clickWithRetry(contactNode)
 
-        // Tap Send / OK / Forward button that appears after selecting a contact
-        val root3 = rootInActiveWindow ?: return false
+        // Wait for Send / OK / Forward button after contact selection
         val sendIds = listOf(
             "com.whatsapp:id/share_forward_btn",
             "com.whatsapp:id/send",
@@ -295,31 +291,36 @@ class LumiAccessibilityService : AccessibilityService() {
             "com.whatsapp:id/done",
             "com.whatsapp:id/forward"
         )
-        val sendNode = nodeByIds(root3, sendIds)
-            ?: nodeByDescs(root3, listOf("Send", "Trimite", "OK", "Forward", "Inainte", "Done"))
-        return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+        val sendNode = waitFor(2500) { root ->
+            nodeByIds(root, sendIds)
+                ?: nodeByDescs(root, listOf("Send", "Trimite", "OK", "Forward", "Inainte", "Done"))
+        } ?: return false
+        return clickWithRetry(sendNode)
     }
 
     private fun performWhatsAppImageSend(): Boolean {
-        val root = rootInActiveWindow ?: return false
         val sendIds = listOf(
             "com.whatsapp:id/send",
             "com.whatsapp:id/send_button",
             "com.whatsapp:id/compose_box_send_button"
         )
-        val sendNode = nodeByIds(root, sendIds)
-            ?: nodeByDescs(root, listOf("Send", "Trimite", "Trimiteţi", "Send message"))
-        return sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+        val sendNode = waitFor(2500) { root ->
+            nodeByIds(root, sendIds)
+                ?: nodeByDescs(root, listOf("Send", "Trimite", "Trimiteţi", "Send message"))
+        } ?: return false
+        return clickWithRetry(sendNode)
     }
 
     // ─── Gmail ────────────────────────────────────────────────────────────────
 
     private fun performGmailSend(): Boolean {
-        val root = rootInActiveWindow ?: return false
-        nodeByIds(root, listOf("com.google.android.gm:id/send_menu_item", "com.google.android.gm:id/send"))
-            ?.let { if (it.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true }
-        return nodeByDescs(root, listOf("Send", "Trimite"))
-            ?.performAction(AccessibilityNodeInfo.ACTION_CLICK) ?: false
+        val sendNode = waitFor(2500) { root ->
+            nodeByIds(root, listOf(
+                "com.google.android.gm:id/send_menu_item",
+                "com.google.android.gm:id/send"
+            )) ?: nodeByDescs(root, listOf("Send", "Trimite"))
+        } ?: return false
+        return clickWithRetry(sendNode)
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -342,6 +343,52 @@ class LumiAccessibilityService : AccessibilityService() {
         node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         })
+    }
+
+    /**
+     * Set the text on an EditText, retry up to 3 times if the text doesn't stick.
+     * Some apps (Instagram, Snapchat) reject the first SET_TEXT call after the field
+     * has just appeared. Returns true if the field eventually contains the text.
+     */
+    private fun setNodeTextSafely(node: AccessibilityNodeInfo, text: String): Boolean {
+        repeat(3) { attempt ->
+            setNodeText(node, text)
+            // Small backoff: 200ms, 400ms, 800ms
+            Thread.sleep(200L shl attempt)
+            val current = node.text?.toString() ?: ""
+            if (current.contains(text.take(20))) return true
+            // Refresh the node — its text may have changed but the cached snapshot hasn't
+            node.refresh()
+        }
+        return (node.text?.toString() ?: "").isNotBlank()
+    }
+
+    /**
+     * Click a node and retry once if the action returns false. Some accessibility nodes
+     * fail the first click when the UI is mid-animation.
+     */
+    private fun clickWithRetry(node: AccessibilityNodeInfo): Boolean {
+        if (node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true
+        Thread.sleep(300)
+        return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    /**
+     * Poll [rootInActiveWindow] until [predicate] returns a non-null match or [timeoutMs]
+     * elapses. This is far more robust than fixed `Thread.sleep` because it adapts to
+     * slow UI loads (cold app starts) without wasting time on fast ones.
+     */
+    private inline fun <T> waitFor(timeoutMs: Long, intervalMs: Long = 150L, predicate: (AccessibilityNodeInfo) -> T?): T? {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val root = rootInActiveWindow
+            if (root != null) {
+                val result = predicate(root)
+                if (result != null) return result
+            }
+            Thread.sleep(intervalMs)
+        }
+        return null
     }
 
     private fun findEditText(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {

@@ -133,39 +133,46 @@ class GeminiClient(
                 throw Exception("OpenRouter ${response.code}: ${parseError(errBody)}")
             }
             val source = response.body?.source() ?: throw Exception("Empty stream body")
-            while (!source.exhausted()) {
-                val line = source.readUtf8Line() ?: break
-                if (!line.startsWith("data:")) continue
-                val payload = line.removePrefix("data:").trim()
-                if (payload.isEmpty() || payload == "[DONE]") continue
+            try {
+                while (!source.exhausted()) {
+                    val line = source.readUtf8Line() ?: break
+                    if (!line.startsWith("data:")) continue
+                    val payload = line.removePrefix("data:").trim()
+                    if (payload.isEmpty() || payload == "[DONE]") continue
 
-                val delta = try {
-                    val obj = JsonParser.parseString(payload).asJsonObject
-                    obj["usage"]?.asJsonObject?.let {
-                        promptTokens = it["prompt_tokens"]?.asInt ?: promptTokens
-                        outputTokens = it["completion_tokens"]?.asInt ?: outputTokens
-                    }
-                    obj["choices"]?.asJsonArray?.get(0)?.asJsonObject
-                        ?.get("delta")?.asJsonObject
-                        ?.get("content")?.takeIf { !it.isJsonNull }?.asString
-                } catch (_: Exception) { null } ?: continue
+                    val delta = try {
+                        val obj = JsonParser.parseString(payload).asJsonObject
+                        obj["usage"]?.asJsonObject?.let {
+                            promptTokens = it["prompt_tokens"]?.asInt ?: promptTokens
+                            outputTokens = it["completion_tokens"]?.asInt ?: outputTokens
+                        }
+                        obj["choices"]?.asJsonArray?.get(0)?.asJsonObject
+                            ?.get("delta")?.asJsonObject
+                            ?.get("content")?.takeIf { !it.isJsonNull }?.asString
+                    } catch (_: Exception) { null } ?: continue
 
-                full.append(delta)
+                    full.append(delta)
 
-                if (!stoppedEmitting) {
-                    val markerIdx = findMarkerStart(full)
-                    val visibleEnd = if (markerIdx >= 0) {
-                        stoppedEmitting = true
-                        markerIdx
-                    } else {
-                        // Hold back enough characters that a partial marker can't slip out.
-                        (full.length - MARKER_HOLDBACK).coerceAtLeast(emittedUpTo)
-                    }
-                    if (visibleEnd > emittedUpTo) {
-                        onVisibleChunk(full.substring(emittedUpTo, visibleEnd))
-                        emittedUpTo = visibleEnd
+                    if (!stoppedEmitting) {
+                        val markerIdx = findMarkerStart(full)
+                        val visibleEnd = if (markerIdx >= 0) {
+                            stoppedEmitting = true
+                            markerIdx
+                        } else {
+                            // Hold back enough characters that a partial marker can't slip out.
+                            (full.length - MARKER_HOLDBACK).coerceAtLeast(emittedUpTo)
+                        }
+                        if (visibleEnd > emittedUpTo) {
+                            onVisibleChunk(full.substring(emittedUpTo, visibleEnd))
+                            emittedUpTo = visibleEnd
+                        }
                     }
                 }
+            } catch (e: java.io.IOException) {
+                // Network blip mid-stream — keep whatever we already accumulated so the user
+                // sees a partial answer instead of a hard error. The action JSON tail
+                // (if any) is parsed downstream from `full.toString()`.
+                if (full.isEmpty()) throw e
             }
         }
         // If the stream ended cleanly without ever hitting a marker, flush whatever's left.
@@ -176,21 +183,14 @@ class GeminiClient(
     }
 
     /** Returns the start index of the earliest action / data-request marker, or -1. */
-    private fun findMarkerStart(buf: CharSequence): Int {
-        val a = indexOfMarker(buf, "___LUMI_ACTIONS___")
-        val r = indexOfMarker(buf, "___LUMI_REQUEST___")
+    private fun findMarkerStart(buf: StringBuilder): Int {
+        val a = buf.indexOf("___LUMI_ACTIONS___")
+        val r = buf.indexOf("___LUMI_REQUEST___")
         return when {
             a < 0 -> r
             r < 0 -> a
             else -> minOf(a, r)
         }
-    }
-
-    private fun indexOfMarker(buf: CharSequence, marker: String): Int {
-        // Plain substring search; CharSequence.indexOf isn't on String only here.
-        val s = buf.toString()
-        val idx = s.indexOf(marker)
-        return idx
     }
 
     private fun geminiPartsToContent(parts: List<Map<String, Any>>): Any {

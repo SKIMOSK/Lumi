@@ -38,6 +38,7 @@ object ActionValidator {
     fun validate(actions: List<LumiAction>): Report {
         val valid = mutableListOf<LumiAction>()
         val issues = mutableListOf<Issue>()
+        // ── Per-action validation
         for (a in actions) {
             val rule = RULES[a.type.uppercase()]
             if (rule == null) {
@@ -49,7 +50,26 @@ object ActionValidator {
             if (result.fatal) continue
             valid += a
         }
+        // ── Cross-action sanity (e.g. SEND_IMAGE referring to non-existent gallery results)
+        issues += crossCheck(valid)
         return Report(valid, issues)
+    }
+
+    /**
+     * Inter-action consistency checks. These don't drop actions (they're warnings) but
+     * surface obvious mistakes back to the AI so it can self-correct.
+     */
+    private fun crossCheck(actions: List<LumiAction>): List<Issue> {
+        val out = mutableListOf<Issue>()
+        val hasGallerySearch = actions.any { it.type.equals("GALLERY_SEARCH", true) }
+        for (a in actions) {
+            if (!a.type.equals("SEND_IMAGE", true)) continue
+            val refersToGallery = !a.params["use_gallery_result"].isNullOrBlank()
+            if (refersToGallery && !hasGallerySearch) {
+                out += Issue(a, "use_gallery_result foloseste rezultate dintr-o cautare anterioara — adauga GALLERY_SEARCH inainte sau foloseste image_id direct.", Severity.WARNING)
+            }
+        }
+        return out
     }
 
     // ─── Rule DSL ────────────────────────────────────────────────────────────
@@ -173,7 +193,15 @@ object ActionValidator {
         Rule("SET_TIMER", listOf(
             FieldCheck("duration_seconds", required = true, type = ValueType.LONG),
             FieldCheck("name")
-        )),
+        ), custom = { a ->
+            val secs = a.params["duration_seconds"]?.toLongOrNull()
+            when {
+                secs == null -> null  // already caught by type check
+                secs <= 0L -> "duration_seconds trebuie pozitiv"
+                secs > 86400L * 30 -> "duration_seconds prea mare (max 30 zile)"
+                else -> null
+            }
+        }),
         Rule("SET_STOPWATCH", listOf(FieldCheck("name"))),
         Rule("SET_ALARM", listOf(
             FieldCheck("time_24h", required = true, type = ValueType.TIME_HHMM),
@@ -235,7 +263,15 @@ object ActionValidator {
             FieldCheck("contact"),
             FieldCheck("attachment_query"),
             FieldCheck("attach_pending", type = ValueType.BOOL)
-        ), anyOf = listOf(listOf("to", "contact"), listOf("body", "message"))),
+        ), anyOf = listOf(listOf("to", "contact")),
+            custom = { a ->
+                val hasBody = !a.params["body"].isNullOrBlank() || !a.params["message"].isNullOrBlank()
+                val hasAttachment = !a.params["attachment_query"].isNullOrBlank() ||
+                    a.params["attach_pending"]?.lowercase() == "true"
+                if (!hasBody && !hasAttachment) "trebuie 'body'/'message' sau atasament (attachment_query/attach_pending=true)"
+                else null
+            }
+        ),
         Rule("READ_EMAIL", emptyList()),
         Rule("CALL", listOf(FieldCheck("contact", required = true))),
 
@@ -278,7 +314,14 @@ object ActionValidator {
             FieldCheck("end_datetime", type = ValueType.DATETIME),
             FieldCheck("description"),
             FieldCheck("location")
-        )),
+        ), custom = { a ->
+            // Sanity: end after start (if both provided)
+            val start = a.params["start_datetime"]
+            val end = a.params["end_datetime"]
+            if (!start.isNullOrBlank() && !end.isNullOrBlank() && end < start)
+                "end_datetime ($end) este inainte de start_datetime ($start)"
+            else null
+        }),
         Rule("READ_CALENDAR", emptyList()),
         Rule("DELETE_EVENT", listOf(
             FieldCheck("id"),
