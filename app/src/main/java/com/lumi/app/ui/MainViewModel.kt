@@ -88,6 +88,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _btState = MutableLiveData(LumiBluetoothManager.ConnectionState.DISCONNECTED)
     val btState: LiveData<LumiBluetoothManager.ConnectionState> = _btState
 
+    private val _deviceColorTheme = MutableLiveData(settings.getDeviceTheme(settings.btDeviceAddress))
+    val deviceColorTheme: LiveData<String> = _deviceColorTheme
+
     private val _isProcessing = MutableLiveData(false)
     val isProcessing: LiveData<Boolean> = _isProcessing
 
@@ -113,6 +116,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         setupTimerDoneCallback()
         setupBluetoothCallbacks()
         registerTimerReceiver(app)
+        registerFingerprintSetupReceiver(app)
         memory.updateMaxSize(settings.memorySizeHistory)
         loadChatHistory()
     }
@@ -355,6 +359,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
                 if (bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED) {
                     tts.speak(displayText)
+                    // Also speak on the Lumi hardware device
+                    withContext(Dispatchers.IO) { bluetooth.sendTtsText(displayText) }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "AI error", e)
@@ -408,13 +414,39 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     LumiBluetoothManager.ConnectionState.CONNECTED   -> "Conectat la Lumi"
                     LumiBluetoothManager.ConnectionState.DISCONNECTED -> "Deconectat"
                 })
+                if (state == LumiBluetoothManager.ConnectionState.CONNECTED) {
+                    // Sync fingerprint setting to device on connection
+                    val fpCmd = if (settings.fingerprintEnabled)
+                        LumiBluetoothManager.CMD_FINGERPRINT_ON
+                    else
+                        LumiBluetoothManager.CMD_FINGERPRINT_OFF
+                    bluetooth.sendCommand(fpCmd)
+                }
             }
             override fun onAudioFrame(pcmData: ByteArray, sequenceNum: Int) {}
             override fun onImageReceived(jpegData: ByteArray) {
                 latestImageBase64 = Base64.encodeToString(jpegData, Base64.NO_WRAP)
             }
             override fun onError(message: String) = addSystem("Eroare BT: $message")
+            override fun onSpeechText(text: String) {
+                viewModelScope.launch(Dispatchers.Main) {
+                    processPrompt(text, useDeviceImage = true)
+                }
+            }
+            override fun onDeviceInfo(deviceId: String, colorTheme: String, fingerprintEnabled: Boolean) {
+                settings.setDeviceTheme(settings.btDeviceAddress, colorTheme)
+                _deviceColorTheme.postValue(colorTheme)
+            }
         })
+    }
+
+    // ── Fingerprint setup broadcast (triggered by SettingsActivity button) ────
+    fun sendFingerprintSetupCommand() {
+        if (bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED) {
+            bluetooth.sendCommand(LumiBluetoothManager.CMD_SETUP_FP)
+        } else {
+            addSystem("Dispozitivul nu este conectat.")
+        }
     }
 
     // ─── Timer callback ───────────────────────────────────────────────────────
@@ -427,6 +459,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             if (bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED) {
                 bluetooth.sendCommand(LumiBluetoothManager.CMD_SPEAK)
             }
+        }
+    }
+
+    private fun registerFingerprintSetupReceiver(app: Application) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                sendFingerprintSetupCommand()
+            }
+        }
+        val filter = IntentFilter("com.lumi.app.SETUP_FINGERPRINT")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            app.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            app.registerReceiver(receiver, filter)
         }
     }
 

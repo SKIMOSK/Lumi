@@ -72,6 +72,11 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchAutoConnect.isChecked = settings.autoConnect
         binding.switchStreaming.isChecked = settings.streamingEnabled
 
+        // Lumi device section
+        val currentTheme = if (settings.hasBtDevice()) settings.getDeviceTheme(settings.btDeviceAddress) else "grey"
+        binding.tvDeviceTheme.text = "Temă dispozitiv: $currentTheme"
+        binding.switchFingerprint.isChecked = settings.fingerprintEnabled
+
         binding.tvBtDevice.text = if (settings.hasBtDevice())
             "${settings.btDeviceName} (${settings.btDeviceAddress})"
         else "Niciun dispozitiv selectat"
@@ -87,6 +92,12 @@ class SettingsActivity : AppCompatActivity() {
         }
         binding.btnPatchNotes.setOnClickListener {
             startActivity(Intent(this, PatchNotesActivity::class.java))
+        }
+        binding.btnSetupFingerprint.setOnClickListener {
+            // Delegate to MainActivity's ViewModel which holds the BLE connection
+            val intent = Intent("com.lumi.app.SETUP_FINGERPRINT")
+            sendBroadcast(intent)
+            Toast.makeText(this, "Comandă trimisă dispozitivului.", Toast.LENGTH_SHORT).show()
         }
         setupActionModeSwitch()
     }
@@ -158,6 +169,7 @@ class SettingsActivity : AppCompatActivity() {
         settings.systemPrompt = binding.etSystemPrompt.text?.toString() ?: AppSettings.DEFAULT_SYSTEM_PROMPT
         settings.autoConnect = binding.switchAutoConnect.isChecked
         settings.streamingEnabled = binding.switchStreaming.isChecked
+        settings.fingerprintEnabled = binding.switchFingerprint.isChecked
 
         val selectedDevice = binding.spinnerBtDevices.selectedItem as? BluetoothDeviceItem
         if (selectedDevice != null) {

@@ -1,0 +1,18 @@
+[Unit]
+Description=Lumi Companion Device
+After=network.target bluetooth.target
+Requires=bluetooth.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/lumi
+ExecStart=/opt/lumi/venv/bin/python -m lumi_device.main
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lumi-device
+
+[Install]
+WantedBy=multi-user.target

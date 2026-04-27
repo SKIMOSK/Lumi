@@ -23,6 +23,8 @@ class AppSettings(context: Context) {
         const val KEY_AUTONOMOUS_MODE     = "autonomous_mode"
         const val KEY_TTS_SPEED           = "tts_speed"
         const val KEY_STREAMING           = "streaming_enabled"
+        const val KEY_FINGERPRINT_ENABLED = "device_fingerprint_enabled"
+        private const val KEY_DEVICE_THEME_PREFIX = "device_theme_"
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
@@ -104,6 +106,20 @@ Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
     var streamingEnabled: Boolean
         get() = prefs.getBoolean(KEY_STREAMING, false)
         set(v) = prefs.edit().putBoolean(KEY_STREAMING, v).apply()
+
+    var fingerprintEnabled: Boolean
+        get() = prefs.getBoolean(KEY_FINGERPRINT_ENABLED, false)
+        set(v) = prefs.edit().putBoolean(KEY_FINGERPRINT_ENABLED, v).apply()
+
+    fun getDeviceTheme(address: String): String {
+        val key = KEY_DEVICE_THEME_PREFIX + address.replace(":", "_")
+        return prefs.getString(key, "grey") ?: "grey"
+    }
+
+    fun setDeviceTheme(address: String, theme: String) {
+        val key = KEY_DEVICE_THEME_PREFIX + address.replace(":", "_")
+        prefs.edit().putString(key, theme).apply()
+    }
 
     fun hasApiKey() = openRouterApiKey.isNotBlank()
     fun hasBtDevice() = btDeviceAddress.isNotBlank()

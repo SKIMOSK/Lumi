@@ -45,10 +45,16 @@ class LumiBluetoothManager(private val context: Context) {
         val CMD_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab3")
         val STATUS_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab4")
         val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+        val TTS_TEXT_CHAR_UUID: UUID    = UUID.fromString("12345678-1234-1234-1234-123456789ab5")
+        val DEVICE_INFO_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab6")
+        val SPEECH_TEXT_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab7")
 
-        const val CMD_SPEAK = 0x01.toByte()
-        const val CMD_STOP = 0x02.toByte()
-        const val CMD_READY = 0x03.toByte()
+        const val CMD_SPEAK           = 0x01.toByte()
+        const val CMD_STOP            = 0x02.toByte()
+        const val CMD_READY           = 0x03.toByte()
+        const val CMD_SETUP_FP        = 0x04.toByte()
+        const val CMD_FINGERPRINT_ON  = 0x05.toByte()
+        const val CMD_FINGERPRINT_OFF = 0x06.toByte()
     }
 
     interface Listener {
@@ -56,6 +62,8 @@ class LumiBluetoothManager(private val context: Context) {
         fun onAudioFrame(pcmData: ByteArray, sequenceNum: Int)
         fun onImageReceived(jpegData: ByteArray)
         fun onError(message: String)
+        fun onSpeechText(text: String) {}
+        fun onDeviceInfo(deviceId: String, colorTheme: String, fingerprintEnabled: Boolean) {}
     }
 
     enum class ConnectionState { DISCONNECTED, SCANNING, CONNECTING, CONNECTED }
@@ -162,6 +170,15 @@ class LumiBluetoothManager(private val context: Context) {
             }
             enableNotify(gatt, service, AUDIO_CHAR_UUID)
             enableNotify(gatt, service, IMAGE_CHAR_UUID)
+            enableNotify(gatt, service, SPEECH_TEXT_CHAR_UUID)
+
+            // Read device info (device_id, color_theme, fingerprint_enabled)
+            service.getCharacteristic(DEVICE_INFO_CHAR_UUID)?.let { info ->
+                try { gatt.readCharacteristic(info) } catch (e: SecurityException) { }
+            }
+
+            // Request higher MTU so TTS text fits in one write
+            try { gatt.requestMtu(512) } catch (e: SecurityException) { }
 
             // Signal device we're ready
             service.getCharacteristic(CMD_CHAR_UUID)?.let { cmd ->
@@ -169,6 +186,27 @@ class LumiBluetoothManager(private val context: Context) {
                 try { gatt.writeCharacteristic(cmd) } catch (e: SecurityException) { }
             }
             connectionState = ConnectionState.CONNECTED
+        }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            char: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS && char.uuid == DEVICE_INFO_CHAR_UUID) {
+                parseDeviceInfo(char.value ?: return)
+            }
+        }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            char: BluetoothGattCharacteristic,
+            value: ByteArray,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS && char.uuid == DEVICE_INFO_CHAR_UUID) {
+                parseDeviceInfo(value)
+            }
         }
 
         @Deprecated("Used for API < 33")
@@ -205,7 +243,21 @@ class LumiBluetoothManager(private val context: Context) {
                 listener?.onAudioFrame(data.copyOfRange(2, data.size), seq)
             }
             IMAGE_CHAR_UUID -> handleImageChunk(data)
+            SPEECH_TEXT_CHAR_UUID -> {
+                val text = data.toString(Charsets.UTF_8).trim()
+                if (text.isNotEmpty()) listener?.onSpeechText(text)
+            }
         }
+    }
+
+    private fun parseDeviceInfo(data: ByteArray) {
+        try {
+            val json = org.json.JSONObject(data.toString(Charsets.UTF_8))
+            val deviceId = json.optString("device_id", "")
+            val theme = json.optString("color_theme", "grey")
+            val fp = json.optBoolean("fingerprint_enabled", false)
+            listener?.onDeviceInfo(deviceId, theme, fp)
+        } catch (_: Exception) {}
     }
 
     private fun handleImageChunk(data: ByteArray) {
@@ -226,12 +278,36 @@ class LumiBluetoothManager(private val context: Context) {
 
     // ─── Commands ────────────────────────────────────────────────────────────
 
-    /** Send a TTS audio signal back to the Lumi device (optional, if device has speaker). */
     fun sendCommand(cmd: Byte) {
         val service = gatt?.getService(LUMI_SERVICE_UUID) ?: return
         val char = service.getCharacteristic(CMD_CHAR_UUID) ?: return
         char.value = byteArrayOf(cmd)
         try { gatt?.writeCharacteristic(char) } catch (e: SecurityException) { }
+    }
+
+    /** Send TTS text to the device to be spoken via espeak-ng.
+     *  Chunks at 240 bytes (safe for CYW43438 BLE on Pi Zero 2W).
+     *  Each chunk: byte[0]=0x00 (continue) or 0x01 (last), bytes[1..]=UTF-8 text.
+     */
+    fun sendTtsText(text: String) {
+        val service = gatt?.getService(LUMI_SERVICE_UUID) ?: return
+        val char = service.getCharacteristic(TTS_TEXT_CHAR_UUID) ?: return
+        val bytes = text.toByteArray(Charsets.UTF_8)
+        val maxPayload = 239 // 240 - 1 flag byte
+        var offset = 0
+        while (offset < bytes.size) {
+            val end = minOf(offset + maxPayload, bytes.size)
+            val isLast = end == bytes.size
+            val chunk = ByteArray(1 + (end - offset))
+            chunk[0] = if (isLast) 0x01 else 0x00
+            bytes.copyInto(chunk, destinationOffset = 1, startIndex = offset, endIndex = end)
+            char.value = chunk
+            try {
+                gatt?.writeCharacteristic(char)
+                if (!isLast) Thread.sleep(30)
+            } catch (e: SecurityException) { return }
+            offset = end
+        }
     }
 
     fun disconnect() {
