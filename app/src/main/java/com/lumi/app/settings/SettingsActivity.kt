@@ -1,8 +1,10 @@
 package com.lumi.app.settings
 
 import android.bluetooth.BluetoothManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -18,6 +20,11 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var settings: AppSettings
+
+    // Receives broadcasts when device info (theme) changes while this screen is open.
+    private val deviceInfoReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) = refreshDeviceSection()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,10 +79,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchAutoConnect.isChecked = settings.autoConnect
         binding.switchStreaming.isChecked = settings.streamingEnabled
 
-        // Lumi device section
-        val currentTheme = if (settings.hasBtDevice()) settings.getDeviceTheme(settings.btDeviceAddress) else "grey"
-        binding.tvDeviceTheme.text = "Temă dispozitiv: $currentTheme"
-        binding.switchFingerprint.isChecked = settings.fingerprintEnabled
+        // Lumi device section populated in onResume() so it stays fresh.
 
         binding.tvBtDevice.text = if (settings.hasBtDevice())
             "${settings.btDeviceName} (${settings.btDeviceAddress})"
@@ -200,6 +204,29 @@ class SettingsActivity : AppCompatActivity() {
 
         val currentIdx = devices.indexOfFirst { it.address == settings.btDeviceAddress }
         if (currentIdx >= 0) binding.spinnerBtDevices.setSelection(currentIdx)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshDeviceSection()
+        val filter = IntentFilter("com.lumi.app.DEVICE_INFO_UPDATED")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(deviceInfoReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(deviceInfoReceiver, filter)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        try { unregisterReceiver(deviceInfoReceiver) } catch (_: IllegalArgumentException) {}
+    }
+
+    private fun refreshDeviceSection() {
+        val theme = if (settings.hasBtDevice()) settings.getDeviceTheme(settings.btDeviceAddress) else "grey"
+        binding.tvDeviceTheme.text = "Temă dispozitiv: $theme"
+        binding.switchFingerprint.isChecked = settings.fingerprintEnabled
     }
 
     override fun onSupportNavigateUp(): Boolean { finish(); return true }

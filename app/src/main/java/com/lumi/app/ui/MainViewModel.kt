@@ -436,6 +436,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             override fun onDeviceInfo(deviceId: String, colorTheme: String, fingerprintEnabled: Boolean) {
                 settings.setDeviceTheme(settings.btDeviceAddress, colorTheme)
                 _deviceColorTheme.postValue(colorTheme)
+                // Notify SettingsActivity (if open) so it refreshes its theme label instantly
+                getApplication<Application>().sendBroadcast(
+                    Intent("com.lumi.app.DEVICE_INFO_UPDATED")
+                )
             }
         })
     }

@@ -2,7 +2,6 @@
 import asyncio
 import logging
 import signal
-import sys
 
 from . import config as cfg_module
 from .audio_service import AudioService
@@ -27,24 +26,30 @@ async def run():
 
     loop = asyncio.get_running_loop()
 
-    # ── Services ─────────────────────────────────────────────────────────────
+    # ── Services ──────────────────────────────────────────────────────────────
     camera      = CameraService(config)
     vibration   = VibrationService(config)
     fall_det    = FallDetector(config)
     fingerprint = FingerprintService(config)
-    audio       = AudioService(config, loop)
+    audio       = AudioService(config)        # no loop dependency
     ble         = LumiBleServer(config, loop)
 
-    # ── BLE callbacks ────────────────────────────────────────────────────────
-
-    def on_tts_text(text: str):
-        audio.speak(text)
-        vibration.vibrate(80)
+    # ── BLE → audio lifecycle ─────────────────────────────────────────────────
 
     def on_cmd_ready():
-        log.info("Phone connected — starting audio listener")
-        audio.start()
+        """Phone sent CMD_READY — start (or resume) listening."""
+        audio.enable_listening()
         audio.speak("Lumi connected")
+
+    def on_client_disconnected():
+        """Phone disconnected — pause listening until reconnect."""
+        audio.disable_listening()
+        log.info("Phone disconnected — listening paused")
+
+    def on_tts_text(text: str):
+        audio.stop_speaking()   # stop any ongoing speech first
+        audio.speak(text)
+        vibration.vibrate(80)
 
     def on_setup_fingerprint():
         fingerprint.enroll_fingerprint()
@@ -55,49 +60,51 @@ async def run():
         cfg_module.save(config)
         log.info("Fingerprint %s", "enabled" if enabled else "disabled")
 
-    ble.on_tts_text           = on_tts_text
-    ble.on_cmd_ready          = on_cmd_ready
-    ble.on_setup_fingerprint  = on_setup_fingerprint
+    ble.on_cmd_ready           = on_cmd_ready
+    ble.on_client_disconnected = on_client_disconnected
+    ble.on_tts_text            = on_tts_text
+    ble.on_setup_fingerprint   = on_setup_fingerprint
     ble.on_fingerprint_setting = on_fingerprint_setting
 
-    # ── Audio callback ───────────────────────────────────────────────────────
+    # ── Speech recognized → send to phone ────────────────────────────────────
 
-    async def on_speech_recognized(text: str):
-        # Fingerprint gate: if enabled, user must have scanned within last 10s
+    async def on_speech_async(text: str):
+        if not ble.connected:
+            log.debug("Speech ignored — phone not connected")
+            return
+
+        # Fingerprint gate: must have scanned within last 10 s
         if config.get("fingerprint_enabled") and not fingerprint.is_authenticated_for_trigger():
-            log.info("Speech ignored — fingerprint not authenticated")
+            log.info("Speech blocked — fingerprint required")
             audio.speak("Please scan your fingerprint first")
             return
 
-        log.info("Processing speech: %s", text)
+        log.info("Sending to phone: %s", text)
         vibration.vibrate(100)
 
-        # Capture image alongside the voice command for visual context
+        # Capture image with the voice command for visual AI context
         jpeg = await loop.run_in_executor(None, camera.capture_jpeg)
         if jpeg:
             await ble.send_image(jpeg)
-            log.debug("Image sent with voice command")
 
-        # Send recognized text to phone
         await ble.send_speech_text(text)
 
-    # Wire audio callback (bridge thread → coroutine)
-    def _sync_speech_cb(text: str):
-        asyncio.run_coroutine_threadsafe(on_speech_recognized(text), loop)
+    # Bridge: STT thread → asyncio coroutine
+    def _speech_cb(text: str):
+        asyncio.run_coroutine_threadsafe(on_speech_async(text), loop)
 
-    audio.on_speech_recognized = _sync_speech_cb
+    audio.on_speech_recognized = _speech_cb
 
-    # ── Fall detection callback ───────────────────────────────────────────────
+    # ── Fall detection ────────────────────────────────────────────────────────
 
     def on_fall():
         vibration.vibrate(500)
         audio.speak("Fall detected. Are you okay?")
-        # Could also send an alert to the phone here via BLE status
 
     fall_det.on_fall = on_fall
     fall_det.start()
 
-    # ── Shutdown ─────────────────────────────────────────────────────────────
+    # ── Shutdown handling ─────────────────────────────────────────────────────
 
     stop_event = asyncio.Event()
 
@@ -108,11 +115,13 @@ async def run():
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, _signal_handler)
 
-    # ── Start BLE server ─────────────────────────────────────────────────────
-    await ble.start()
-    audio.speak("Lumi ready")
+    # ── Start services ────────────────────────────────────────────────────────
 
-    log.info("Waiting for phone connection...")
+    audio.start()   # opens mic stream; listening gated by enable_listening()
+    await ble.start()
+    audio.speak("Lumi ready. Waiting for connection.")
+    log.info("Advertising as 'Lumi' — waiting for phone…")
+
     await stop_event.wait()
 
     # ── Cleanup ───────────────────────────────────────────────────────────────
