@@ -13,15 +13,23 @@ import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.files.FileHelper
 import com.lumi.app.gallery.GallerySearchHelper
+import com.lumi.app.health.HealthConnectHelper
+import com.lumi.app.location.GeofenceHelper
+import com.lumi.app.location.LocationHelper
+import com.lumi.app.location.LocationReminder
+import com.lumi.app.location.UserLocation
+import com.lumi.app.location.UserLocations
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.messaging.SendResult
 import com.lumi.app.notes.NoteAppResult
 import com.lumi.app.notes.NotesHelper
 import com.lumi.app.notes.UserMemory
+import com.lumi.app.packages.PackageTrackingHelper
 import com.lumi.app.settings.AppSettings
 import com.lumi.app.system.SystemSettingsHelper
 import com.lumi.app.timer.TimerManager
 import com.lumi.app.tts.LumiTTS
+import com.lumi.app.weather.WeatherHelper
 import com.lumi.app.whatsapp.LumiAccessibilityService
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -44,7 +52,13 @@ class ActionExecutor(
     private val tts: LumiTTS? = null,
     private val appSettings: AppSettings? = null,
     private val gallerySearchHelper: GallerySearchHelper? = null,
-    private val documentHelper: com.lumi.app.system.DocumentHelper
+    private val documentHelper: com.lumi.app.system.DocumentHelper,
+    private val locationHelper: LocationHelper? = null,
+    private val userLocations: UserLocations? = null,
+    private val geofenceHelper: GeofenceHelper? = null,
+    /** Called when AI requests translation mode start: fromLang, toLang */
+    val onStartTranslation: ((String, String) -> Unit)? = null,
+    val onStopTranslation: (() -> Unit)? = null
 ) {
     data class Result(val action: LumiAction, val success: Boolean, val message: String, val galleryImageIds: List<Long>? = null)
 
@@ -135,6 +149,15 @@ class ActionExecutor(
         "SEND_FILE"            -> sendFile(a)
         "EDIT_FILE"            -> editFile(a)
         "REPLY_NOTIFICATION"   -> replyNotification(a)
+        "GET_WEATHER"          -> getWeather(a)
+        "GET_HEALTH"           -> getHealth(a)
+        "TRACK_PACKAGE"        -> trackPackage(a)
+        "ADD_CONTACT"          -> addContact(a)
+        "ADD_PHONE_TO_CONTACT" -> addPhoneToContact(a)
+        "SET_USER_LOCATION"    -> setUserLocation(a)
+        "SET_LOCATION_REMINDER"-> setLocationReminder(a)
+        "START_TRANSLATION"    -> startTranslation(a)
+        "STOP_TRANSLATION"     -> stopTranslation(a)
         else -> Result(a, false, "Actiune necunoscuta: ${a.type}")
     }
 
@@ -611,6 +634,21 @@ class ActionExecutor(
         else Result(a, true, "Aplicatia de sanatate deschisa.")
     }
 
+    private suspend fun getHealth(a: LumiAction): Result {
+        val helper = HealthConnectHelper(context)
+        if (!helper.isAvailable()) {
+            // Fallback: open app
+            messenger.openHealthConnect()
+            return Result(a, true, "Health Connect nu este disponibil. Aplicatia a fost deschisa.")
+        }
+        val period = a.params["period"]?.lowercase() ?: "today"
+        val summary = if (period.contains("sapt") || period.contains("week"))
+            helper.getWeeklySummary()
+        else
+            helper.getTodaySummary()
+        return Result(a, true, summary)
+    }
+
     // ─── Banking ─────────────────────────────────────────────────────────────
 
     private fun readBalance(a: LumiAction): Result {
@@ -641,14 +679,26 @@ class ActionExecutor(
     }
 
     private fun shopTrack(a: LumiAction): Result {
-        val appName = a.params["app"]?.lowercase() ?: "amazon"
+        // Try SMS-based tracking first
+        val appName = a.params["app"]?.lowercase() ?: ""
+        val pkgHelper = PackageTrackingHelper(context)
+        val packages = pkgHelper.findTrackingNumbers()
+        val filtered = if (appName.isNotBlank())
+            packages.filter { it.carrier.lowercase().contains(appName) }
+        else packages
+
+        if (filtered.isNotEmpty()) {
+            return Result(a, true, pkgHelper.formatForDisplay(filtered))
+        }
+
+        // Fallback: open app orders page
         val r = when {
             appName.contains("ebay") -> messenger.openEbaySearch("my orders")
             appName.contains("aliexpress") -> messenger.openAliExpressSearch("my orders")
             else -> messenger.openAmazonOrders()
         }
         return if (r is SendResult.Error) Result(a, false, r.reason)
-        else Result(a, true, "Sectiunea de comenzi deschisa.")
+        else Result(a, true, "Niciun numar de tracking gasit in SMS-uri. Sectiunea de comenzi a fost deschisa.")
     }
 
     // ─── Crypto balance ──────────────────────────────────────────────────────
@@ -1132,5 +1182,115 @@ class ActionExecutor(
         val ok = com.lumi.app.notifications.LumiNotificationService.sendReply(context, notif, msg)
         return if (ok) Result(a, true, "Raspuns trimis in ${notif.appName} catre ${notif.title}.")
         else Result(a, false, "Nu s-a putut trimite raspunsul.")
+    }
+
+    // ─── Weather ─────────────────────────────────────────────────────────────
+
+    private fun getWeather(a: LumiAction): Result {
+        val gps = locationHelper?.getLastKnown()
+            ?: return Result(a, false, "Locatia GPS nu este disponibila. Activeaza permisiunea de locatie.")
+        val lang = appSettings?.sttLanguage ?: "ro-RO"
+        val weather = WeatherHelper().getWeather(gps.lat, gps.lon, lang)
+        return Result(a, true, weather)
+    }
+
+    // ─── Package tracking ─────────────────────────────────────────────────────
+
+    private fun trackPackage(a: LumiAction): Result {
+        val carrier = a.params["carrier"]?.lowercase() ?: ""
+        val helper = PackageTrackingHelper(context)
+        val packages = helper.findTrackingNumbers()
+        val filtered = if (carrier.isNotBlank())
+            packages.filter { it.carrier.lowercase().contains(carrier) }
+        else packages
+        return Result(a, true, helper.formatForDisplay(filtered))
+    }
+
+    // ─── Contact management ───────────────────────────────────────────────────
+
+    private fun addContact(a: LumiAction): Result {
+        val name  = a.params["name"]  ?: return Result(a, false, "Nume contact lipsa.")
+        val phone = a.params["phone"] ?: ""
+        if (!consent.request("Adaug contact nou: $name${if (phone.isNotBlank()) " ($phone)" else ""}. Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+        return if (contacts.addContact(name, phone))
+            Result(a, true, "Contact \"$name\" adaugat${if (phone.isNotBlank()) " cu numarul $phone" else ""}.")
+        else
+            Result(a, false, "Nu s-a putut adauga contactul. Verifica permisiunea WRITE_CONTACTS.")
+    }
+
+    private suspend fun addPhoneToContact(a: LumiAction): Result {
+        val cName = a.params["contact"] ?: return Result(a, false, "Contact lipsa.")
+        val phone = a.params["phone"]   ?: return Result(a, false, "Numar lipsa.")
+        val contact = contacts.findBestMatch(cName)
+            ?: return Result(a, false, "Contactul \"$cName\" negasit.")
+        if (!consent.request("Adaug numarul $phone la ${contact.name}. Confirmi?", getMode()))
+            return Result(a, false, "Anulat.")
+        return if (contacts.addPhoneToContact(contact.id, phone))
+            Result(a, true, "Numarul $phone adaugat la ${contact.name}.")
+        else
+            Result(a, false, "Nu s-a putut adauga numarul.")
+    }
+
+    // ─── User locations ───────────────────────────────────────────────────────
+
+    private fun setUserLocation(a: LumiAction): Result {
+        val name    = a.params["name"]    ?: return Result(a, false, "Nume locatie lipsa.")
+        val address = a.params["address"] ?: return Result(a, false, "Adresa locatie lipsa.")
+        val lat = a.params["lat"]?.toDoubleOrNull()
+        val lon = a.params["lon"]?.toDoubleOrNull()
+        val (finalLat, finalLon) = if (lat != null && lon != null) {
+            Pair(lat, lon)
+        } else {
+            val gps = locationHelper?.getLastKnown()
+            Pair(gps?.lat ?: 0.0, gps?.lon ?: 0.0)
+        }
+        val loc = UserLocation(name = name, address = address, lat = finalLat, lon = finalLon)
+        val ul = userLocations ?: UserLocations(context)
+        ul.add(loc)
+        return Result(a, true, "Locatia \"$name\" salvata: $address")
+    }
+
+    // ─── Location reminders ───────────────────────────────────────────────────
+
+    private fun setLocationReminder(a: LumiAction): Result {
+        val locName = a.params["location"] ?: return Result(a, false, "Locatie lipsa.")
+        val text    = a.params["reminder"] ?: return Result(a, false, "Textul reminderului lipsa.")
+        val onExit  = a.params["trigger"]?.lowercase() == "exit"
+
+        val ul = userLocations ?: UserLocations(context)
+        val userLoc = ul.findByName(locName)
+            ?: return Result(a, false, "Locatia \"$locName\" nu este salvata. Salveaza-o mai intai cu SET_USER_LOCATION.")
+
+        val helper = geofenceHelper ?: GeofenceHelper(context)
+        if (!helper.canAddGeofences()) {
+            return Result(a, false, "Permisiunea pentru locatie in fundal lipseste. Acorda permisiunea ACCESS_BACKGROUND_LOCATION.")
+        }
+
+        var resultMsg = ""
+        val reminder = LocationReminder(
+            id = "reminder_${locName}_${System.currentTimeMillis()}",
+            locationName = locName,
+            reminderText = text,
+            triggerOnEnter = !onExit,
+            triggerOnExit = onExit
+        )
+        helper.addReminder(userLoc, reminder) { success, msg -> resultMsg = msg }
+        return Result(a, true, if (resultMsg.isNotBlank()) resultMsg
+            else "Reminder setat: vei fi notificat ${if (onExit) "cand pleci din" else "cand ajungi la"} $locName.")
+    }
+
+    // ─── Translation mode ─────────────────────────────────────────────────────
+
+    private fun startTranslation(a: LumiAction): Result {
+        val from = a.params["from_lang"] ?: a.params["from"] ?: "auto"
+        val to   = a.params["to_lang"]   ?: a.params["to"]   ?: (appSettings?.sttLanguage ?: "ro-RO")
+        onStartTranslation?.invoke(from, to)
+        return Result(a, true, "Mod traducere pornit. Vorbeste — traduc automat. Apasa Stop pentru a opri.")
+    }
+
+    private fun stopTranslation(a: LumiAction): Result {
+        onStopTranslation?.invoke()
+        return Result(a, true, "Mod traducere oprit.")
     }
 }

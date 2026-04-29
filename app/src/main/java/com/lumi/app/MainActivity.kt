@@ -174,6 +174,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupButtons() {
         binding.fabMic.setOnClickListener { if (isListening) stopListening() else startListening() }
+        binding.fabStop.setOnClickListener { viewModel.cancelCurrentTask() }
 
         binding.btnSend.setOnClickListener {
             val text = binding.etInput.text?.toString()?.trim() ?: ""
@@ -278,6 +279,14 @@ class MainActivity : AppCompatActivity() {
             binding.fabMic.isEnabled = !processing
             binding.btnSend.isEnabled = !processing
             binding.btnAttach.isEnabled = !processing
+            val translating = viewModel.translationActive.value == true
+            binding.fabStop.visibility = if (processing || translating) View.VISIBLE else View.GONE
+        }
+        viewModel.translationActive.observe(this) { active ->
+            binding.bannerTranslation.visibility = if (active) View.VISIBLE else View.GONE
+            val processing = viewModel.isProcessing.value == true
+            binding.fabStop.visibility = if (active || processing) View.VISIBLE else View.GONE
+            if (active) startListening()
         }
         // Consent dialog requests from ViewModel
         viewModel.consentRequest.observe(this) { req ->
@@ -323,7 +332,13 @@ class MainActivity : AppCompatActivity() {
             binding.voiceOverlay.visibility = View.GONE
             if (finalText.isNotBlank()) {
                 binding.etInput.text?.clear()
-                viewModel.processPrompt(finalText)
+                if (viewModel.translationActive.value == true) {
+                    viewModel.translateAndSpeak(finalText)
+                    // Auto-restart listening for the continuous loop
+                    startListening()
+                } else {
+                    viewModel.processPrompt(finalText)
+                }
             }
         }
     }

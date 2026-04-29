@@ -22,8 +22,10 @@ class AppSettings(context: Context) {
         const val KEY_ACTION_MODE         = "action_mode"
         const val KEY_AUTONOMOUS_MODE     = "autonomous_mode"
         const val KEY_TTS_SPEED           = "tts_speed"
-        const val KEY_STREAMING           = "streaming_enabled"
-        const val KEY_FINGERPRINT_ENABLED = "device_fingerprint_enabled"
+        const val KEY_STREAMING                = "streaming_enabled"
+        const val KEY_FINGERPRINT_ENABLED      = "device_fingerprint_enabled"
+        const val KEY_TRANSLATION_FROM         = "translation_from_lang"
+        const val KEY_TRANSLATION_TO           = "translation_to_lang"
         private const val KEY_DEVICE_THEME_PREFIX = "device_theme_"
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
@@ -110,6 +112,16 @@ Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
     var fingerprintEnabled: Boolean
         get() = prefs.getBoolean(KEY_FINGERPRINT_ENABLED, false)
         set(v) = prefs.edit().putBoolean(KEY_FINGERPRINT_ENABLED, v).apply()
+
+    /** Source language for real-time translation ("auto" = detect automatically). */
+    var translationFromLang: String
+        get() = prefs.getString(KEY_TRANSLATION_FROM, "auto") ?: "auto"
+        set(v) = prefs.edit().putString(KEY_TRANSLATION_FROM, v).apply()
+
+    /** Target language for real-time translation (default: app STT language). */
+    var translationToLang: String
+        get() = prefs.getString(KEY_TRANSLATION_TO, sttLanguage) ?: sttLanguage
+        set(v) = prefs.edit().putString(KEY_TRANSLATION_TO, v).apply()
 
     fun getDeviceTheme(address: String): String {
         val key = KEY_DEVICE_THEME_PREFIX + address.replace(":", "_")

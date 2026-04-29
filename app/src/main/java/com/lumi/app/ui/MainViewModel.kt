@@ -28,8 +28,10 @@ import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
 import com.lumi.app.files.FileHelper
 import com.lumi.app.gallery.GallerySearchHelper
+import com.lumi.app.location.GeofenceHelper
 import com.lumi.app.location.LocationHelper
 import com.lumi.app.location.PlaceSearchHelper
+import com.lumi.app.location.UserLocations
 import com.lumi.app.messaging.MessageSender
 import com.lumi.app.notes.NotesHelper
 import com.lumi.app.notes.UserMemory
@@ -68,6 +70,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val documentHelper    = com.lumi.app.system.DocumentHelper(app)
     private val locationHelper    = LocationHelper(app)
     private val placeSearchHelper = PlaceSearchHelper()
+    private val userLocations     = UserLocations(app)
+    private val geofenceHelper    = GeofenceHelper(app)
     private val fileHelper = FileHelper(app)
     val consent = ConsentManager(tts, null)
 
@@ -96,6 +100,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _statusText = MutableLiveData("Inactiv")
     val statusText: LiveData<String> = _statusText
+
+    // Translation mode
+    private val _translationActive = MutableLiveData(false)
+    val translationActive: LiveData<Boolean> = _translationActive
+    private var translateFrom = "auto"
+    private var translateTo = settings.sttLanguage
 
     private var latestImageBase64: String? = null
     private var pendingAttachImage: String? = null
@@ -151,7 +161,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 getApplication<Application>(), timerManager, consent, contactsHelper,
                 messageSender, notesHelper, sysSettings, mode,
                 userMemory, btDeviceManager, settings.btDeviceAddress,
-                tts, settings, gallerySearchHelper, documentHelper
+                tts, settings, gallerySearchHelper, documentHelper,
+                locationHelper, userLocations, geofenceHelper,
+                onStartTranslation = { from, to -> startTranslationMode(from, to) },
+                onStopTranslation = { stopTranslationMode() }
             )
         } else null
         val calendarHelper = CalendarHelper(getApplication<Application>())
@@ -496,6 +509,90 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             app.registerReceiver(receiver, filter)
+        }
+    }
+
+    // ─── Cancel / Stop ────────────────────────────────────────────────────────
+
+    fun cancelCurrentTask() {
+        currentJob?.cancel()
+        currentJob = null
+        tts.stop()
+        if (_translationActive.value == true) stopTranslationMode()
+        // Remove dangling loading bubble
+        val idx = messageList.indexOfFirst { it.isLoading }
+        if (idx >= 0) {
+            messageList[idx] = ChatMessage(text = "Anulat.", time = now(), isUser = false)
+            _messages.postValue(messageList.toList())
+        }
+        _isProcessing.postValue(false)
+        _statusText.postValue("Anulat")
+    }
+
+    // ─── Translation mode ─────────────────────────────────────────────────────
+
+    fun startTranslationMode(from: String = "auto", to: String = settings.sttLanguage) {
+        translateFrom = from
+        translateTo = to
+        _translationActive.postValue(true)
+        _statusText.postValue("Mod traducere activ")
+        addSystem("Mod traducere pornit. Vorbeste — traduc automat. Apasa Stop pentru a opri.")
+    }
+
+    fun stopTranslationMode() {
+        _translationActive.postValue(false)
+        translateFrom = "auto"
+        translateTo = settings.sttLanguage
+        _statusText.postValue("Inactiv")
+        addSystem("Mod traducere oprit.")
+    }
+
+    /**
+     * Called from MainActivity when STT fires during translation mode.
+     * Sends the recognized text to the AI for translation only (no action routing).
+     */
+    fun translateAndSpeak(inputText: String) {
+        if (!settings.hasApiKey()) return
+        if (inputText.isBlank()) return
+
+        val loading = ChatMessage(text = "…", time = now(), isUser = false, isLoading = true)
+        messageList.add(ChatMessage(text = inputText, time = now(), isUser = true))
+        messageList.add(loading)
+        _messages.postValue(messageList.toList())
+        _isProcessing.postValue(true)
+
+        currentJob = viewModelScope.launch {
+            try {
+                val client = GeminiClient(settings.openRouterApiKey, settings.openRouterBaseUrl)
+                val fromLabel = if (translateFrom == "auto") "limba detectata automat" else translateFrom
+                val sysPrompt = "Esti un traducator profesionist. Traduce urmatorul text din $fromLabel in $translateTo. Returneaza NUMAI traducerea, fara explicatii, fara ghilimele, fara text suplimentar."
+                val resp = client.generate(
+                    prompt = inputText,
+                    model = settings.fastModel,
+                    systemInstruction = sysPrompt,
+                    temperature = 0.2
+                )
+                val translation = resp.text.trim()
+                val lumiMsg = ChatMessage(text = translation, time = now(), isUser = false)
+                withContext(Dispatchers.Main) {
+                    val idx = messageList.indexOfFirst { it.id == loading.id }
+                    if (idx >= 0) messageList[idx] = lumiMsg else messageList.add(lumiMsg)
+                    _messages.value = messageList.toList()
+                }
+                tts.speak(translation)
+                if (bluetooth.connectionState == LumiBluetoothManager.ConnectionState.CONNECTED) {
+                    withContext(Dispatchers.IO) { bluetooth.sendTtsText(translation) }
+                }
+            } catch (e: Exception) {
+                val errMsg = ChatMessage(text = "Eroare traducere: ${e.message}", time = now(), isUser = false)
+                withContext(Dispatchers.Main) {
+                    val idx = messageList.indexOfFirst { it.id == loading.id }
+                    if (idx >= 0) messageList[idx] = errMsg else messageList.add(errMsg)
+                    _messages.value = messageList.toList()
+                }
+            } finally {
+                _isProcessing.postValue(false)
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.lumi.app.contacts
 
+import android.content.ContentProviderOperation
 import android.content.Context
 import android.provider.ContactsContract
 import java.text.Normalizer
@@ -89,6 +90,61 @@ class ContactsHelper(private val context: Context) {
             if (results.isNotEmpty()) return results.first()
         }
         return null
+    }
+
+    /** Add a new contact with given name and phone number. Returns true on success. */
+    fun addContact(name: String, phone: String): Boolean {
+        val ops = ArrayList<ContentProviderOperation>()
+        val rawContactIdx = ops.size
+        ops.add(ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
+            .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
+            .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+            .build())
+        ops.add(ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdx)
+            .withValue(ContactsContract.Data.MIMETYPE,
+                ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+            .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+            .build())
+        if (phone.isNotBlank()) {
+            ops.add(ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactIdx)
+                .withValue(ContactsContract.Data.MIMETYPE,
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
+                .withValue(ContactsContract.CommonDataKinds.Phone.TYPE,
+                    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
+                .build())
+        }
+        return try {
+            context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+            true
+        } catch (_: Exception) { false }
+    }
+
+    /** Add a phone number to an existing contact. Returns true on success. */
+    fun addPhoneToContact(contactId: Long, phone: String): Boolean {
+        val rawContactId = getRawContactId(contactId) ?: return false
+        val op = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+            .withValue(ContactsContract.Data.MIMETYPE,
+                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+            .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
+            .withValue(ContactsContract.CommonDataKinds.Phone.TYPE,
+                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
+            .build()
+        return try {
+            context.contentResolver.applyBatch(ContactsContract.AUTHORITY, arrayListOf(op))
+            true
+        } catch (_: Exception) { false }
+    }
+
+    private fun getRawContactId(contactId: Long): Long? {
+        val uri = ContactsContract.RawContacts.CONTENT_URI
+        val projection = arrayOf(ContactsContract.RawContacts._ID)
+        val selection = "${ContactsContract.RawContacts.CONTACT_ID} = ?"
+        return context.contentResolver.query(uri, projection, selection, arrayOf(contactId.toString()), null)
+            ?.use { if (it.moveToFirst()) it.getLong(0) else null }
     }
 
     fun formatForGemini(contacts: List<Contact>): String {

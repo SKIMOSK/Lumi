@@ -166,6 +166,19 @@ Netflix: {"actions":[{"type":"MEDIA_CONTROL","app":"netflix","command":"open","q
 Google Home: {"actions":[{"type":"HOME_CONTROL","app":"google_home","device":"Becuri living","action":"turn off"}]}
 Sanatate (Google Fit): {"actions":[{"type":"READ_HEALTH","app":"google_fit"}]}
 Sanatate (Strava): {"actions":[{"type":"READ_HEALTH","app":"strava"}]}
+Sanatate Health Connect azi: {"actions":[{"type":"GET_HEALTH","period":"today"}]}
+Sanatate saptamana: {"actions":[{"type":"GET_HEALTH","period":"week"}]}
+Vreme acum: {"actions":[{"type":"GET_WEATHER"}]}
+Urmarire colete SMS: {"actions":[{"type":"TRACK_PACKAGE"}]}
+Urmarire colete DHL: {"actions":[{"type":"TRACK_PACKAGE","carrier":"dhl"}]}
+Adauga contact: {"actions":[{"type":"ADD_CONTACT","name":"Ana Maria","phone":"0722111222"}]}
+Adauga numar la contact: {"actions":[{"type":"ADD_PHONE_TO_CONTACT","contact":"Mama","phone":"0733444555"}]}
+Salveaza locatie: {"actions":[{"type":"SET_USER_LOCATION","name":"acasa","address":"Str. Florilor 12, Cluj-Napoca","lat":"46.7712","lon":"23.6236"}]}
+Salveaza locatie curenta: {"actions":[{"type":"SET_USER_LOCATION","name":"birou","address":"Calea Dorobantilor 14, Cluj"}]}
+Reminder la locatie: {"actions":[{"type":"SET_LOCATION_REMINDER","location":"acasa","reminder":"Suna-l pe tata","trigger":"enter"}]}
+Reminder la plecare: {"actions":[{"type":"SET_LOCATION_REMINDER","location":"birou","reminder":"Cumpara paine","trigger":"exit"}]}
+Incepe traducere: {"actions":[{"type":"START_TRANSLATION","from_lang":"en","to_lang":"ro-RO"}]}
+Opreste traducere: {"actions":[{"type":"STOP_TRANSLATION"}]}
 Deschide Revolut: {"actions":[{"type":"READ_BALANCE","app":"revolut"}]}
 Deschide BTpay: {"actions":[{"type":"READ_BALANCE","app":"btpay"}]}
 Deschide PayPal: {"actions":[{"type":"READ_BALANCE","app":"paypal"}]}
@@ -233,6 +246,15 @@ REGULI IMPORTANTE:
 - BT_CONNECT/BT_DISCONNECT deschide Setarile Bluetooth (aplicatia nu poate conecta programatic dispozitive non-BLE).
 - YOUTUBE_SEARCH si YOUTUBE_WATCH_LATER nu redau video automat — cauta/afiseaza doar.
 - SET_TTS_SPEED: "faster"/"slower" ajusteaza relativ; "speed" (0.5-2.0) seteaza absolut.
+- GET_WEATHER: necesita GPS activ. Foloseste cand utilizatorul intreaba "ce vreme e?", "cum e afara?", "va ploua?", "prognoza meteo". Nu cere adresa — foloseste GPS automat.
+- GET_HEALTH: citeste date reale din Health Connect (pasi, calorii, puls, somn). Foloseste in loc de READ_HEALTH cand vrei date concrete. period="today" sau "week".
+- TRACK_PACKAGE: cauta in SMS-urile recente numere de tracking. Foloseste pentru "unde e coletul meu?", "urmareste pachetul", "cand ajunge comanda?".
+- ADD_CONTACT: adauga contact nou in agenda. Cere confirmare. Necesita "name" si optional "phone".
+- ADD_PHONE_TO_CONTACT: adauga numar nou la contact existent. Foloseste cand utilizatorul spune "adauga numarul X la Y".
+- SET_USER_LOCATION: salveaza o locatie cu nume (acasa, birou, sala, parinti etc). Daca ai GPS, include lat/lon. Daca nu, omite-le.
+- SET_LOCATION_REMINDER: seteaza reminder bazat pe geofence. "location" trebuie sa fie o locatie deja salvata cu SET_USER_LOCATION. trigger="enter" (implicit) sau "exit".
+- START_TRANSLATION: porneste mod traducere in timp real. from_lang (ex: "en", "fr", "de", "auto") si to_lang (ex: "ro-RO", "en-US"). Daca utilizatorul nu specifica limbile, from_lang="auto" si to_lang = limba setata in app.
+- STOP_TRANSLATION: opreste modul traducere. Genereaza automat cand utilizatorul spune "stop", "opreste traducerea", "gata".
 - Daca utilizatorul intreaba despre vreme sau traducere, AI-ul poate raspunde direct fara actiuni.
 - GALLERY_SEARCH: cauta in galerie. Reguli:
   * "cea mai recenta poza/imagine", "ultima poza", "ultimul screenshot", "ce am fotografiat ultima data" → {"type":"GALLERY_SEARCH","limit":"1"} — imediat, fara intrebari
@@ -336,7 +358,7 @@ Daca utilizatorul da o informatie utila ca raspuns la o intrebare a ta (adresa, 
 
     private val classifyPrompt = """
 Clasifica cererea de mai jos ca SIMPLU sau COMPLEX.
-SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS (inclusiv "du-ma acasa/la birou"), VPN, calendar (citire/creare/stergere/editare event), control media (play/pause/skip/volum), YouTube cautare, smart home, sanatate, sold bancar, crypto, stiri, shopping cautare/comenzi, bluetooth lista/conectare, memorie utilizator, cautare galerie foto, citire fisier atasat, raspuns la notificari (REPLY_NOTIFICATION), retinere fapte (REMEMBER_FACT).
+SIMPLU: raspunsuri rapide, identificare obiecte, calcule, traduceri, timere, notite, setari sistem (luminozitate, volum, DND, economisire baterie, viteza voce), navigare GPS (inclusiv "du-ma acasa/la birou"), VPN, calendar (citire/creare/stergere/editare event), control media (play/pause/skip/volum), YouTube cautare, smart home, sanatate (GET_HEALTH, READ_HEALTH), sold bancar, crypto, stiri, vreme (GET_WEATHER), shopping cautare/comenzi/tracking (TRACK_PACKAGE), bluetooth lista/conectare, memorie utilizator, cautare galerie foto, citire fisier atasat, raspuns la notificari (REPLY_NOTIFICATION), retinere fapte (REMEMBER_FACT), locatii utilizator (SET_USER_LOCATION), remindere locatie (SET_LOCATION_REMINDER), traducere timp real (START_TRANSLATION, STOP_TRANSLATION).
 COMPLEX: trimitere mesaje noi (WhatsApp/Telegram/Slack/Instagram/Snapchat/Facebook/Discord/SMS/email), trimitere imagini, trimitere fisiere, editare fisiere, apeluri, cautare contacte, livrare mancare, ride-sharing (Uber/Lyft), orchestrare multi-pas cu mai multi destinatari.
 Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
 """.trimIndent()

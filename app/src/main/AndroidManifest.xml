@@ -50,6 +50,17 @@
     <!-- Location — GPS for navigation cues + BLE on older APIs -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+
+    <!-- Health Connect -->
+    <uses-permission android:name="android.permission.health.READ_STEPS"/>
+    <uses-permission android:name="android.permission.health.READ_SLEEP"/>
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
+    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>
+    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED"/>
+
+    <!-- Write contacts -->
+    <uses-permission android:name="android.permission.WRITE_CONTACTS"/>
 
     <!-- Wake lock for background processing -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -196,6 +207,15 @@
             android:name=".bluetooth.LumiBluetoothService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice"/>
+
+        <!-- Geofence transitions receiver -->
+        <receiver
+            android:name=".location.GeofenceBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.lumi.app.ACTION_GEOFENCE_TRANSITION"/>
+            </intent-filter>
+        </receiver>
 
         <!-- Timer alarm receiver -->
         <receiver
