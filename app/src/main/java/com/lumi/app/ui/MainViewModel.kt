@@ -22,6 +22,7 @@ import com.lumi.app.ai.Interaction
 import com.lumi.app.ai.TaskRouter
 import com.lumi.app.bluetooth.BluetoothDeviceManager
 import com.lumi.app.bluetooth.LumiBluetoothManager
+import com.lumi.app.bluetooth.LumiBluetoothService
 import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
@@ -408,6 +409,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     LumiBluetoothManager.ConnectionState.CONNECTED   -> "Conectat la Lumi"
                     LumiBluetoothManager.ConnectionState.DISCONNECTED -> "Deconectat"
                 })
+                val ctx = getApplication<Application>()
+                if (state == LumiBluetoothManager.ConnectionState.CONNECTED) {
+                    // Keep BLE alive when the app moves to background
+                    val svcIntent = Intent(ctx, LumiBluetoothService::class.java)
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        ctx.startForegroundService(svcIntent)
+                    } else {
+                        ctx.startService(svcIntent)
+                    }
+                    // Sync fingerprint setting to device on connection
+                    val fpCmd = if (settings.fingerprintEnabled)
+                        LumiBluetoothManager.CMD_FINGERPRINT_ON
+                    else
+                        LumiBluetoothManager.CMD_FINGERPRINT_OFF
+                    bluetooth.sendCommand(fpCmd)
+                } else if (state == LumiBluetoothManager.ConnectionState.DISCONNECTED) {
+                    ctx.stopService(Intent(ctx, LumiBluetoothService::class.java))
+                }
             }
             override fun onAudioFrame(pcmData: ByteArray, sequenceNum: Int) {}
             override fun onImageReceived(jpegData: ByteArray) {
