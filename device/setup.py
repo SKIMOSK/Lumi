@@ -6,11 +6,12 @@ Usage:
   sudo python3 setup.py --device-id "orange-lumi-1" --color-theme orange
 
 This script:
-  1. Installs system packages (Bluetooth, audio, espeak-ng)
+  1. Installs system packages (Bluetooth, audio, espeak-ng, gpiozero)
   2. Creates a Python venv and installs Python dependencies
   3. Prompts for (or accepts via flags) device settings
-  4. Saves config to ~/.lumi/config.json
-  5. Installs and enables the systemd service for auto-start on boot
+  4. Detects the physical task button GPIO pin
+  5. Saves config to ~/.lumi/config.json
+  6. Installs and enables the systemd service for auto-start on boot
 """
 import argparse
 import json
@@ -18,6 +19,8 @@ import os
 import shutil
 import subprocess
 import sys
+import time
+from typing import Optional
 
 CONFIG_PATH = os.path.expanduser("~/.lumi/config.json")
 INSTALL_DIR = "/opt/lumi"
@@ -39,7 +42,13 @@ SYSTEM_PACKAGES = [
     "libatlas-base-dev",   # numpy optimisation on ARM
     "libopencv-dev",
     "ffmpeg",
+    "python3-gpiozero",    # GPIO button support
 ]
+
+# GPIO pins safe to scan for button detection (BCM numbering).
+# Excludes: power (1,2), GND pins, I2C (2,3), SPI (9,10,11), UART (14,15),
+# and ID EEPROM (0,1). Pins used by common Pi peripherals are excluded too.
+_SAFE_BCM_PINS = [4, 5, 6, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -69,6 +78,81 @@ def ask_words(prompt: str, default: str, min_words=3, max_words=10) -> str:
         if min_words <= len(words) <= max_words:
             return val
         print(f"  Please enter between {min_words} and {max_words} words.")
+
+
+# ── GPIO button detection ─────────────────────────────────────────────────────
+
+def _ask_pin_manual() -> Optional[int]:
+    """Fallback: ask the user to type the BCM pin number (or skip)."""
+    while True:
+        val = input("  Task button GPIO BCM pin [17, or Enter to skip]: ").strip()
+        if not val:
+            print("  Task button disabled — re-run setup any time to configure it.")
+            return None
+        try:
+            n = int(val)
+            if 1 <= n <= 27:
+                return n
+        except ValueError:
+            pass
+        print("  Please enter a BCM pin number (1-27) or press Enter to skip.")
+
+
+def detect_task_button_gpio() -> Optional[int]:
+    """Scan GPIO pins for a button press and return the detected BCM pin number.
+
+    Requires gpiozero (installed in step 2).  Falls back to manual entry if
+    gpiozero is not available or if running outside a Raspberry Pi environment.
+    """
+    print("\n  Wire your task button between a GPIO pin and GND.")
+    print("  The button must be DIFFERENT from the power button.\n")
+
+    try:
+        from gpiozero import Button as _GPIOButton
+    except Exception:
+        print("  gpiozero not available — entering pin manually.")
+        return _ask_pin_manual()
+
+    buttons: dict = {}
+    detected: list = [None]
+
+    def _make_cb(pin: int):
+        def _cb():
+            if detected[0] is None:
+                detected[0] = pin
+        return _cb
+
+    for pin in _SAFE_BCM_PINS:
+        try:
+            b = _GPIOButton(pin, pull_up=True, bounce_time=0.05)
+            b.when_pressed = _make_cb(pin)
+            buttons[pin] = b
+        except Exception:
+            pass  # pin already in use or not accessible
+
+    print("  >>> Press the task button now...  (30-second window)")
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        if detected[0] is not None:
+            break
+        time.sleep(0.1)
+
+    for b in buttons.values():
+        try:
+            b.close()
+        except Exception:
+            pass
+
+    if detected[0] is None:
+        print("  No button press detected within 30 seconds.")
+        return _ask_pin_manual()
+
+    pin = detected[0]
+    print(f"\n  Detected button press on GPIO BCM {pin}.")
+    confirm = input(f"  Use GPIO BCM {pin} as the task button? [Y/n]: ").strip().lower()
+    if confirm not in ("", "y", "yes"):
+        return _ask_pin_manual()
+    return pin
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -122,6 +206,14 @@ def main():
         run(["apt-get", "update", "-qq"])
         run(["apt-get", "install", "-y", "-qq"] + SYSTEM_PACKAGES)
 
+    # ── 2.5. Task button GPIO setup ─────────────────────────────────────────
+    print("\n─── Task Button Setup ─────────────────────────────────────────")
+    task_button_gpio = detect_task_button_gpio()
+    if task_button_gpio is not None:
+        print(f"  Task button will be on GPIO BCM {task_button_gpio}")
+    else:
+        print("  Task button skipped (voice-only mode)")
+
     # ── 3. Configure BlueZ for GATT peripheral ──────────────────────────────
     print("\n─── Configuring BlueZ ─────────────────────────────────────────")
     bluez_conf = "/etc/bluetooth/main.conf"
@@ -170,6 +262,7 @@ def main():
         "device_id": device_id,
         "color_theme": color_theme,
         "stt_language": stt_language,
+        "task_button_gpio": task_button_gpio,
     })
     with open(CONFIG_PATH, "w") as f:
         json.dump(existing, f, indent=2)
@@ -193,6 +286,7 @@ def main():
     print("\n✓ Setup complete!")
     print(f"  Device ID    : {device_id}")
     print(f"  Color theme  : {color_theme}")
+    print(f"  Task button  : {'GPIO BCM ' + str(task_button_gpio) if task_button_gpio else 'not configured'}")
     print()
     print("Next steps:")
     print("  1. On your Android phone, open Bluetooth settings and pair with 'Lumi'")

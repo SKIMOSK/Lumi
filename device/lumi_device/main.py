@@ -6,6 +6,7 @@ import signal
 from . import config as cfg_module
 from .audio_service import AudioService
 from .ble_server import LumiBleServer
+from .button_service import ButtonService
 from .camera_service import CameraService
 from .fall_detector import FallDetector
 from .fingerprint_service import FingerprintService
@@ -33,6 +34,7 @@ async def run():
     fingerprint = FingerprintService(config)
     audio       = AudioService(config)        # no loop dependency
     ble         = LumiBleServer(config, loop)
+    button      = ButtonService(config)
 
     # ── BLE → audio lifecycle ─────────────────────────────────────────────────
 
@@ -95,6 +97,20 @@ async def run():
 
     audio.on_speech_recognized = _speech_cb
 
+    # ── Task button ───────────────────────────────────────────────────────────
+
+    def on_task_button():
+        """Physical task button pressed — stop current speech and signal ready."""
+        if not ble.connected:
+            audio.speak("Not connected to phone")
+            return
+        audio.stop_speaking()
+        vibration.vibrate(60)
+        audio.speak("Go ahead")   # brief cue: user can now speak
+
+    button.on_button_pressed = on_task_button
+    button.start()
+
     # ── Fall detection ────────────────────────────────────────────────────────
 
     def on_fall():
@@ -126,6 +142,7 @@ async def run():
 
     # ── Cleanup ───────────────────────────────────────────────────────────────
     audio.stop()
+    button.stop()
     fall_det.stop()
     camera.release()
     vibration.cleanup()

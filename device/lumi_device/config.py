@@ -13,6 +13,7 @@ DEFAULTS = {
     "vad_silence_ms": 900,
     "vad_energy_threshold": 300,
     "fingerprint_enabled": False,
+    "task_button_gpio": None,
 }
 
 
