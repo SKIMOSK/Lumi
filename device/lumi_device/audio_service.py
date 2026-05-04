@@ -43,6 +43,10 @@ class AudioService:
         # Bounded queue — drop oldest frames if Pi is too slow to process (prevents RAM growth)
         self._frame_queue: queue.Queue = queue.Queue(maxsize=200)
 
+        # Raw recording (for hold-mode sound capture)
+        self._raw_recording = False
+        self._raw_buf: list = []
+
         # Set by main.py — called with recognized text string (sync, thread-safe)
         self.on_speech_recognized: Optional[Callable[[str], None]] = None
 
@@ -88,7 +92,54 @@ class AudioService:
         self._running = False
         self._listening_enabled = False
 
-    # ── Recording ────────────────────────────────────────────────────────────
+    # ── Raw recording (hold-mode / sound capture) ─────────────────────────────
+
+    def start_raw_recording(self):
+        """Begin buffering all microphone frames regardless of VAD."""
+        self._raw_buf.clear()
+        self._raw_recording = True
+        log.info("Raw recording started")
+
+    def stop_raw_recording(self) -> bytes:
+        """Stop buffering and return a WAV-encoded bytes object (may be empty)."""
+        self._raw_recording = False
+        frames = self._raw_buf.copy()
+        self._raw_buf.clear()
+        if not frames:
+            return b""
+        pcm = np.concatenate(frames, axis=0)
+        wav = self._build_wav(pcm.tobytes())
+        log.info("Raw recording stopped (%d bytes WAV)", len(wav))
+        return wav
+
+    def recognize_pcm(self, pcm: np.ndarray) -> str:
+        """Run STT on a PCM array synchronously.  Returns '' on failure."""
+        raw = pcm.tobytes()
+        audio_data = sr.AudioData(raw, SAMPLE_RATE, 2)
+        try:
+            return self._recognizer.recognize_google(
+                audio_data, language=self._language, show_all=False
+            ) or ""
+        except Exception:
+            return ""
+
+    @staticmethod
+    def _build_wav(pcm_bytes: bytes) -> bytes:
+        import struct
+        sr_val    = SAMPLE_RATE
+        channels  = CHANNELS
+        bps       = 16
+        byte_rate = sr_val * channels * bps // 8
+        blk_align = channels * bps // 8
+        data_size = len(pcm_bytes)
+        return struct.pack(
+            "<4sI4s4sIHHIIHH4sI",
+            b"RIFF", 36 + data_size, b"WAVE",
+            b"fmt ", 16, 1, channels, sr_val, byte_rate, blk_align, bps,
+            b"data", data_size,
+        ) + pcm_bytes
+
+    # ── Internal recording ────────────────────────────────────────────────────
 
     def _record_loop(self):
         speech_buf = []
@@ -96,17 +147,21 @@ class AudioService:
         in_speech = False
 
         def audio_callback(indata, frames, time_info, status):
-            if not self._listening_enabled:
-                return
             if status:
                 log.debug("Audio status: %s", status)
+            frame = indata.copy()
+            # Always feed raw recording buffer when active
+            if self._raw_recording:
+                self._raw_buf.append(frame)
+            if not self._listening_enabled:
+                return
             try:
-                self._frame_queue.put_nowait(indata.copy())
+                self._frame_queue.put_nowait(frame)
             except queue.Full:
                 # Drop oldest frame to make room
                 try:
                     self._frame_queue.get_nowait()
-                    self._frame_queue.put_nowait(indata.copy())
+                    self._frame_queue.put_nowait(frame)
                 except queue.Empty:
                     pass
 

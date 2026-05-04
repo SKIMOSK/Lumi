@@ -10,14 +10,15 @@ from typing import Callable, Optional
 
 log = logging.getLogger(__name__)
 
-SERVICE_UUID          = "12345678-1234-1234-1234-123456789abc"
-AUDIO_CHAR_UUID       = "12345678-1234-1234-1234-123456789ab1"
-IMAGE_CHAR_UUID       = "12345678-1234-1234-1234-123456789ab2"
-CMD_CHAR_UUID         = "12345678-1234-1234-1234-123456789ab3"
-STATUS_CHAR_UUID      = "12345678-1234-1234-1234-123456789ab4"
-TTS_TEXT_CHAR_UUID    = "12345678-1234-1234-1234-123456789ab5"
-DEVICE_INFO_CHAR_UUID = "12345678-1234-1234-1234-123456789ab6"
-SPEECH_TEXT_CHAR_UUID = "12345678-1234-1234-1234-123456789ab7"
+SERVICE_UUID            = "12345678-1234-1234-1234-123456789abc"
+AUDIO_CHAR_UUID         = "12345678-1234-1234-1234-123456789ab1"
+IMAGE_CHAR_UUID         = "12345678-1234-1234-1234-123456789ab2"
+CMD_CHAR_UUID           = "12345678-1234-1234-1234-123456789ab3"
+STATUS_CHAR_UUID        = "12345678-1234-1234-1234-123456789ab4"
+TTS_TEXT_CHAR_UUID      = "12345678-1234-1234-1234-123456789ab5"
+DEVICE_INFO_CHAR_UUID   = "12345678-1234-1234-1234-123456789ab6"
+SPEECH_TEXT_CHAR_UUID   = "12345678-1234-1234-1234-123456789ab7"
+AUDIO_RECORD_CHAR_UUID  = "12345678-1234-1234-1234-123456789ab8"  # recorded WAV (Pi→Phone)
 
 CMD_SPEAK       = 0x01
 CMD_STOP        = 0x02
@@ -107,6 +108,11 @@ class LumiBleServer:
         # Speech Text (Pi → Phone) — notify only
         await self._server.add_new_characteristic(
             SERVICE_UUID, SPEECH_TEXT_CHAR_UUID,
+            Props.notify, None, Perms.readable)
+
+        # Audio Recording (Pi → Phone) — WAV chunks, same protocol as image
+        await self._server.add_new_characteristic(
+            SERVICE_UUID, AUDIO_RECORD_CHAR_UUID,
             Props.notify, None, Perms.readable)
 
         await self._server.start()
@@ -245,6 +251,35 @@ class LumiBleServer:
         except Exception as e:
             log.debug("Image sentinel notify failed: %s", e)
         log.debug("Image sent (%d bytes, %d chunks)", len(jpeg_data), len(chunks))
+
+    async def send_recorded_audio(self, wav_data: bytes):
+        """Send a WAV recording to the phone using the same chunk protocol as images."""
+        if not self._server or not self._connected:
+            return
+        char = self._server.get_characteristic(AUDIO_RECORD_CHAR_UUID)
+        if not char:
+            return
+
+        chunks = [wav_data[i:i + BLE_CHUNK] for i in range(0, len(wav_data), BLE_CHUNK)]
+        if len(chunks) >= 0xFF:
+            chunks = chunks[:0xFE]
+
+        for idx, chunk in enumerate(chunks):
+            char.value = bytearray([idx & 0xFF]) + bytearray(chunk)
+            try:
+                self._server.update_value(SERVICE_UUID, AUDIO_RECORD_CHAR_UUID)
+            except Exception as e:
+                log.debug("Audio record chunk notify failed: %s", e)
+                return
+            await asyncio.sleep(0.012)
+
+        total = len(wav_data).to_bytes(4, "little")
+        char.value = bytearray(b"\xFF") + bytearray(total)
+        try:
+            self._server.update_value(SERVICE_UUID, AUDIO_RECORD_CHAR_UUID)
+        except Exception as e:
+            log.debug("Audio record sentinel notify failed: %s", e)
+        log.debug("Recorded audio sent (%d bytes, %d chunks)", len(wav_data), len(chunks))
 
     def set_status(self, status_byte: int):
         if self._server:
