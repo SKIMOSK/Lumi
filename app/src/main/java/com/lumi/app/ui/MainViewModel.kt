@@ -27,6 +27,7 @@ import com.lumi.app.calendar.CalendarHelper
 import com.lumi.app.consent.ConsentManager
 import com.lumi.app.consent.ConsentMode
 import com.lumi.app.contacts.ContactsHelper
+import com.lumi.app.audio.SoundAnalysisHelper
 import com.lumi.app.files.FileHelper
 import com.lumi.app.gallery.GallerySearchHelper
 import com.lumi.app.location.LocationHelper
@@ -96,6 +97,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val statusText: LiveData<String> = _statusText
 
     private var latestImageBase64: String? = null
+    private var latestAudioBase64: String? = null
     private var pendingAttachImage: String? = null
     private var pendingAttachFile: Uri? = null
     private var pendingAttachFileName: String = ""
@@ -411,14 +413,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 })
                 val ctx = getApplication<Application>()
                 if (state == LumiBluetoothManager.ConnectionState.CONNECTED) {
-                    // Keep BLE alive when the app moves to background
                     val svcIntent = Intent(ctx, LumiBluetoothService::class.java)
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                         ctx.startForegroundService(svcIntent)
                     } else {
                         ctx.startService(svcIntent)
                     }
-                    // Sync fingerprint setting to device on connection
                     val fpCmd = if (settings.fingerprintEnabled)
                         LumiBluetoothManager.CMD_FINGERPRINT_ON
                     else
@@ -428,10 +428,72 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     ctx.stopService(Intent(ctx, LumiBluetoothService::class.java))
                 }
             }
+
             override fun onAudioFrame(pcmData: ByteArray, sequenceNum: Int) {}
+
             override fun onImageReceived(jpegData: ByteArray) {
                 latestImageBase64 = Base64.encodeToString(jpegData, Base64.NO_WRAP)
             }
+
+            override fun onAudioRecordingReceived(wavBytes: ByteArray) {
+                latestAudioBase64 = Base64.encodeToString(wavBytes, Base64.NO_WRAP)
+            }
+
+            override fun onDeviceInfo(deviceId: String, colorTheme: String, fingerprintEnabled: Boolean) {
+                // Device info received after connection — sync fingerprint state if it differs
+                if (settings.fingerprintEnabled != fingerprintEnabled) {
+                    settings.fingerprintEnabled = fingerprintEnabled
+                }
+            }
+
+            override fun onSpeechText(text: String) {
+                viewModelScope.launch(Dispatchers.Main) {
+                    when {
+                        text.startsWith("[SOUND_IDENTIFY]") -> {
+                            val userQuestion = text.removePrefix("[SOUND_IDENTIFY]").trim()
+                            val audio = latestAudioBase64 ?: run {
+                                addSystem("Sunet primit dar nicio înregistrare audio disponibilă.")
+                                return@launch
+                            }
+                            latestAudioBase64 = null
+                            if (!settings.hasApiKey()) {
+                                addSystem("Configurează cheia API pentru identificare sunet.")
+                                return@launch
+                            }
+                            addSystem("Identific sunetul…")
+                            viewModelScope.launch {
+                                try {
+                                    val helper = SoundAnalysisHelper(
+                                        GeminiClient(settings.openRouterApiKey, settings.openRouterBaseUrl)
+                                    )
+                                    val prompt = userQuestion.ifBlank { "What sound is this? Identify it concisely." }
+                                    val response = helper.identify(audio, prompt, settings.fastModel)
+                                    withContext(Dispatchers.Main) {
+                                        addSystem("Sunet identificat: ${response.text}")
+                                        tts.speak(response.text)
+                                    }
+                                } catch (e: Exception) {
+                                    withContext(Dispatchers.Main) {
+                                        addSystem("Eroare identificare sunet: ${e.message}")
+                                    }
+                                }
+                            }
+                        }
+                        text.startsWith("[PHOTO_ANALYSIS]") -> {
+                            val speechText = text.removePrefix("[PHOTO_ANALYSIS]").trim()
+                            processPrompt(speechText.ifBlank { "Ce este în imagine?" }, useDeviceImage = true)
+                        }
+                        text == "[FALL_DETECTED]" -> {
+                            addSystem("⚠️ Cădere detectată de dispozitivul Lumi!")
+                            tts.speak("Atenție! A fost detectată o cădere.")
+                        }
+                        else -> {
+                            if (text.isNotBlank()) processPrompt(text, useDeviceImage = false)
+                        }
+                    }
+                }
+            }
+
             override fun onError(message: String) = addSystem("Eroare BT: $message")
         })
     }

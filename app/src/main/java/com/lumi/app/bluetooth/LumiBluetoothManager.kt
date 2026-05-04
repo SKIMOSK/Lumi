@@ -13,42 +13,60 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import java.util.UUID
 
 /**
- * BLE protocol with the Lumi hardware device.
+ * BLE GATT client for the Lumi hardware device.
  *
- * Service UUID:   LUMI_SERVICE_UUID
- * Characteristics:
- *   AUDIO_CHAR   — NOTIFY — raw PCM audio frames from the device mic
- *   IMAGE_CHAR   — NOTIFY — JPEG image chunks (reassembled here)
- *   CMD_CHAR     — WRITE  — send commands back to device (e.g., play TTS audio)
- *   STATUS_CHAR  — READ   — device status byte
+ * Characteristics (all under LUMI_SERVICE_UUID):
+ *   AUDIO_CHAR        — NOTIFY — raw PCM audio frames (live mic stream)
+ *   IMAGE_CHAR        — NOTIFY — JPEG image chunks
+ *   AUDIO_RECORD_CHAR — NOTIFY — recorded WAV chunks (hold-mode sound capture)
+ *   CMD_CHAR          — WRITE  — commands to device
+ *   STATUS_CHAR       — READ   — device status byte
+ *   TTS_TEXT_CHAR     — WRITE  — text for device to speak via espeak-ng
+ *   DEVICE_INFO_CHAR  — READ   — JSON: device_id, color_theme, fingerprint_enabled
+ *   SPEECH_TEXT_CHAR  — NOTIFY — recognised speech text from device
  *
- * Image chunk protocol:
- *   byte[0]   = 0x00..0xFE  → chunk index
- *   byte[0]   = 0xFF        → last chunk; payload is total byte count (4 bytes LE)
- *   byte[1..] = JPEG data
+ * Chunked-data protocol (images, recorded audio):
+ *   byte[0]   = 0x00..0xFE → chunk index; byte[1..] = data
+ *   byte[0]   = 0xFF       → last chunk; byte[1..4] = total size (LE); byte[5..] = tail data
  *
- * Audio chunk protocol:
- *   byte[0..1] = sequence number (big-endian uint16)
- *   byte[2..]  = PCM s16le 16kHz mono samples
+ * TTS text protocol (phone → device, WRITE_TYPE_NO_RESPONSE):
+ *   byte[0] = 0x00 → more chunks follow
+ *   byte[0] = 0x01 → last (or only) chunk — device speaks now
+ *   byte[1..] = UTF-8 text payload
+ *
+ * Connection setup (sequential, each gated by the previous GATT callback):
+ *   onServicesDiscovered → requestMtu(512)
+ *   onMtuChanged         → enableNotify×4 (600 ms each) → readDeviceInfo → sendCmdReady → CONNECTED
  */
 class LumiBluetoothManager(private val context: Context) {
 
     companion object {
         private const val TAG = "LumiBT"
-        val LUMI_SERVICE_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789abc")
-        val AUDIO_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab1")
-        val IMAGE_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab2")
-        val CMD_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab3")
-        val STATUS_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab4")
-        val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+        val LUMI_SERVICE_UUID: UUID      = UUID.fromString("12345678-1234-1234-1234-123456789abc")
+        val AUDIO_CHAR_UUID: UUID        = UUID.fromString("12345678-1234-1234-1234-123456789ab1")
+        val IMAGE_CHAR_UUID: UUID        = UUID.fromString("12345678-1234-1234-1234-123456789ab2")
+        val CMD_CHAR_UUID: UUID          = UUID.fromString("12345678-1234-1234-1234-123456789ab3")
+        val STATUS_CHAR_UUID: UUID       = UUID.fromString("12345678-1234-1234-1234-123456789ab4")
+        val TTS_TEXT_CHAR_UUID: UUID     = UUID.fromString("12345678-1234-1234-1234-123456789ab5")
+        val DEVICE_INFO_CHAR_UUID: UUID  = UUID.fromString("12345678-1234-1234-1234-123456789ab6")
+        val SPEECH_TEXT_CHAR_UUID: UUID  = UUID.fromString("12345678-1234-1234-1234-123456789ab7")
+        val AUDIO_RECORD_CHAR_UUID: UUID = UUID.fromString("12345678-1234-1234-1234-123456789ab8")
+        val CCCD_UUID: UUID              = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
-        const val CMD_SPEAK = 0x01.toByte()
-        const val CMD_STOP = 0x02.toByte()
-        const val CMD_READY = 0x03.toByte()
+        const val CMD_SPEAK           = 0x01.toByte()
+        const val CMD_STOP            = 0x02.toByte()
+        const val CMD_READY           = 0x03.toByte()
+        const val CMD_SETUP_FP        = 0x04.toByte()
+        const val CMD_FINGERPRINT_ON  = 0x05.toByte()
+        const val CMD_FINGERPRINT_OFF = 0x06.toByte()
+
+        private const val NOTIFY_SETUP_DELAY_MS = 600L
     }
 
     interface Listener {
@@ -56,6 +74,9 @@ class LumiBluetoothManager(private val context: Context) {
         fun onAudioFrame(pcmData: ByteArray, sequenceNum: Int)
         fun onImageReceived(jpegData: ByteArray)
         fun onError(message: String)
+        fun onSpeechText(text: String) {}
+        fun onDeviceInfo(deviceId: String, colorTheme: String, fingerprintEnabled: Boolean) {}
+        fun onAudioRecordingReceived(wavBytes: ByteArray) {}
     }
 
     enum class ConnectionState { DISCONNECTED, SCANNING, CONNECTING, CONNECTED }
@@ -65,8 +86,13 @@ class LumiBluetoothManager(private val context: Context) {
 
     private var gatt: BluetoothGatt? = null
     private var listener: Listener? = null
-    private var imageBuffer = mutableListOf<Pair<Int, ByteArray>>() // chunkIndex → data
-    private var imageTotalSize = 0
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val imageBuffer       = mutableListOf<Pair<Int, ByteArray>>()
+    private val audioRecordBuffer = mutableListOf<Pair<Int, ByteArray>>()
+
+    private var pendingService: BluetoothGattService? = null
+    @Volatile private var negotiatedMtu = 23
 
     var connectionState = ConnectionState.DISCONNECTED
         private set(value) {
@@ -75,10 +101,9 @@ class LumiBluetoothManager(private val context: Context) {
         }
 
     fun setListener(l: Listener) { listener = l }
-
     fun isBluetoothEnabled() = adapter?.isEnabled == true
 
-    // ─── Scanning ────────────────────────────────────────────────────────────
+    // ─── Scanning ─────────────────────────────────────────────────────────────
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -116,11 +141,11 @@ class LumiBluetoothManager(private val context: Context) {
             val device = adapter?.getRemoteDevice(address) ?: return
             connect(device)
         } catch (e: Exception) {
-            listener?.onError("Nu s-a putut conecta la adresa BT: $address")
+            listener?.onError("Nu s-a putut conecta: $address")
         }
     }
 
-    // ─── GATT Connection ────────────────────────────────────────────────────
+    // ─── GATT Connection ──────────────────────────────────────────────────────
 
     private fun connect(device: BluetoothDevice) {
         connectionState = ConnectionState.CONNECTING
@@ -137,14 +162,24 @@ class LumiBluetoothManager(private val context: Context) {
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
+
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                Log.w(TAG, "GATT error status=$status — resetting")
+                clearState()
+                try { gatt.close() } catch (_: SecurityException) {}
+                this@LumiBluetoothManager.gatt = null
+                connectionState = ConnectionState.DISCONNECTED
+                return
+            }
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     Log.i(TAG, "GATT connected, discovering services…")
-                    try { gatt.discoverServices() } catch (e: SecurityException) { }
+                    try { gatt.discoverServices() } catch (_: SecurityException) {}
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(TAG, "GATT disconnected")
+                    clearState()
                     connectionState = ConnectionState.DISCONNECTED
                 }
             }
@@ -152,48 +187,79 @@ class LumiBluetoothManager(private val context: Context) {
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) {
-                listener?.onError("Service discovery eșuată: $status")
-                return
+                listener?.onError("Service discovery eșuată: $status"); return
             }
-            val service = gatt.getService(LUMI_SERVICE_UUID)
-            if (service == null) {
-                listener?.onError("Serviciul Lumi nu a fost găsit pe dispozitiv.")
-                return
+            val service = gatt.getService(LUMI_SERVICE_UUID) ?: run {
+                listener?.onError("Serviciul Lumi nu a fost găsit."); return
             }
-            enableNotify(gatt, service, AUDIO_CHAR_UUID)
-            enableNotify(gatt, service, IMAGE_CHAR_UUID)
-
-            // Signal device we're ready
-            service.getCharacteristic(CMD_CHAR_UUID)?.let { cmd ->
-                cmd.value = byteArrayOf(CMD_READY)
-                try { gatt.writeCharacteristic(cmd) } catch (e: SecurityException) { }
+            pendingService = service
+            try { gatt.requestMtu(512) } catch (_: SecurityException) {
+                onMtuChanged(gatt, 23, BluetoothGatt.GATT_SUCCESS)
             }
-            connectionState = ConnectionState.CONNECTED
         }
 
-        @Deprecated("Used for API < 33")
+        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+            negotiatedMtu = if (status == BluetoothGatt.GATT_SUCCESS) mtu else 23
+            Log.i(TAG, "MTU: $negotiatedMtu")
+            val service = pendingService ?: return
+            var t = 0L
+            fun post(ms: Long, block: () -> Unit) { handler.postDelayed(block, ms.also { t += it }) }
+
+            post(0L)                    { enableNotify(gatt, service, AUDIO_CHAR_UUID) }
+            post(NOTIFY_SETUP_DELAY_MS) { enableNotify(gatt, service, IMAGE_CHAR_UUID) }
+            post(NOTIFY_SETUP_DELAY_MS) { enableNotify(gatt, service, SPEECH_TEXT_CHAR_UUID) }
+            post(NOTIFY_SETUP_DELAY_MS) { enableNotify(gatt, service, AUDIO_RECORD_CHAR_UUID) }
+            post(NOTIFY_SETUP_DELAY_MS) {
+                service.getCharacteristic(DEVICE_INFO_CHAR_UUID)?.let { info ->
+                    try { gatt.readCharacteristic(info) } catch (_: SecurityException) {}
+                }
+            }
+            post(NOTIFY_SETUP_DELAY_MS) {
+                service.getCharacteristic(CMD_CHAR_UUID)?.let { cmd ->
+                    cmd.value = byteArrayOf(CMD_READY)
+                    try { gatt.writeCharacteristic(cmd) } catch (_: SecurityException) {}
+                }
+                connectionState = ConnectionState.CONNECTED
+            }
+        }
+
+        @Deprecated("API < 33")
+        override fun onCharacteristicRead(gatt: BluetoothGatt, char: BluetoothGattCharacteristic, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS && char.uuid == DEVICE_INFO_CHAR_UUID)
+                parseDeviceInfo(char.value ?: return)
+        }
+
+        override fun onCharacteristicRead(gatt: BluetoothGatt, char: BluetoothGattCharacteristic, value: ByteArray, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS && char.uuid == DEVICE_INFO_CHAR_UUID)
+                parseDeviceInfo(value)
+        }
+
+        @Deprecated("API < 33")
         override fun onCharacteristicChanged(gatt: BluetoothGatt, char: BluetoothGattCharacteristic) {
             handleCharacteristicChange(char.uuid, char.value ?: return)
         }
 
-        override fun onCharacteristicChanged(
-            gatt: BluetoothGatt,
-            char: BluetoothGattCharacteristic,
-            value: ByteArray
-        ) {
+        override fun onCharacteristicChanged(gatt: BluetoothGatt, char: BluetoothGattCharacteristic, value: ByteArray) {
             handleCharacteristicChange(char.uuid, value)
         }
+
+        override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
+            Log.d(TAG, "CCCD write ${descriptor.characteristic.uuid}: $status")
+        }
     }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private fun enableNotify(gatt: BluetoothGatt, service: BluetoothGattService, charUuid: UUID) {
         val char = service.getCharacteristic(charUuid) ?: return
         try {
             gatt.setCharacteristicNotification(char, true)
-            val desc = char.getDescriptor(CCCD_UUID)
-            desc?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            desc?.let { gatt.writeDescriptor(it) }
+            char.getDescriptor(CCCD_UUID)?.let {
+                it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                gatt.writeDescriptor(it)
+            }
         } catch (e: SecurityException) {
-            Log.e(TAG, "enableNotify SecurityException", e)
+            Log.e(TAG, "enableNotify $charUuid", e)
         }
     }
 
@@ -204,39 +270,85 @@ class LumiBluetoothManager(private val context: Context) {
                 val seq = ((data[0].toInt() and 0xFF) shl 8) or (data[1].toInt() and 0xFF)
                 listener?.onAudioFrame(data.copyOfRange(2, data.size), seq)
             }
-            IMAGE_CHAR_UUID -> handleImageChunk(data)
+            IMAGE_CHAR_UUID        -> handleChunkedData(data, imageBuffer) { listener?.onImageReceived(it) }
+            AUDIO_RECORD_CHAR_UUID -> handleChunkedData(data, audioRecordBuffer) { listener?.onAudioRecordingReceived(it) }
+            SPEECH_TEXT_CHAR_UUID  -> {
+                val text = data.toString(Charsets.UTF_8).trim()
+                if (text.isNotEmpty()) listener?.onSpeechText(text)
+            }
         }
     }
 
-    private fun handleImageChunk(data: ByteArray) {
+    @Synchronized
+    private fun handleChunkedData(
+        data: ByteArray,
+        buffer: MutableList<Pair<Int, ByteArray>>,
+        onComplete: (ByteArray) -> Unit
+    ) {
         if (data.isEmpty()) return
         val chunkIndex = data[0].toInt() and 0xFF
         if (chunkIndex == 0xFF) {
-            // Last chunk marker — contains total size in next 4 bytes (informational)
-            val assembled = imageBuffer
-                .sortedBy { it.first }
-                .flatMap { it.second.toList() }
-                .toByteArray()
-            imageBuffer.clear()
-            if (assembled.isNotEmpty()) listener?.onImageReceived(assembled)
+            val assembled = buffer.sortedBy { it.first }.flatMap { it.second.toList() }.toByteArray()
+            buffer.clear()
+            if (assembled.isNotEmpty()) onComplete(assembled)
         } else {
-            imageBuffer.add(Pair(chunkIndex, data.copyOfRange(1, data.size)))
+            buffer.add(Pair(chunkIndex, data.copyOfRange(1, data.size)))
         }
     }
 
-    // ─── Commands ────────────────────────────────────────────────────────────
+    private fun parseDeviceInfo(data: ByteArray) {
+        try {
+            val json = org.json.JSONObject(data.toString(Charsets.UTF_8))
+            listener?.onDeviceInfo(
+                json.optString("device_id", ""),
+                json.optString("color_theme", "grey"),
+                json.optBoolean("fingerprint_enabled", false)
+            )
+        } catch (_: Exception) { Log.w(TAG, "Failed to parse device info") }
+    }
 
-    /** Send a TTS audio signal back to the Lumi device (optional, if device has speaker). */
+    private fun clearState() {
+        handler.removeCallbacksAndMessages(null)
+        synchronized(imageBuffer)       { imageBuffer.clear() }
+        synchronized(audioRecordBuffer) { audioRecordBuffer.clear() }
+        pendingService = null
+        negotiatedMtu = 23
+    }
+
+    // ─── Commands ─────────────────────────────────────────────────────────────
+
     fun sendCommand(cmd: Byte) {
-        val service = gatt?.getService(LUMI_SERVICE_UUID) ?: return
+        val g = gatt ?: return
+        val service = g.getService(LUMI_SERVICE_UUID) ?: return
         val char = service.getCharacteristic(CMD_CHAR_UUID) ?: return
         char.value = byteArrayOf(cmd)
-        try { gatt?.writeCharacteristic(char) } catch (e: SecurityException) { }
+        try { g.writeCharacteristic(char) } catch (_: SecurityException) {}
+    }
+
+    fun sendTtsText(text: String) {
+        val g = gatt ?: return
+        val service = g.getService(LUMI_SERVICE_UUID) ?: return
+        val char = service.getCharacteristic(TTS_TEXT_CHAR_UUID) ?: return
+        char.writeType = BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
+
+        val bytes = text.toByteArray(Charsets.UTF_8)
+        val maxPayload = (negotiatedMtu - 4).coerceAtLeast(20)
+        var offset = 0
+        while (offset < bytes.size) {
+            val end = minOf(offset + maxPayload, bytes.size)
+            val chunk = ByteArray(1 + (end - offset))
+            chunk[0] = if (end == bytes.size) 0x01 else 0x00
+            bytes.copyInto(chunk, destinationOffset = 1, startIndex = offset, endIndex = end)
+            char.value = chunk
+            try { g.writeCharacteristic(char) } catch (_: SecurityException) { return }
+            offset = end
+        }
     }
 
     fun disconnect() {
         stopScan()
-        try { gatt?.disconnect(); gatt?.close() } catch (e: SecurityException) { }
+        clearState()
+        try { gatt?.disconnect(); gatt?.close() } catch (_: SecurityException) {}
         gatt = null
         connectionState = ConnectionState.DISCONNECTED
     }

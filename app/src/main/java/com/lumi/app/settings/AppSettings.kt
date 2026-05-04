@@ -21,21 +21,24 @@ class AppSettings(context: Context) {
         const val KEY_MEMORY_SIZE         = "memory_size"
         const val KEY_ACTION_MODE         = "action_mode"
         const val KEY_AUTONOMOUS_MODE     = "autonomous_mode"
-        const val KEY_TTS_SPEED           = "tts_speed"
-        const val KEY_STREAMING           = "streaming_enabled"
+        const val KEY_TTS_SPEED              = "tts_speed"
+        const val KEY_STREAMING              = "streaming_enabled"
+        const val KEY_FINGERPRINT_ENABLED    = "fingerprint_enabled"
 
         const val OPENROUTER_DEFAULT_URL = "https://openrouter.ai/api/v1"
 
-        const val MODEL_FASTER        = "anthropic/claude-haiku-4-5"          // fixed: no date suffix
+        const val MODEL_FASTER        = "anthropic/claude-haiku-4-5"
         const val MODEL_FAST          = "google/gemini-2.5-flash"
+        const val MODEL_BEST_FAST     = "google/gemini-2.5-pro"              // best fast tier
         const val MODEL_EXPERT_PRO    = "google/gemini-3.1-pro-preview"
         const val MODEL_EXPERT_OPUS   = "anthropic/claude-opus-4-6"
         const val MODEL_EXPERT_SONNET = "anthropic/claude-sonnet-4-6"
+        const val MODEL_BEST_EXPERT   = "anthropic/claude-opus-4-7"          // absolute best
 
-        val FAST_MODELS  = listOf(MODEL_FASTER, MODEL_FAST)
-        val FAST_LABELS  = listOf("Fastest (Claude Haiku 4.5)", "Fast (Gemini 2.5 Flash)")
-        val EXPERT_MODELS  = listOf(MODEL_EXPERT_PRO, MODEL_EXPERT_OPUS, MODEL_EXPERT_SONNET)
-        val EXPERT_LABELS  = listOf("Balanced — Gemini 3.1 Pro", "Higher End — Claude Opus 4.6", "Cost Efficient — Claude Sonnet")
+        val FAST_MODELS  = listOf(MODEL_FASTER, MODEL_FAST, MODEL_BEST_FAST)
+        val FAST_LABELS  = listOf("Fastest — Claude Haiku 4.5", "Fast — Gemini 2.5 Flash", "Best Fast — Gemini 2.5 Pro")
+        val EXPERT_MODELS  = listOf(MODEL_EXPERT_PRO, MODEL_EXPERT_OPUS, MODEL_EXPERT_SONNET, MODEL_BEST_EXPERT)
+        val EXPERT_LABELS  = listOf("Balanced — Gemini 3.1 Pro", "Higher End — Claude Opus 4.6", "Cost Efficient — Claude Sonnet", "Best — Claude Opus 4.7")
 
         const val DEFAULT_SYSTEM_PROMPT = """Ești Lumi, un asistent AI personal integrat în dispozitivul Lumi.
 Răspunzi în română (sau în limba în care ți se vorbește).
@@ -104,6 +107,10 @@ Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
     var streamingEnabled: Boolean
         get() = prefs.getBoolean(KEY_STREAMING, false)
         set(v) = prefs.edit().putBoolean(KEY_STREAMING, v).apply()
+
+    var fingerprintEnabled: Boolean
+        get() = prefs.getBoolean(KEY_FINGERPRINT_ENABLED, false)
+        set(v) = prefs.edit().putBoolean(KEY_FINGERPRINT_ENABLED, v).apply()
 
     fun hasApiKey() = openRouterApiKey.isNotBlank()
     fun hasBtDevice() = btDeviceAddress.isNotBlank()

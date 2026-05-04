@@ -44,6 +44,8 @@ class GeminiClient(
     suspend fun generate(
         prompt: String,
         imageBase64: String? = null,
+        audioBase64: String? = null,
+        audioMimeType: String = "audio/wav",
         model: String,
         history: List<Map<String, Any>> = emptyList(),
         systemInstruction: String? = null,
@@ -75,6 +77,13 @@ class GeminiClient(
             currentContent.add(mapOf(
                 "type" to "image_url",
                 "image_url" to mapOf("url" to "data:$mimeType;base64,$img")
+            ))
+        }
+        audioBase64?.takeIf { it.isNotBlank() }?.let { audio ->
+            val fmt = audioMimeType.removePrefix("audio/").lowercase()
+            currentContent.add(mapOf(
+                "type" to "input_audio",
+                "input_audio" to mapOf("data" to audio, "format" to fmt)
             ))
         }
         messages.add(mapOf("role" to "user", "content" to currentContent))
