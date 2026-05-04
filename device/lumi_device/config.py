@@ -13,7 +13,12 @@ DEFAULTS = {
     "vad_silence_ms": 900,
     "vad_energy_threshold": 300,
     "fingerprint_enabled": False,
+    "fingerprint_uart": "/dev/serial0",
+    "fingerprint_baud": 57600,
     "task_button_gpio": None,
+    "vibration_gpio": 18,
+    "battery_i2c_bus": 1,
+    "fall_detect_enabled": True,
 }
 
 

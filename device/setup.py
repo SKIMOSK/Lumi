@@ -47,6 +47,8 @@ SYSTEM_PACKAGES = [
     "ffmpeg",
     "python3-gpiozero",
     "alsa-utils",
+    "i2c-tools",
+    "python3-smbus2",
 ]
 
 # BCM pins safe to scan (excluding power, GND, I2C=2/3, SPI=9/10/11, UART=14/15)
@@ -164,6 +166,66 @@ def detect_task_button_gpio(prompt_start: bool = False) -> Optional[int]:
 
 # ── Hardware checks ───────────────────────────────────────────────────────────
 
+def check_vibration(gpio_pin: int) -> bool:
+    """Pulse the vibration motor briefly as a hardware check."""
+    try:
+        from gpiozero import PWMOutputDevice
+        motor = PWMOutputDevice(gpio_pin, initial_value=0)
+        motor.value = 1.0
+        time.sleep(0.25)
+        motor.value = 0.0
+        motor.close()
+        print(f"  ✓ Vibration motor pulsed on GPIO BCM {gpio_pin}")
+        return True
+    except Exception as e:
+        print(f"  ✗ Vibration motor GPIO BCM {gpio_pin}: {e}")
+        return False
+
+
+def check_fingerprint_uart(uart: str = "/dev/serial0") -> bool:
+    if not os.path.exists(uart):
+        print(f"  ✗ Fingerprint UART {uart} not found — enable UART and reboot")
+        return False
+    try:
+        from pyfingerprint.pyfingerprint import PyFingerprint
+        sensor = PyFingerprint(uart, 57600, 0xFFFFFFFF, 0x00000000)
+        if sensor.verifyPassword():
+            n = sensor.countTemplates()
+            print(f"  ✓ Fingerprint sensor ready on {uart} — {n} template(s) stored")
+            return True
+        print(f"  ✗ Fingerprint sensor on {uart}: password verification failed")
+        return False
+    except ImportError:
+        print("  ⚠ pyfingerprint not yet installed (will install in step 7)")
+        return True   # not a hard failure at this stage
+    except Exception as e:
+        print(f"  ✗ Fingerprint sensor on {uart}: {e}")
+        return False
+
+
+def check_battery_i2c() -> bool:
+    try:
+        import smbus2
+        bus = smbus2.SMBus(1)
+        # Try IP5306 first (0x75), then MAX17040 (0x36)
+        for addr, name in [(0x75, "IP5306"), (0x36, "MAX17040")]:
+            try:
+                bus.read_byte(addr)
+                print(f"  ✓ Battery module detected on I2C bus 1 address 0x{addr:02X} ({name})")
+                return True
+            except Exception:
+                pass
+        print("  ✗ Battery module not found on I2C (tried 0x75 and 0x36)")
+        print("    Check SDA→GPIO2, SCL→GPIO3 wiring and that I2C is enabled")
+        return False
+    except ImportError:
+        print("  ⚠ smbus2 not yet installed (will install in step 7)")
+        return True
+    except Exception as e:
+        print(f"  ✗ I2C bus 1 error: {e}")
+        return False
+
+
 def check_camera() -> bool:
     for i in range(4):
         if os.path.exists(f"/dev/video{i}"):
@@ -276,10 +338,47 @@ def main():
     color_theme  = args.color_theme  or ask_choice("Color theme", THEMES, "grey")
     stt_language = args.stt_language or ask("STT language (e.g. en-US, ro-RO, fr-FR)", "en-US")
 
+    # ── 2b. Peripheral hardware ───────────────────────────────────────────────
+    print("\n─── Peripheral Hardware ──────────────────────────────────────────────")
+
+    # Vibration motor GPIO
+    print("\n  Vibration motor (Mini 6 mm, 3 V, 7000 RPM)")
+    print("  Connect via NPN transistor (2N2222 / BC547):")
+    print("    GPIO pin → 1 kΩ → Base  |  Collector → motor → 3.3 V  |  Emitter → GND")
+    print("    Add flyback diode across motor (cathode to 3.3 V side)")
+    vib_pin_s = input("  GPIO BCM pin for vibration motor [18, or Enter to skip]: ").strip()
+    vibration_gpio: Optional[int] = None
+    if vib_pin_s:
+        try:
+            vibration_gpio = int(vib_pin_s)
+        except ValueError:
+            pass
+    if vibration_gpio is None:
+        vibration_gpio = 18
+        print(f"  Using default GPIO BCM {vibration_gpio}")
+    else:
+        print(f"  Vibration motor → GPIO BCM {vibration_gpio}")
+
+    # Fingerprint sensor UART
+    print("\n  Fingerprint sensor (SFM-V1.7 — UART)")
+    print("  Wiring: SFM TXD→Pi GPIO15(RXD)  SFM RXD→Pi GPIO14(TXD)  VCC→3.3V  GND→GND")
+    print("  UART must be enabled: raspi-config → Interface Options → Serial Port")
+    print("    → Disable login shell over serial  → Enable serial hardware  → Reboot")
+    fp_enabled = input("  Is the fingerprint sensor connected? [y/N]: ").strip().lower() in ("y", "yes")
+
+    # Battery module I2C
+    print("\n  Battery module (LiPo 3.7 V for Pi Zero — I2C)")
+    print("  Wiring: I2C SDA → Pi GPIO2 (pin 3)  SCL → Pi GPIO3 (pin 5)  VCC/GND as labelled")
+    print("  I2C must be enabled: raspi-config → Interface Options → I2C → Enable")
+    bat_enabled = input("  Is the battery module connected via I2C? [y/N]: ").strip().lower() in ("y", "yes")
+
     print(f"\n  Device ID    : {device_id}")
     print(f"  Color theme  : {color_theme}")
     print(f"  Language     : {stt_language}")
     print(f"  Task button  : {'GPIO BCM ' + str(task_button_gpio) if task_button_gpio else 'not configured'}")
+    print(f"  Vibration GPIO: {vibration_gpio}")
+    print(f"  Fingerprint  : {'enabled (SFM-V1.7 UART)' if fp_enabled else 'disabled'}")
+    print(f"  Battery I2C  : {'enabled' if bat_enabled else 'disabled/not connected'}")
     if input("\nProceed? [Y/n]: ").strip().lower() not in ("", "y", "yes"):
         print("Setup cancelled.")
         sys.exit(0)
@@ -296,9 +395,17 @@ def main():
     mic_ok = check_microphone()
     spk_ok = check_speaker()
     bt_ok  = check_bluetooth()
+    vib_ok = check_vibration(vibration_gpio)
+    fp_ok  = check_fingerprint_uart() if fp_enabled else True
+    bat_ok = check_battery_i2c() if bat_enabled else True
 
-    missing = [n for ok, n in [(cam_ok, "camera"), (mic_ok, "microphone"),
-                                (spk_ok, "speaker"), (bt_ok, "bluetooth")] if not ok]
+    checks = [(cam_ok, "camera"), (mic_ok, "microphone"), (spk_ok, "speaker"),
+              (bt_ok, "bluetooth"), (vib_ok, "vibration motor")]
+    if fp_enabled:
+        checks.append((fp_ok, "fingerprint sensor"))
+    if bat_enabled:
+        checks.append((bat_ok, "battery module"))
+    missing = [n for ok_flag, n in checks if not ok_flag]
     if missing:
         print(f"\n  WARNING: {', '.join(missing)} not detected.")
         if input("  Continue anyway? [y/N]: ").strip().lower() not in ("y", "yes"):
@@ -361,10 +468,16 @@ def main():
         except Exception:
             pass
     existing.update({
-        "device_id":        device_id,
-        "color_theme":      color_theme,
-        "stt_language":     stt_language,
-        "task_button_gpio": task_button_gpio,
+        "device_id":           device_id,
+        "color_theme":         color_theme,
+        "stt_language":        stt_language,
+        "task_button_gpio":    task_button_gpio,
+        "vibration_gpio":      vibration_gpio,
+        "fingerprint_enabled": fp_enabled,
+        "fingerprint_uart":    "/dev/serial0",
+        "fingerprint_baud":    57600,
+        "battery_i2c_bus":     1,
+        "fall_detect_enabled": True,
     })
     with open(CONFIG_PATH, "w") as f:
         json.dump(existing, f, indent=2)
@@ -388,8 +501,11 @@ def main():
     print(f"  Device ID    : {device_id}")
     print(f"  Color theme  : {color_theme}")
     print(f"  Task button  : {'GPIO BCM ' + str(task_button_gpio) if task_button_gpio else 'not configured'}")
+    print(f"  Vibration    : GPIO BCM {vibration_gpio}")
+    print(f"  Fingerprint  : {'enabled' if fp_enabled else 'disabled'}")
     print()
     print("Next steps:")
+    print("  0. Run diagnostics anytime: python3 diagnostics.py")
     print("  1. Open the Lumi app on your phone")
     print("  2. Settings → Bluetooth → select this device")
     print("  3. The device auto-connects when the app opens")

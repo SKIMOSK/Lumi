@@ -4,3 +4,5 @@ SpeechRecognition==3.10.4
 opencv-python-headless==4.9.0.80
 numpy>=1.24.0,<2.0.0
 gpiozero>=2.0
+pyfingerprint>=2.2.1
+smbus2>=0.4.2

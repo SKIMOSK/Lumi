@@ -5,16 +5,21 @@ Button interaction modes (set by physical task button):
   SINGLE_LISTEN  — single click: VAD active, next recognised utterance is sent
   PHOTO_LISTEN   — double click: photo(s) queued, next utterance sent with photos
   HOLD_RECORDING — hold: raw audio buffered; on release STT+WAV sent to phone
+
+Special button gestures:
+  Triple click   — soft shutdown (sudo shutdown -h now); does NOT cut power
 """
 import asyncio
 import logging
 import signal
+import subprocess
 from enum import Enum, auto
 
 import numpy as np
 
 from . import config as cfg_module
 from .audio_service import AudioService
+from .battery_service import BatteryService
 from .ble_server import LumiBleServer
 from .button_service import ButtonService
 from .camera_service import CameraService
@@ -37,7 +42,7 @@ class DeviceMode(Enum):
     HOLD_RECORDING = auto()
 
 
-# ── Image helper (defined at module level to stay out of run()) ───────────────
+# ── Image helper ──────────────────────────────────────────────────────────────
 
 def _stitch_images(jpegs: list) -> bytes | None:
     """Return a side-by-side JPEG of 1-2 images, or the first on failure."""
@@ -69,9 +74,12 @@ async def run():
     vibration   = VibrationService(config)
     fall_det    = FallDetector(config)
     fingerprint = FingerprintService(config)
+    battery     = BatteryService(config)
     audio       = AudioService(config)
     ble         = LumiBleServer(config, loop)
     button      = ButtonService(config)
+
+    log.info("Battery: %s", battery.get_status())
 
     # ── Shared state ──────────────────────────────────────────────────────────
     _mode:         DeviceMode = DeviceMode.IDLE
@@ -104,7 +112,9 @@ async def run():
         vibration.vibrate(80)
 
     def on_setup_fingerprint():
-        fingerprint.enroll_fingerprint()
+        # Run enrollment in a thread so the async loop is not blocked
+        import threading
+        threading.Thread(target=fingerprint.enroll_fingerprint, daemon=True).start()
 
     def on_fingerprint_setting(enabled: bool):
         fingerprint.set_enabled(enabled)
@@ -148,6 +158,18 @@ async def run():
 
     audio.on_speech_recognized = _speech_cb
 
+    # ── Fingerprint auth result callback ──────────────────────────────────────
+
+    def on_fp_auth_result(success: bool):
+        if success:
+            audio.speak("Fingerprint verified")
+            vibration.vibrate(60)
+        else:
+            audio.speak("Fingerprint not recognised")
+            vibration.vibrate_pattern([(80, 1.0), (80, 0.0), (80, 1.0)])
+
+    fingerprint.on_auth_result = on_fp_auth_result
+
     # ── Button interactions ───────────────────────────────────────────────────
 
     def on_single_click():
@@ -158,7 +180,12 @@ async def run():
             audio.stop_speaking()
             vibration.vibrate(50)
             _set_mode(DeviceMode.SINGLE_LISTEN)
-            audio.speak("Listening")
+            # Kick off fingerprint scan in background if required
+            if config.get("fingerprint_enabled"):
+                audio.speak("Scan your fingerprint, then speak")
+                fingerprint.start_auth_scan()
+            else:
+                audio.speak("Listening")
         elif _mode in (DeviceMode.SINGLE_LISTEN, DeviceMode.PHOTO_LISTEN):
             _queued_jpegs.clear()
             _set_mode(DeviceMode.IDLE)
@@ -191,10 +218,24 @@ async def run():
             if jpeg:
                 _queued_jpegs.clear()
                 _queued_jpegs.append(jpeg)
+
             _set_mode(DeviceMode.PHOTO_LISTEN)
-            audio.speak("Photo taken. Listening")
+            if config.get("fingerprint_enabled"):
+                audio.speak("Photo taken. Scan fingerprint, then speak")
+                fingerprint.start_auth_scan()
+            else:
+                audio.speak("Photo taken. Listening")
 
         asyncio.run_coroutine_threadsafe(_double_click_async(), loop)
+
+    def on_triple_click():
+        """Soft shutdown — announces, vibrates, then calls 'sudo shutdown -h now'."""
+        log.info("Triple click detected — initiating soft shutdown")
+        audio.stop_speaking()
+        vibration.vibrate_pattern([(100, 1.0), (100, 0.0), (100, 1.0), (100, 0.0), (200, 1.0)])
+        audio.speak("Shutting down. Goodbye.")
+        import time; time.sleep(2.5)   # let espeak finish
+        subprocess.run(["sudo", "shutdown", "-h", "now"], check=False)
 
     def on_hold_start():
         if not ble.connected:
@@ -215,17 +256,19 @@ async def run():
             if not wav_bytes or not ble.connected:
                 return
             vibration.vibrate(100)
-            pcm_bytes = wav_bytes[44:]  # skip standard 44-byte WAV header
+            pcm_bytes = wav_bytes[44:]  # skip 44-byte WAV header
             pcm_array = np.frombuffer(pcm_bytes, dtype=np.int16).reshape(-1, 1)
             stt_text = await loop.run_in_executor(None, audio.recognize_pcm, pcm_array)
             log.info("Hold STT result: %s", stt_text or "(none)")
             await ble.send_recorded_audio(wav_bytes)
-            await ble.send_speech_text(stt_text if stt_text else "[SOUND_IDENTIFY]")
+            marker = f"[SOUND_IDENTIFY] {stt_text}" if stt_text else "[SOUND_IDENTIFY]"
+            await ble.send_speech_text(marker)
 
         asyncio.run_coroutine_threadsafe(_send_recording_async(), loop)
 
     button.on_single_click  = on_single_click
     button.on_double_click  = on_double_click
+    button.on_triple_click  = on_triple_click
     button.on_hold_start    = on_hold_start
     button.on_hold_release  = on_hold_release
     button.start()
@@ -241,7 +284,8 @@ async def run():
             )
 
     fall_det.on_fall = on_fall
-    fall_det.start()
+    if config.get("fall_detect_enabled", True):
+        fall_det.start()
 
     # ── Shutdown handling ─────────────────────────────────────────────────────
 

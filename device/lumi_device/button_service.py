@@ -1,16 +1,17 @@
-"""Physical task-button service — single click, double click, and hold detection.
+"""Physical task-button service — single, double, triple click and hold detection.
 
 Button wiring: GPIO pin (BCM) → button → GND.
 gpiozero applies an internal pull-up; pressing the button drives the pin LOW.
 
 Interaction timings:
   hold_time        = 0.7 s  — button must be held this long to trigger HOLD
-  double_click_win = 0.35 s — two releases within this window = double click
+  double_click_win = 0.35 s — releases within this window accumulate clicks
   bounce_time      = 0.05 s — debounce filter
 
 Callbacks set by main.py:
-  on_single_click()   — short press-and-release (no double within window)
-  on_double_click()   — two quick press-and-releases
+  on_single_click()   — one short press-and-release
+  on_double_click()   — two quick presses within the window
+  on_triple_click()   — three quick presses — triggers soft shutdown
   on_hold_start()     — button held ≥ hold_time (still pressed)
   on_hold_release()   — button released AFTER a hold was triggered
 """
@@ -38,6 +39,7 @@ class ButtonService:
 
         self.on_single_click:  Optional[Callable[[], None]] = None
         self.on_double_click:  Optional[Callable[[], None]] = None
+        self.on_triple_click:  Optional[Callable[[], None]] = None
         self.on_hold_start:    Optional[Callable[[], None]] = None
         self.on_hold_release:  Optional[Callable[[], None]] = None
 
@@ -124,8 +126,10 @@ class ButtonService:
             self._click_timer = None
         if count == 1:
             cb = self.on_single_click
-        elif count >= 2:
+        elif count == 2:
             cb = self.on_double_click
+        elif count >= 3:
+            cb = self.on_triple_click
         else:
             return
         if cb:
