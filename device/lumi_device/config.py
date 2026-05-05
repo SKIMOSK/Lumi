@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 
@@ -29,7 +30,7 @@ def load() -> dict:
                 return {**DEFAULTS, **json.load(f)}
         except Exception:
             pass
-    return DEFAULTS.copy()
+    return copy.deepcopy(DEFAULTS)
 
 
 def save(cfg: dict):

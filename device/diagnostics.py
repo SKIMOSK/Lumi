@@ -155,7 +155,7 @@ def test_camera(config: dict):
         cap = cv2.VideoCapture(idx)
         if not cap.isOpened():
             _record("Camera", "FAIL",
-                    f"Cannot open camera index {idx} — check USB or CSI connection")
+                    f"Cannot open camera index {idx} — check USB or CSI connection, or try: sudo usermod -aG video $USER && logout")
             return
         ret, frame = cap.read()
         cap.release()
@@ -167,7 +167,10 @@ def test_camera(config: dict):
     except ImportError:
         _record("Camera", "FAIL", "opencv-python-headless not installed")
     except Exception as e:
-        _record("Camera", "FAIL", str(e))
+        msg = str(e)
+        if "Permission denied" in msg or "/dev/video" in msg:
+            msg += " — fix with: sudo usermod -aG video $USER && logout"
+        _record("Camera", "FAIL", msg)
 
 
 def test_microphone(config: dict):

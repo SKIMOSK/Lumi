@@ -120,7 +120,14 @@ class AudioService:
             return self._recognizer.recognize_google(
                 audio_data, language=self._language, show_all=False
             ) or ""
-        except Exception:
+        except sr.UnknownValueError:
+            logger.debug("Speech not recognized")
+            return ""
+        except sr.RequestError as e:
+            logger.warning(f"STT network error: {e}")
+            return ""
+        except Exception as e:
+            logger.error(f"STT failed: {e}")
             return ""
 
     @staticmethod

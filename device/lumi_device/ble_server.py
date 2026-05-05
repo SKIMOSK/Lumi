@@ -173,12 +173,15 @@ class LumiBleServer:
         elif cmd == CMD_STOP:
             log.info("Stop command")
         elif cmd == CMD_SETUP_FP:
+            log.info("Fingerprint setup requested")
             if self.on_setup_fingerprint:
                 self._loop.call_soon_threadsafe(self.on_setup_fingerprint)
         elif cmd == CMD_FP_ON:
+            log.info("Fingerprint enabled")
             if self.on_fingerprint_setting:
                 self._loop.call_soon_threadsafe(self.on_fingerprint_setting, True)
         elif cmd == CMD_FP_OFF:
+            log.info("Fingerprint disabled")
             if self.on_fingerprint_setting:
                 self._loop.call_soon_threadsafe(self.on_fingerprint_setting, False)
 
