@@ -41,6 +41,7 @@ class FingerprintService:
         self._baud: int  = config.get("fingerprint_baud", 57600)
         self._sensor     = None          # PyFingerprint instance
         self._last_auth: float = 0.0
+        self._auth_lock  = threading.Lock()
         self._scan_thread: Optional[threading.Thread] = None
 
         # Optional callback — called with True/False after a background scan
@@ -75,7 +76,9 @@ class FingerprintService:
             return True
         if self._sensor is None:
             return True   # no hardware → always allow
-        return (time.monotonic() - self._last_auth) < _AUTH_WINDOW_S
+        with self._auth_lock:
+            last = self._last_auth
+        return (time.monotonic() - last) < _AUTH_WINDOW_S
 
     def start_auth_scan(self):
         """Non-blocking fingerprint scan.
@@ -84,7 +87,8 @@ class FingerprintService:
         enabled or sensor is absent the result is immediately True.
         """
         if not self._enabled or self._sensor is None:
-            self._last_auth = time.monotonic()
+            with self._auth_lock:
+                self._last_auth = time.monotonic()
             if self.on_auth_result:
                 self.on_auth_result(True)
             return
@@ -96,7 +100,8 @@ class FingerprintService:
     def scan_and_verify(self) -> bool:
         """Blocking scan — returns True on a recognised match."""
         if not self._enabled or self._sensor is None:
-            self._last_auth = time.monotonic()
+            with self._auth_lock:
+                self._last_auth = time.monotonic()
             return True
         return self._do_scan()
 
@@ -184,7 +189,8 @@ class FingerprintService:
                 return False
 
             log.info("Fingerprint verified — slot=%d score=%d", position, score)
-            self._last_auth = time.monotonic()
+            with self._auth_lock:
+                self._last_auth = time.monotonic()
             return True
 
         except Exception as e:

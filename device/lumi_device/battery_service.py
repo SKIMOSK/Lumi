@@ -59,6 +59,15 @@ class BatteryService:
             return self._sysfs_charging()
         return None
 
+    def close(self):
+        """Release I2C bus file descriptor."""
+        if self._bus is not None:
+            try:
+                self._bus.close()
+            except Exception:
+                pass
+            self._bus = None
+
     # ── Backend detection ─────────────────────────────────────────────────────
 
     def _detect_backend(self) -> Optional[str]:

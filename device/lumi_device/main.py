@@ -101,10 +101,13 @@ async def run():
         audio.speak("Lumi connected")
 
     def on_client_disconnected():
-        audio.disable_listening()
-        _set_mode(DeviceMode.IDLE)
-        _queued_jpegs.clear()
-        log.info("Phone disconnected — listening paused")
+        def _disconnect():
+            nonlocal _queued_jpegs
+            audio.disable_listening()
+            _queued_jpegs.clear()
+            _set_mode(DeviceMode.IDLE)
+            log.info("Phone disconnected — listening paused")
+        loop.call_soon_threadsafe(_disconnect)
 
     def on_tts_text(text: str):
         audio.stop_speaking()
@@ -172,7 +175,8 @@ async def run():
 
     # ── Button interactions ───────────────────────────────────────────────────
 
-    def on_single_click():
+    async def _single_click_async():
+        nonlocal _queued_jpegs
         if not ble.connected:
             audio.speak("Not connected")
             return
@@ -180,7 +184,6 @@ async def run():
             audio.stop_speaking()
             vibration.vibrate(50)
             _set_mode(DeviceMode.SINGLE_LISTEN)
-            # Kick off fingerprint scan in background if required
             if config.get("fingerprint_enabled"):
                 audio.speak("Scan your fingerprint, then speak")
                 fingerprint.start_auth_scan()
@@ -190,6 +193,9 @@ async def run():
             _queued_jpegs.clear()
             _set_mode(DeviceMode.IDLE)
             audio.speak("Cancelled")
+
+    def on_single_click():
+        asyncio.run_coroutine_threadsafe(_single_click_async(), loop)
 
     def on_double_click():
         if not ble.connected:
@@ -238,12 +244,14 @@ async def run():
         subprocess.run(["sudo", "shutdown", "-h", "now"], check=False)
 
     def on_hold_start():
-        if not ble.connected:
-            return
-        audio.stop_speaking()
-        vibration.vibrate(30)
-        _set_mode(DeviceMode.HOLD_RECORDING)
-        audio.start_raw_recording()
+        def _start():
+            if not ble.connected:
+                return
+            audio.stop_speaking()
+            vibration.vibrate(30)
+            _set_mode(DeviceMode.HOLD_RECORDING)
+            audio.start_raw_recording()
+        loop.call_soon_threadsafe(_start)
 
     def on_hold_release():
         if _mode != DeviceMode.HOLD_RECORDING:
@@ -313,6 +321,7 @@ async def run():
     fall_det.stop()
     camera.release()
     vibration.cleanup()
+    battery.close()
     await ble.stop()
     log.info("Lumi device stopped")
 
