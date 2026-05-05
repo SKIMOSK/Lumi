@@ -220,7 +220,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         tts.wasInterrupted = false
 
         val wantsDetail = isAskingForMoreDetail(userText)
-        if (wantsDetail) wordLimitBonus += 50 else wordLimitBonus = 0
+        if (wantsDetail) wordLimitBonus = (wordLimitBonus + 50).coerceAtMost(300) else wordLimitBonus = 0
         val expertLimit = 95 + wordLimitBonus
         if (expertLimit > 500) {
             addSystem("Maximum words exceeded, I cannot complete your request.")

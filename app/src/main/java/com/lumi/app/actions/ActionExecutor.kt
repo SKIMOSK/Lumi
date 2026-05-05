@@ -70,7 +70,7 @@ class ActionExecutor(
         repeat(attempts) {
             if (block()) return true
             delay(delayMs)
-            delayMs *= 2
+            delayMs = (delayMs * 2).coerceAtMost(2000L)
         }
         return false
     }

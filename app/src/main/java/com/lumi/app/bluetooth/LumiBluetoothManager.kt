@@ -273,7 +273,7 @@ class LumiBluetoothManager(private val context: Context) {
             IMAGE_CHAR_UUID        -> handleChunkedData(data, imageBuffer) { listener?.onImageReceived(it) }
             AUDIO_RECORD_CHAR_UUID -> handleChunkedData(data, audioRecordBuffer) { listener?.onAudioRecordingReceived(it) }
             SPEECH_TEXT_CHAR_UUID  -> {
-                val text = data.toString(Charsets.UTF_8).trim()
+                val text = data.toString(Charsets.UTF_8).trim().take(5000)
                 if (text.isNotEmpty()) listener?.onSpeechText(text)
             }
         }

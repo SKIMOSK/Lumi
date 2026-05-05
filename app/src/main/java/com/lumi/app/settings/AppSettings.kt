@@ -56,8 +56,8 @@ Ești concis și util. Poți vedea imagini trimise de la dispozitivul Lumi."""
     var fastModel: String
         get() {
             val v = prefs.getString(KEY_FAST_MODEL, MODEL_FAST) ?: MODEL_FAST
-            // Migrate from old broken date-suffixed Haiku ID
-            return if (v == "anthropic/claude-haiku-4-5-20251001") MODEL_FASTER else v
+            // Migrate from old broken date-suffixed model IDs
+            return if (v.startsWith("anthropic/claude-haiku-4-5-") && v != MODEL_FASTER) MODEL_FASTER else v
         }
         set(v) = prefs.edit().putString(KEY_FAST_MODEL, v).apply()
 

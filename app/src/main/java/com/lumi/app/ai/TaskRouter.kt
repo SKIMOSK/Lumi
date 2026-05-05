@@ -522,28 +522,33 @@ Raspunde cu UN SINGUR CUVANT: SIMPLU sau COMPLEX
         }
 
         req.place_search?.let { ps ->
-            sb.appendLine("=== Cautare Locuri: \"${ps.query}\" ===")
-            val gps = locationHelper?.getLastKnown()
-            if (gps == null) {
-                sb.appendLine("GPS indisponibil. Foloseste adresa completa a locatiei sau activeaza permisiunea de locatie.")
+            if (ps.query.isBlank()) {
+                sb.appendLine("=== Cautare Locuri ===")
+                sb.appendLine("Cere o locatie specifica (ex: 'Primarie', 'banca', 'magazin')")
             } else {
-                val searcher = placeSearchHelper
-                if (searcher == null) {
-                    sb.appendLine("Serviciu cautare locuri indisponibil.")
+                sb.appendLine("=== Cautare Locuri: \"${ps.query}\" ===")
+                val gps = locationHelper?.getLastKnown()
+                if (gps == null) {
+                    sb.appendLine("GPS indisponibil. Foloseste adresa completa a locatiei sau activeaza permisiunea de locatie.")
                 } else {
-                    val city = searcher.reverseGeocode(gps.lat, gps.lon)
-                    val cityNote = if (city != null) " (oras detectat: $city)" else ""
-                    sb.appendLine("Locatie curenta: ${gps.lat}, ${gps.lon}$cityNote")
-                    val places = searcher.search(ps.query, gps.lat, gps.lon, ps.limit)
-                    if (places.isEmpty()) {
-                        sb.appendLine("Nu s-au gasit locuri pentru '${ps.query}' in zona.")
+                    val searcher = placeSearchHelper
+                    if (searcher == null) {
+                        sb.appendLine("Serviciu cautare locuri indisponibil.")
                     } else {
-                        places.forEachIndexed { i, p ->
-                            sb.appendLine("[${i + 1}] ${p.name}")
-                            sb.appendLine("    Adresa completa: ${p.address}")
-                            sb.appendLine("    Coordonate: ${p.lat}, ${p.lon}")
+                        val city = searcher.reverseGeocode(gps.lat, gps.lon)
+                        val cityNote = if (city != null) " (oras detectat: $city)" else ""
+                        sb.appendLine("Locatie curenta: ${gps.lat}, ${gps.lon}$cityNote")
+                        val places = searcher.search(ps.query, gps.lat, gps.lon, ps.limit)
+                        if (places.isEmpty()) {
+                            sb.appendLine("Nu s-au gasit locuri pentru '${ps.query}' in zona.")
+                        } else {
+                            places.forEachIndexed { i, p ->
+                                sb.appendLine("[${i + 1}] ${p.name}")
+                                sb.appendLine("    Adresa completa: ${p.address}")
+                                sb.appendLine("    Coordonate: ${p.lat}, ${p.lon}")
+                            }
+                            sb.appendLine("Foloseste adresa [1] ca referinta in NAVIGATE_MAPS/WAZE.")
                         }
-                        sb.appendLine("Foloseste adresa [1] ca referinta in NAVIGATE_MAPS/WAZE.")
                     }
                 }
             }
