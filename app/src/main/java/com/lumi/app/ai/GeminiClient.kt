@@ -79,7 +79,7 @@ class GeminiClient(
                 "image_url" to mapOf("url" to "data:$mimeType;base64,$img")
             ))
         }
-        audioBase64?.takeIf { it.isNotBlank() }?.let { audio ->
+        audioBase64?.takeIf { isValidAudioBase64(it) }?.let { audio ->
             val fmt = audioMimeType.removePrefix("audio/").lowercase()
             currentContent.add(mapOf(
                 "type" to "input_audio",
@@ -184,9 +184,11 @@ class GeminiClient(
                 if (full.isEmpty()) throw e
             }
         }
-        // If the stream ended cleanly without ever hitting a marker, flush whatever's left.
+        // Stream ended — flush remaining visible text, but stop before any partial marker.
         if (!stoppedEmitting && emittedUpTo < full.length) {
-            onVisibleChunk(full.substring(emittedUpTo, full.length))
+            val markerIdx = findMarkerStart(full)
+            val flushEnd = if (markerIdx in emittedUpTo until full.length) markerIdx else full.length
+            if (flushEnd > emittedUpTo) onVisibleChunk(full.substring(emittedUpTo, flushEnd))
         }
         return GeminiResponse(full.toString(), model, promptTokens, outputTokens)
     }
@@ -239,6 +241,18 @@ class GeminiClient(
         if (b64.isBlank() || b64.length < 32) return false
         val head = b64.trimStart().take(8)
         return head.startsWith("/9j/") || head.startsWith("iVBOR")
+    }
+
+    /** WAV base64 must be at least ~100 chars and decode to a RIFF header. */
+    private fun isValidAudioBase64(b64: String): Boolean {
+        if (b64.isBlank() || b64.length < 100) return false
+        return try {
+            val headerBytes = android.util.Base64.decode(b64.take(16), android.util.Base64.DEFAULT)
+            headerBytes.size >= 4 && headerBytes[0] == 'R'.code.toByte() &&
+                headerBytes[1] == 'I'.code.toByte() &&
+                headerBytes[2] == 'F'.code.toByte() &&
+                headerBytes[3] == 'F'.code.toByte()
+        } catch (_: Exception) { false }
     }
 
     private fun parseError(json: String): String = try {

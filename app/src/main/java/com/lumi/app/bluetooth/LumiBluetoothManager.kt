@@ -89,7 +89,9 @@ class LumiBluetoothManager(private val context: Context) {
     private val handler = Handler(Looper.getMainLooper())
 
     private val imageBuffer       = mutableListOf<Pair<Int, ByteArray>>()
+    private var imageBufferFirstChunkMs = 0L
     private val audioRecordBuffer = mutableListOf<Pair<Int, ByteArray>>()
+    private var audioRecordBufferFirstChunkMs = 0L
 
     private var pendingService: BluetoothGattService? = null
     @Volatile private var negotiatedMtu = 23
@@ -270,8 +272,10 @@ class LumiBluetoothManager(private val context: Context) {
                 val seq = ((data[0].toInt() and 0xFF) shl 8) or (data[1].toInt() and 0xFF)
                 listener?.onAudioFrame(data.copyOfRange(2, data.size), seq)
             }
-            IMAGE_CHAR_UUID        -> handleChunkedData(data, imageBuffer) { listener?.onImageReceived(it) }
-            AUDIO_RECORD_CHAR_UUID -> handleChunkedData(data, audioRecordBuffer) { listener?.onAudioRecordingReceived(it) }
+            IMAGE_CHAR_UUID        -> handleChunkedData(data, imageBuffer,
+                { imageBufferFirstChunkMs }, { imageBufferFirstChunkMs = it }) { listener?.onImageReceived(it) }
+            AUDIO_RECORD_CHAR_UUID -> handleChunkedData(data, audioRecordBuffer,
+                { audioRecordBufferFirstChunkMs }, { audioRecordBufferFirstChunkMs = it }) { listener?.onAudioRecordingReceived(it) }
             SPEECH_TEXT_CHAR_UUID  -> {
                 val text = data.toString(Charsets.UTF_8).trim().take(5000)
                 if (text.isNotEmpty()) listener?.onSpeechText(text)
@@ -283,6 +287,8 @@ class LumiBluetoothManager(private val context: Context) {
     private fun handleChunkedData(
         data: ByteArray,
         buffer: MutableList<Pair<Int, ByteArray>>,
+        getTimestamp: () -> Long,
+        setTimestamp: (Long) -> Unit,
         onComplete: (ByteArray) -> Unit
     ) {
         if (data.isEmpty()) return
@@ -290,8 +296,18 @@ class LumiBluetoothManager(private val context: Context) {
         if (chunkIndex == 0xFF) {
             val assembled = buffer.sortedBy { it.first }.flatMap { it.second.toList() }.toByteArray()
             buffer.clear()
+            setTimestamp(0L)
             if (assembled.isNotEmpty()) onComplete(assembled)
         } else {
+            val now = System.currentTimeMillis()
+            val firstChunkMs = getTimestamp()
+            // Reset stale buffer (no final chunk after 30 s) or when a new transfer starts (index 0)
+            if (buffer.isNotEmpty() && (chunkIndex == 0 || (firstChunkMs > 0 && now - firstChunkMs > 30_000L))) {
+                Log.w(TAG, "Chunked buffer reset — index=$chunkIndex stale=${now - firstChunkMs}ms")
+                buffer.clear()
+                setTimestamp(0L)
+            }
+            if (buffer.isEmpty()) setTimestamp(now)
             buffer.add(Pair(chunkIndex, data.copyOfRange(1, data.size)))
         }
     }
@@ -309,8 +325,8 @@ class LumiBluetoothManager(private val context: Context) {
 
     private fun clearState() {
         handler.removeCallbacksAndMessages(null)
-        synchronized(imageBuffer)       { imageBuffer.clear() }
-        synchronized(audioRecordBuffer) { audioRecordBuffer.clear() }
+        synchronized(imageBuffer)       { imageBuffer.clear(); imageBufferFirstChunkMs = 0L }
+        synchronized(audioRecordBuffer) { audioRecordBuffer.clear(); audioRecordBufferFirstChunkMs = 0L }
         pendingService = null
         negotiatedMtu = 23
     }

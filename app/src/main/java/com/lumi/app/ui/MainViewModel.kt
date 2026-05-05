@@ -49,6 +49,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicReference
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -96,7 +97,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _statusText = MutableLiveData("Inactiv")
     val statusText: LiveData<String> = _statusText
 
-    private var latestImageBase64: String? = null
+    private val latestImageRef = AtomicReference<String?>(null)
     private var latestAudioBase64: String? = null
     private var pendingAttachImage: String? = null
     private var pendingAttachFile: Uri? = null
@@ -228,10 +229,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
 
-        var imageBase64 = pendingAttachImage ?: (if (useDeviceImage) latestImageBase64 else null)
+        val deviceImage = if (useDeviceImage) latestImageRef.getAndSet(null) else null
+        var imageBase64 = pendingAttachImage ?: deviceImage
         pendingAttachImage = null
-        // Clear immediately — a bad BLE frame must not poison the next request
-        latestImageBase64 = null
 
         val attachedFileUri = pendingAttachFile
         val attachedFileName = pendingAttachFileName
@@ -380,7 +380,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         pendingAttachFile = uri
         pendingAttachFileName = name
         pendingAttachImage = null
-        latestImageBase64 = null
+        latestImageRef.set(null)
     }
 
     fun clearPendingFile() { pendingAttachFile = null; pendingAttachFileName = "" }
@@ -432,7 +432,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             override fun onAudioFrame(pcmData: ByteArray, sequenceNum: Int) {}
 
             override fun onImageReceived(jpegData: ByteArray) {
-                latestImageBase64 = Base64.encodeToString(jpegData, Base64.NO_WRAP)
+                latestImageRef.set(Base64.encodeToString(jpegData, Base64.NO_WRAP))
             }
 
             override fun onAudioRecordingReceived(wavBytes: ByteArray) {
