@@ -10,7 +10,10 @@ import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
+import android.os.ParcelUuid
 import android.content.Context
 import android.os.Build
 import android.os.Handler
@@ -67,6 +70,7 @@ class LumiBluetoothManager(private val context: Context) {
         const val CMD_FINGERPRINT_OFF = 0x06.toByte()
 
         private const val NOTIFY_SETUP_DELAY_MS = 600L
+        private const val SCAN_TIMEOUT_MS = 10_000L
     }
 
     interface Listener {
@@ -109,14 +113,8 @@ class LumiBluetoothManager(private val context: Context) {
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            val device = result.device
-            val name = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                try { device.name } catch (e: SecurityException) { null }
-            } else { device.name }
-            if (name?.startsWith("Lumi") == true) {
-                stopScan()
-                connect(device)
-            }
+            stopScan()
+            connect(result.device)
         }
         override fun onScanFailed(errorCode: Int) {
             listener?.onError("BLE scan failed: $errorCode")
@@ -127,7 +125,13 @@ class LumiBluetoothManager(private val context: Context) {
     fun startScan() {
         connectionState = ConnectionState.SCANNING
         try {
-            adapter?.bluetoothLeScanner?.startScan(scanCallback)
+            val filter = ScanFilter.Builder()
+                .setServiceUuid(ParcelUuid(LUMI_SERVICE_UUID))
+                .build()
+            val settings = ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build()
+            adapter?.bluetoothLeScanner?.startScan(listOf(filter), settings, scanCallback)
         } catch (e: SecurityException) {
             listener?.onError("Permisiune Bluetooth lipsă.")
             connectionState = ConnectionState.DISCONNECTED

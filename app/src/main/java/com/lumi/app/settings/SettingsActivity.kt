@@ -1,16 +1,26 @@
 package com.lumi.app.settings
 
+import android.Manifest
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.ParcelUuid
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.lumi.app.bluetooth.LumiBluetoothManager
 import com.lumi.app.databinding.ActivitySettingsBinding
 import com.lumi.app.ui.PatchNotesActivity
 
@@ -18,6 +28,12 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var settings: AppSettings
+
+    private val discoveredDevices = mutableListOf<BluetoothDeviceItem>()
+    private var scanAdapter: ArrayAdapter<BluetoothDeviceItem>? = null
+    private var leScanCallback: ScanCallback? = null
+    private val scanHandler = Handler(Looper.getMainLooper())
+    private val scanTimeoutMs = 10_000L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,19 +52,16 @@ class SettingsActivity : AppCompatActivity() {
         val customUrl = settings.openRouterBaseUrl.takeIf { it != AppSettings.OPENROUTER_DEFAULT_URL } ?: ""
         binding.etOpenRouterUrl.setText(customUrl)
 
-        // Fast model spinner
         val fastAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, AppSettings.FAST_LABELS)
         fastAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerFastModel.adapter = fastAdapter
         binding.spinnerFastModel.setSelection(AppSettings.FAST_MODELS.indexOf(settings.fastModel).coerceAtLeast(0))
 
-        // Expert model spinner
         val expertAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, AppSettings.EXPERT_LABELS)
         expertAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerExpertModel.adapter = expertAdapter
         binding.spinnerExpertModel.setSelection(AppSettings.EXPERT_MODELS.indexOf(settings.expertModel).coerceAtLeast(0))
 
-        // STT language
         val languages = listOf("ro-RO", "en-US", "fr-FR", "de-DE", "es-ES")
         val langAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, languages)
         langAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -73,15 +86,22 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchStreaming.isChecked = settings.streamingEnabled
 
         binding.tvBtDevice.text = if (settings.hasBtDevice())
-            "${settings.btDeviceName} (${settings.btDeviceAddress})"
-        else "Niciun dispozitiv selectat"
+            "Salvat: ${settings.btDeviceName} (${settings.btDeviceAddress})"
+        else "Niciun dispozitiv salvat"
 
-        loadPairedDevices()
+        // Pre-populate scan results list with the currently saved device (if any)
+        discoveredDevices.clear()
+        if (settings.hasBtDevice()) {
+            discoveredDevices.add(BluetoothDeviceItem(settings.btDeviceName, settings.btDeviceAddress))
+        }
+        scanAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, discoveredDevices)
+        scanAdapter!!.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerBtDevices.adapter = scanAdapter
     }
 
     private fun setupListeners() {
         binding.btnSave.setOnClickListener { saveSettings() }
-        binding.btnScanBt.setOnClickListener { loadPairedDevices() }
+        binding.btnScanBt.setOnClickListener { startBleScan() }
         binding.btnResetPrompt.setOnClickListener {
             binding.etSystemPrompt.setText(AppSettings.DEFAULT_SYSTEM_PROMPT)
         }
@@ -135,6 +155,118 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
+    // ─── BLE Device Scanning ──────────────────────────────────────────────────
+
+    private fun startBleScan() {
+        val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val btAdapter = btManager.adapter ?: run {
+            Toast.makeText(this, "Bluetooth nu este disponibil.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!btAdapter.isEnabled) {
+            Toast.makeText(this, "Activați Bluetooth mai întâi.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val permOk = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
+        } else {
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        }
+        if (!permOk) {
+            val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
+            else
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            requestPermissions(perm, REQ_BLE_SCAN)
+            return
+        }
+
+        val leScanner = btAdapter.bluetoothLeScanner ?: run {
+            Toast.makeText(this, "BLE scanner indisponibil.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Clear previous scan results, keep saved device at top so user can re-select it
+        val savedAddress = settings.btDeviceAddress
+        discoveredDevices.clear()
+        val seenAddresses = mutableSetOf<String>()
+        if (settings.hasBtDevice()) {
+            discoveredDevices.add(BluetoothDeviceItem(settings.btDeviceName, savedAddress))
+            seenAddresses.add(savedAddress)
+        }
+        scanAdapter?.notifyDataSetChanged()
+
+        binding.btnScanBt.isEnabled = false
+        binding.btnScanBt.text = "Se caută... (10s)"
+
+        val filter = ScanFilter.Builder()
+            .setServiceUuid(ParcelUuid(LumiBluetoothManager.LUMI_SERVICE_UUID))
+            .build()
+        val scanSettings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .build()
+
+        val cb = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                val address = result.device.address ?: return
+                if (!seenAddresses.add(address)) return
+                val name = try {
+                    result.device.name ?: result.scanRecord?.deviceName ?: "Lumi"
+                } catch (_: SecurityException) { "Lumi" }
+                runOnUiThread {
+                    discoveredDevices.add(BluetoothDeviceItem(name, address))
+                    scanAdapter?.notifyDataSetChanged()
+                }
+            }
+            override fun onScanFailed(errorCode: Int) {
+                runOnUiThread { stopBleScan(leScanner) }
+            }
+        }
+        leScanCallback = cb
+
+        try {
+            leScanner.startScan(listOf(filter), scanSettings, cb)
+        } catch (e: SecurityException) {
+            leScanCallback = null
+            binding.btnScanBt.isEnabled = true
+            binding.btnScanBt.text = "Caută dispozitive Lumi (BLE)"
+            Toast.makeText(this, "Permisiune Bluetooth lipsă.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        scanHandler.postDelayed({ stopBleScan(leScanner) }, scanTimeoutMs)
+    }
+
+    private fun stopBleScan(
+        leScanner: android.bluetooth.le.BluetoothLeScanner? =
+            (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter?.bluetoothLeScanner
+    ) {
+        scanHandler.removeCallbacksAndMessages(null)
+        leScanCallback?.let {
+            try { leScanner?.stopScan(it) } catch (_: SecurityException) {}
+            leScanCallback = null
+        }
+        if (!isDestroyed) {
+            binding.btnScanBt.isEnabled = true
+            binding.btnScanBt.text = "Caută dispozitive Lumi (BLE)"
+            if (discoveredDevices.isEmpty()) {
+                Toast.makeText(this, "Nu s-au găsit dispozitive Lumi.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_BLE_SCAN && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            startBleScan()
+        } else if (requestCode == REQ_BLE_SCAN) {
+            Toast.makeText(this, "Permisiunile BLE sunt necesare pentru scanare.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ─── Save / Load ──────────────────────────────────────────────────────────
+
     private fun saveSettings() {
         val apiKey = binding.etOpenRouterKey.text?.toString()?.trim() ?: ""
         if (apiKey.isBlank()) {
@@ -169,30 +301,18 @@ class SettingsActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun loadPairedDevices() {
-        val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        val adapter = btManager.adapter ?: return
-
-        val devices = try {
-            adapter.bondedDevices?.map { device ->
-                BluetoothDeviceItem(
-                    name = try { device.name ?: "Necunoscut" } catch (e: SecurityException) { "?" },
-                    address = device.address
-                )
-            } ?: emptyList()
-        } catch (e: SecurityException) { emptyList() }
-
-        val deviceAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, devices)
-        deviceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.spinnerBtDevices.adapter = deviceAdapter
-
-        val currentIdx = devices.indexOfFirst { it.address == settings.btDeviceAddress }
-        if (currentIdx >= 0) binding.spinnerBtDevices.setSelection(currentIdx)
+    override fun onDestroy() {
+        super.onDestroy()
+        stopBleScan()
     }
 
     override fun onSupportNavigateUp(): Boolean { finish(); return true }
 
     data class BluetoothDeviceItem(val name: String, val address: String) {
         override fun toString() = "$name ($address)"
+    }
+
+    companion object {
+        private const val REQ_BLE_SCAN = 1001
     }
 }

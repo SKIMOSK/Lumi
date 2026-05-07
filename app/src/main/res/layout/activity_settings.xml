@@ -140,7 +140,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:text="Reîncarcă dispozitive pereche"/>
+                android:text="Caută dispozitive Lumi (BLE)"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
